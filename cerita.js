@@ -1,5 +1,5 @@
 // ===============================================================
-// 📝 SKELETON / CONFIG DASAR TEMPLATE GAME 2D
+// SKELETON / CONFIG DASAR TEMPLATE GAME 2D
 // ===============================================================
 // File ini adalah pusat konfigurasi utama untuk murid:
 // 1. Ubah Nama & Gambar Hero Karakter
@@ -16,13 +16,13 @@ export const CONFIG_SKELETON = {
     // 2. Setelan Dasar Hero / Karakter Utama
     player: {
         nama: "Hero Cilik",
-        // ⭐ DROP & PLAY: Cukup tulis nama file gambar di folder public/aset_murid/
+        // DROP & PLAY: Cukup tulis nama file gambar di folder public/aset_murid/
         // Contoh: "hero_contoh.png" atau "karakter.png" (kosongkan "" jika ingin pakai kotak kuning bawaan)
         gambar: "hero_contoh.png",
         warna: "#fffb00",     // Warna fallback jika tidak pakai gambar
         kecepatan: 220,       // Kecepatan jalan default (bisa diubah live via /inspect slider)
         kekuatanLompat: 440,  // Daya lompat default (bisa diubah live via /inspect slider)
-        hpMaksimal: 3         // Jumlah nyawa awal (hati)
+        hpMaksimal: 3         // Jumlah nyawa awal
     },
 
     // 3. Setelan Awal Quest / Misi
@@ -34,7 +34,7 @@ export const CONFIG_SKELETON = {
 
     // 4. Tas / Inventaris Awal (Bisa kosong atau isi item awal)
     inventoryAwal: [
-        { id: 'item_kunci', nama: 'Kunci Perunggu', deskripsi: 'Kunci misterius pembuka peti rahasia.', icon: '🗝️' }
+        { id: 'item_kunci', nama: 'Kunci Perunggu', deskripsi: 'Kunci misterius pembuka peti rahasia.', icon: '' }
     ],
 
     // 5. Pengaturan Kamera & Zoom
@@ -46,9 +46,9 @@ export const CONFIG_SKELETON = {
 };
 
 // ===============================================================
-// 🗺️ DAFTAR_MAP: SISTEM LEVEL BERBASIS DATA (DATA-DRIVEN)
+// DAFTAR_MAP: SISTEM LEVEL BERBASIS DATA (DATA-DRIVEN)
 // ===============================================================
-// ⭐ MURID/GURU BISA MEMBUAT LEVEL BARU TANPA CODING SAMA SEKALI!
+// MURID/GURU BISA MEMBUAT LEVEL BARU TANPA CODING SAMA SEKALI!
 // Cukup salin 1 blok objek di bawah ini dan ubah posisinya sesuka hati.
 // ===============================================================
 export const DAFTAR_MAP = [
@@ -69,7 +69,7 @@ export const DAFTAR_MAP = [
 
         // Koin / Harta Karun { x, y, id, nama, icon }
         koin: [
-            { x: 720, y: 205, id: 'koin_emas', nama: 'Koin Emas Murni', icon: '🪙' }
+            { x: 720, y: 205, id: 'koin_emas', nama: 'Koin Emas Murni', icon: '' }
         ],
 
         // Rintangan Duri / Hazard { x, y, lebar }
@@ -119,7 +119,7 @@ export const DAFTAR_MAP = [
 
         // Koin permata hutan
         koin: [
-            { x: 900, y: 135, id: 'zamrud_hutan', nama: 'Permata Zamrud Hutan', icon: '💎' }
+            { x: 900, y: 135, id: 'zamrud_hutan', nama: 'Permata Zamrud Hutan', icon: '' }
         ],
 
         // Duri rintangan di lantai

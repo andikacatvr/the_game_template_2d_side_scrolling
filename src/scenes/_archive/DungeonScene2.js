@@ -12,29 +12,29 @@ import { CameraZoomManager } from '../utils/CameraZoomManager.js';
 // ===============================================================
 const WEAPONS = {
     fists: {
-        id: 'fists', name: 'Tangan Kosong', icon: '👊',
+        id: 'fists', name: 'Tangan Kosong', icon: '',
         textureKey: null, damage: 1, range: 70, attackSpeed: 900,
         color: 0x94a3b8, desc: 'Serangan dasar tanpa senjata.'
     },
     sword: {
-        id: 'sword', name: 'Pedang Ksatria', icon: '⚔️',
+        id: 'sword', name: 'Pedang Ksatria', icon: 'ATK',
         textureKey: 'weapon_sword', damage: 2, range: 90, attackSpeed: 650,
         color: 0x60a5fa, desc: 'Pedang tajam. DMG ×2, jangkauan lebih jauh.'
     },
     axe: {
-        id: 'axe', name: 'Kapak Besi', icon: '🪓',
+        id: 'axe', name: 'Kapak Besi', icon: '',
         textureKey: 'weapon_axe', damage: 3, range: 75, attackSpeed: 1100,
         color: 0xf97316, desc: 'Kapak berat. DMG ×3 tapi lebih lambat.'
     },
     bow: {
-        id: 'bow', name: 'Busur Jarak Jauh', icon: '🏹',
+        id: 'bow', name: 'Busur Jarak Jauh', icon: '',
         textureKey: 'weapon_bow', damage: 1, range: 320, attackSpeed: 750,
         color: 0x34d399, desc: 'Menembak panah. Jangkauan ×4!'
     }
 };
 
 // ===============================================================
-// 🔮 DUNGEON SCENE LEVEL 2: GUA SIHIR KEGELAPAN (RANGED ENEMIES)
+//  DUNGEON SCENE LEVEL 2: GUA SIHIR KEGELAPAN (RANGED ENEMIES)
 // ===============================================================
 export class DungeonScene2 extends Phaser.Scene {
     constructor() {
@@ -213,7 +213,7 @@ export class DungeonScene2 extends Phaser.Scene {
         this.tweens.add({ targets: this.exitPortal, scaleX: 1.08, scaleY: 1.08, alpha: 0.85, yoyo: true, repeat: -1, duration: 900 });
         this._exitPrompt = this.add.container(1730, 345).setDepth(25).setVisible(false);
         const ep1 = this.add.rectangle(0, 0, 146, 22, 0x2e1065, 0.95).setStrokeStyle(1.5, 0xfacc15);
-        const ep2 = this.add.text(0, 0, '[E / Enter] Dungeon 3 ➔', { fontSize: '9px', fontStyle: 'bold', fill: '#fef08a', fontFamily: FONT_BODY }).setOrigin(0.5);
+        const ep2 = this.add.text(0, 0, '[E / Enter] Dungeon 3 ->', { fontSize: '9px', fontStyle: 'bold', fill: '#fef08a', fontFamily: FONT_BODY }).setOrigin(0.5);
         this._exitPrompt.add([ep1, ep2]);
         ep1.setInteractive({ useHandCursor: true }).on('pointerdown', () => this._tryExit());
     }
@@ -222,7 +222,7 @@ export class DungeonScene2 extends Phaser.Scene {
         const g = this.add.graphics();
         g.fillStyle(0x3b0764, 1);
         g.fillRect(x - 3, y, 6, 20);
-        const flame = this.add.text(x, y, '🟣', { fontSize: '15px' }).setOrigin(0.5);
+        const flame = this.add.text(x, y, '*', { fontSize: '15px' }).setOrigin(0.5);
         this.tweens.add({ targets: flame, scaleX: 1.2, scaleY: 0.85, yoyo: true, repeat: -1, duration: 260 });
     }
 
@@ -723,7 +723,7 @@ export class DungeonScene2 extends Phaser.Scene {
         const hpLabel = this.add.text(8, 4, 'HP', { fontSize: '11px', fontStyle: 'bold', fill: '#f43f5e', fontFamily: FONT_TITLE });
         this._hpHearts = [];
         for (let i = 0; i < this.maxHp; i++) {
-            this._hpHearts.push(this.add.text(32 + i * 22, 4, '❤️', { fontSize: '14px' }));
+            this._hpHearts.push(this.add.text(32 + i * 22, 4, '■', { fontSize: '14px' }));
         }
         this._hpNumText = this.add.text(102, 5, `${this.hp}/${this.maxHp}`, {
             fontSize: '11px', fontStyle: 'bold', fill: '#fda4af', fontFamily: FONT_BODY
@@ -740,7 +740,7 @@ export class DungeonScene2 extends Phaser.Scene {
         const rightEdge = this.scale.width;
         const menuBg = this.add.rectangle(rightEdge - 24, 26, 36, 36, 0x0f172a, 0.9)
             .setStrokeStyle(2, 0x64748b).setScrollFactor(0).setDepth(30).setInteractive({ useHandCursor: true });
-        this.add.text(rightEdge - 24, 26, '⚙️', { fontSize: '16px' }).setOrigin(0.5).setScrollFactor(0).setDepth(30);
+        this.add.text(rightEdge - 24, 26, '[=]', { fontSize: '16px' }).setOrigin(0.5).setScrollFactor(0).setDepth(30);
         menuBg.on('pointerdown', () => this._toggleSettings());
 
         this._buildWeaponHUDPanel();
@@ -775,7 +775,7 @@ export class DungeonScene2 extends Phaser.Scene {
         if (this._hpHearts) {
             for (let i = 0; i < this.maxHp; i++) {
                 if (this._hpHearts[i]) {
-                    this._hpHearts[i].setText(i < this.hp ? '❤️' : '🖤');
+                    this._hpHearts[i].setText(i < this.hp ? '■' : '■');
                     this._hpHearts[i].setAlpha(i < this.hp ? 1 : 0.35);
                 }
             }
@@ -826,7 +826,7 @@ export class DungeonScene2 extends Phaser.Scene {
             });
         };
         const vL3 = mk(this.add.rectangle(cx, cy + 52, 380, 38, 0xb91c1c, 0.95).setStrokeStyle(2, 0xf87171).setInteractive({ useHandCursor: true }));
-        const vL3t = mk(this.add.text(cx, cy + 52, 'Lanjut ke Dungeon Level 3 (Rintangan Maut) ➔', { fontSize: '12px', fontStyle: 'bold', fill: '#fef2f2', fontFamily: FONT_BODY }).setOrigin(0.5));
+        const vL3t = mk(this.add.text(cx, cy + 52, 'Lanjut ke Dungeon Level 3 (Rintangan Maut) ->', { fontSize: '12px', fontStyle: 'bold', fill: '#fef2f2', fontFamily: FONT_BODY }).setOrigin(0.5));
         vL3.on('pointerdown', toL3);
         vL3.on('pointerover', () => vL3.setFillStyle(0xdc2626, 1));
         vL3.on('pointerout',  () => vL3.setFillStyle(0xb91c1c, 0.95));
@@ -964,7 +964,7 @@ export class DungeonScene2 extends Phaser.Scene {
             this._weaponSprite.setFlipX(this.player.flipX);
         }
 
-        // 🔮 AI MUSUH PENYIHIR: Tembak Bola Sihir Jarak Jauh
+        //  AI MUSUH PENYIHIR: Tembak Bola Sihir Jarak Jauh
         if (this.enemies) {
             const now = this.time.now;
             const MAX_RANGED_DIST = 650; // Jangkauan luas satu layar penuh

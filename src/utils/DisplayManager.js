@@ -1,5 +1,5 @@
 // ===============================================================
-// 🖥️ DISPLAY MANAGER: PENGATUR RESOLUSI & FULLSCREEN LAYAR
+// DISPLAY MANAGER: PENGATUR RESOLUSI & FULLSCREEN LAYAR
 // ===============================================================
 export class DisplayManager {
     static init() {

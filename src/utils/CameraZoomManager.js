@@ -2,7 +2,8 @@ import Phaser from 'phaser';
 import { FONT_BODY } from './helpers.js';
 
 // ===============================================================
-// 🔍 CAMERA ZOOM MANAGER
+// CAMERA ZOOM MANAGER
+// Mengatur zoom kamera dinamis, clamp min/max, dan HUD indikator
 // ===============================================================
 // Pengatur sistem zoom in & zoom out kamera di Phaser 3.
 // Fitur:

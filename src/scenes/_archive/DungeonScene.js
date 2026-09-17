@@ -12,22 +12,22 @@ import { CameraZoomManager } from '../utils/CameraZoomManager.js';
 // ===============================================================
 const WEAPONS = {
     fists: {
-        id: 'fists', name: 'Tangan Kosong', icon: '👊',
+        id: 'fists', name: 'Tangan Kosong', icon: '',
         textureKey: null, damage: 1, range: 70, attackSpeed: 900,
         color: 0x94a3b8, desc: 'Serangan dasar tanpa senjata.'
     },
     sword: {
-        id: 'sword', name: 'Pedang Ksatria', icon: '⚔️',
+        id: 'sword', name: 'Pedang Ksatria', icon: 'ATK',
         textureKey: 'weapon_sword', damage: 2, range: 90, attackSpeed: 650,
         color: 0x60a5fa, desc: 'Pedang tajam. DMG ×2, jangkauan lebih jauh.'
     },
     axe: {
-        id: 'axe', name: 'Kapak Besi', icon: '🪓',
+        id: 'axe', name: 'Kapak Besi', icon: '',
         textureKey: 'weapon_axe', damage: 3, range: 75, attackSpeed: 1100,
         color: 0xf97316, desc: 'Kapak berat. DMG ×3 tapi lebih lambat.'
     },
     bow: {
-        id: 'bow', name: 'Busur Jarak Jauh', icon: '🏹',
+        id: 'bow', name: 'Busur Jarak Jauh', icon: '',
         textureKey: 'weapon_bow', damage: 1, range: 300, attackSpeed: 800,
         color: 0x34d399, desc: 'Menembak panah. Jangkauan ×4!'
     }
@@ -108,7 +108,7 @@ export class DungeonScene extends Phaser.Scene {
         this.input.keyboard.on('keydown-Z',   () => this._attackNearestEnemy());
         this.input.keyboard.on('keydown-X',   () => this._cycleWeapon());
 
-        // 🖱️ Klik mouse di mana saja di layar untuk serang / menembak
+        //  Klik mouse di mana saja di layar untuk serang / menembak
         this.input.on('pointerdown', (pointer) => {
             if (this.isGameOver || this.isVictoryOpen || this.isSettingsOpen) return;
             if (pointer.y < 50) return; // Abaikan klik di area navbar/HUD
@@ -172,7 +172,7 @@ export class DungeonScene extends Phaser.Scene {
         this.tweens.add({ targets: this.exitPortal, alpha: 0.75, yoyo: true, repeat: -1, duration: 900 });
         this._exitPrompt = this.add.container(1550, 340).setDepth(25).setVisible(false);
         const ep1 = this.add.rectangle(0, 0, 146, 22, 0x1c0440, 0.95).setStrokeStyle(1.5, 0xc084fc);
-        const ep2 = this.add.text(0, 0, '[E / Enter] Dungeon 2 ➔', { fontSize: '9px', fontStyle: 'bold', fill: '#e9d5ff', fontFamily: FONT_BODY }).setOrigin(0.5);
+        const ep2 = this.add.text(0, 0, '[E / Enter] Dungeon 2 ->', { fontSize: '9px', fontStyle: 'bold', fill: '#e9d5ff', fontFamily: FONT_BODY }).setOrigin(0.5);
         this._exitPrompt.add([ep1, ep2]);
         ep1.setInteractive({ useHandCursor: true }).on('pointerdown', () => this._tryExit());
 
@@ -184,7 +184,7 @@ export class DungeonScene extends Phaser.Scene {
         const g = this.add.graphics();
         g.fillStyle(0x5c3d11, 1);
         g.fillRect(x - 3, y, 6, 20);
-        const flame = this.add.text(x, y, '🔥', { fontSize: '18px' }).setOrigin(0.5);
+        const flame = this.add.text(x, y, '*', { fontSize: '18px' }).setOrigin(0.5);
         this.tweens.add({ targets: flame, scaleX: 1.15, scaleY: 0.85, yoyo: true, repeat: -1, duration: 250 });
     }
 
@@ -702,7 +702,7 @@ export class DungeonScene extends Phaser.Scene {
         const hpLabel = this.add.text(8, 4, 'HP', { fontSize: '11px', fontStyle: 'bold', fill: '#f43f5e', fontFamily: FONT_TITLE });
         this._hpHearts = [];
         for (let i = 0; i < this.maxHp; i++) {
-            this._hpHearts.push(this.add.text(32 + i * 22, 4, '❤️', { fontSize: '14px' }));
+            this._hpHearts.push(this.add.text(32 + i * 22, 4, '■', { fontSize: '14px' }));
         }
         this._hpNumText = this.add.text(102, 5, `${this.hp}/${this.maxHp}`, {
             fontSize: '11px', fontStyle: 'bold', fill: '#fda4af', fontFamily: FONT_BODY
@@ -777,7 +777,7 @@ export class DungeonScene extends Phaser.Scene {
         if (!this._hpHearts) return;
         for (let i = 0; i < this.maxHp; i++) {
             if (this._hpHearts[i]) {
-                this._hpHearts[i].setText(i < this.hp ? '❤️' : '🖤');
+                this._hpHearts[i].setText(i < this.hp ? '■' : '■');
                 this._hpHearts[i].setAlpha(i < this.hp ? 1 : 0.35);
             }
         }
@@ -819,7 +819,7 @@ export class DungeonScene extends Phaser.Scene {
         const atkBg = this.add.rectangle(735, 318, 56, 42, 0x3b0764, 0.88)
             .setStrokeStyle(2, 0xc084fc)
             .setInteractive(new Phaser.Geom.Rectangle(697, 287, 76, 62), Phaser.Geom.Rectangle.Contains);
-        const atkTxt = this.add.text(735, 318, '⚔️', { fontSize: '20px' }).setOrigin(0.5);
+        const atkTxt = this.add.text(735, 318, 'ATK', { fontSize: '20px' }).setOrigin(0.5);
         atkBg.on('pointerdown', () => {
             this._attackNearestEnemy();
             this.tweens.add({ targets: atkBg, scaleX: 0.88, scaleY: 0.88, duration: 60, yoyo: true });
@@ -848,7 +848,7 @@ export class DungeonScene extends Phaser.Scene {
 
         mk(this.add.rectangle(cx, cy, 4000, 4000, 0x000000, 0.88));
         mk(this.add.rectangle(cx, cy, 480, 270, 0x180509, 0.98).setStrokeStyle(2.5, 0xef4444));
-        mk(this.add.text(cx, cy - 78, '☠️', { fontSize: '34px' }).setOrigin(0.5));
+        mk(this.add.text(cx, cy - 78, '[ GAME OVER ]', { fontSize: '34px' }).setOrigin(0.5));
         mk(this.add.text(cx, cy - 34, 'GAME OVER', { fontSize: '32px', fontStyle: 'bold', fill: '#ef4444', fontFamily: FONT_TITLE }).setOrigin(0.5));
         mk(this.add.text(cx, cy + 6, 'HP habis di dalam gua! Senjatamu tidak cukup kuat?', { fontSize: '12px', fill: '#fca5a5', fontFamily: FONT_BODY }).setOrigin(0.5));
 
@@ -872,7 +872,7 @@ export class DungeonScene extends Phaser.Scene {
 
         mk(this.add.rectangle(cx, cy, 4000, 4000, 0x000000, 0.88));
         mk(this.add.rectangle(cx, cy, 500, 280, 0x07100f, 0.98).setStrokeStyle(2.5, 0x22c55e));
-        mk(this.add.text(cx, cy - 92, '🏆', { fontSize: '38px' }).setOrigin(0.5));
+        mk(this.add.text(cx, cy - 92, '[ SELESAI ]', { fontSize: '38px' }).setOrigin(0.5));
         mk(this.add.text(cx, cy - 52, 'GUA BERHASIL DITAKLUKKAN!', {
             fontSize: '22px', fontStyle: 'bold', fill: '#4ade80', fontFamily: FONT_TITLE
         }).setOrigin(0.5));
@@ -887,7 +887,7 @@ export class DungeonScene extends Phaser.Scene {
 
         // Tombol Utama: Lanjut ke Dungeon Level 2 (Ranged Mages)
         const vL2 = mk(this.add.rectangle(cx, cy + 58, 380, 38, 0x581c87, 0.95).setStrokeStyle(2, 0xd946ef).setInteractive({ useHandCursor: true }));
-        const vL2t = mk(this.add.text(cx, cy + 58, 'Lanjut ke Dungeon Level 2 (Musuh Sihir) ➔', { fontSize: '12px', fontStyle: 'bold', fill: '#f5d0fe', fontFamily: FONT_BODY }).setOrigin(0.5));
+        const vL2t = mk(this.add.text(cx, cy + 58, 'Lanjut ke Dungeon Level 2 (Musuh Sihir) ->', { fontSize: '12px', fontStyle: 'bold', fill: '#f5d0fe', fontFamily: FONT_BODY }).setOrigin(0.5));
         const goToL2 = () => {
             this.scene.start('DungeonScene2', {
                 hp: this.hp,

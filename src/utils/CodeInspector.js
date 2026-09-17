@@ -1,5 +1,5 @@
 // ===============================================================
-// 🧠 CODE INSPECTOR & LIVE CODE TRACER (MULTI-EVENT)
+// CODE INSPECTOR & LIVE CODE TRACER (MULTI-EVENT)
 // ===============================================================
 // Fitur edukasi real-time untuk anak-anak:
 // 1. Gerak & Lompat (Movement & Jump - 60 FPS)
@@ -41,7 +41,7 @@ export class CodeInspector {
             title: 'Mengambil Koin & Menyimpan ke Tas (Inventory)',
             file: 'src/scenes/GameScene.js',
             description: 'Overlap fisik antara player dan koin item akan memicu penambahan item ke dalam array inventaris.',
-            code: `this.physics.add.overlap(this.player, this.items, (player, item) => {\n    item.destroy();\n    AudioManager.playCoin();\n    this.inventory.push({ id: 'gold_coin', nama: 'Koin Emas Murni', icon: '🪙' });\n    this.quest.selesai = true;\n});`
+            code: `this.physics.add.overlap(this.player, this.items, (player, item) => {\n    item.destroy();\n    AudioManager.playCoin();\n    this.inventory.push({ id: 'gold_coin', nama: 'Koin Emas Murni', icon: '' });\n    this.quest.selesai = true;\n});`
         },
         hazard: {
             title: 'Terkena Duri / Musuh (Mengurangi HP & Efek Berkedip)',
@@ -82,7 +82,7 @@ export class CodeInspector {
     }
 
     // ===============================================================
-    // ⚡ REAL-TIME LIVE INSPECTOR (HUD OVERLAY)
+    // REAL-TIME LIVE INSPECTOR (HUD OVERLAY)
     // ===============================================================
 
     static isActive() {
@@ -167,25 +167,25 @@ export class CodeInspector {
 
         if (tabKey === 'move') {
             if (statusText) {
-                statusText.textContent = '⏸️ DIAM (IDLE)';
+                statusText.textContent = 'DIAM (IDLE)';
                 statusText.style.color = '#38bdf8';
             }
             if (coordsText) coordsText.style.display = 'block';
         } else if (tabKey === 'npc') {
             if (statusText) {
-                statusText.textContent = '💬 INTERAKSI NPC (Tekan [E])';
+                statusText.textContent = 'INTERAKSI NPC (Tekan [E])';
                 statusText.style.color = '#c084fc';
             }
             if (coordsText) coordsText.style.display = 'none';
         } else if (tabKey === 'coin') {
             if (statusText) {
-                statusText.textContent = '🪙 AMBIL ITEM (Overlap Fisika)';
+                statusText.textContent = 'AMBIL ITEM (Overlap Fisika)';
                 statusText.style.color = '#fbbf24';
             }
             if (coordsText) coordsText.style.display = 'none';
         } else if (tabKey === 'hazard') {
             if (statusText) {
-                statusText.textContent = '💥 KENA DURI / DAMAGE (takeDamage)';
+                statusText.textContent = 'KENA DURI / DAMAGE (takeDamage)';
                 statusText.style.color = '#f87171';
             }
             if (coordsText) coordsText.style.display = 'none';
@@ -212,7 +212,7 @@ export class CodeInspector {
             if (l4) l4.classList.add('active-npc');
             if (l5) l5.classList.add('active-npc');
             if (st) {
-                st.textContent = `💬 SEDANG BICARA: "${data.name || 'NPC'}" (Dialog Box Terbuka!)`;
+                st.textContent = `SEDANG BICARA: "${data.name || 'NPC'}" (Dialog Box Terbuka!)`;
                 st.style.color = '#d8b4fe';
             }
             this.scheduleAutoReturn(4500);
@@ -226,7 +226,7 @@ export class CodeInspector {
             if (l4) l4.classList.add('active-coin');
             if (l5) l5.classList.add('active-coin');
             if (st) {
-                st.textContent = `🪙 ITEM DIAMBIL: "${data.item || 'Koin'}" (+1 Masuk Tas!)`;
+                st.textContent = `ITEM DIAMBIL: "${data.item || 'Koin'}" (+1 Masuk Tas!)`;
                 st.style.color = '#fde047';
             }
             this.scheduleAutoReturn(3500);
@@ -240,7 +240,7 @@ export class CodeInspector {
             if (l4) l4.classList.add('active-hazard');
             if (l5) l5.classList.add('active-hazard');
             if (st) {
-                st.textContent = `💥 TERKENA RINTANGAN! (HP berkurang & kebal sementara)`;
+                st.textContent = `TERKENA RINTANGAN! (HP berkurang & kebal sementara)`;
                 st.style.color = '#f87171';
             }
             this.scheduleAutoReturn(3500);
@@ -555,23 +555,23 @@ export class CodeInspector {
 
             <div class="lci-header" id="lci-drag-handle">
                 <div class="lci-title">
-                    <span>⚡</span>
+                    <span>&lt;/&gt;</span>
                     <span>LIVE CODE INSPECTOR</span>
                     <span class="lci-badge">REAL-TIME</span>
                 </div>
-                <button class="lci-close" id="lci-btn-close" title="Tutup Inspector">✕</button>
+                <button class="lci-close" id="lci-btn-close" title="Tutup Inspector">X</button>
             </div>
 
             <!-- TABS PEMILIH KATEGORI KODE -->
             <div class="lci-tabs-bar">
-                <button class="lci-tab active" data-tab="move">🏃 Gerak &amp; Lompat</button>
-                <button class="lci-tab" data-tab="npc">💬 Bicara NPC</button>
-                <button class="lci-tab" data-tab="coin">🪙 Ambil Koin</button>
-                <button class="lci-tab" data-tab="hazard">💥 Kena Duri/Hit</button>
+                <button class="lci-tab active" data-tab="move">Gerak &amp; Lompat</button>
+                <button class="lci-tab" data-tab="npc">Bicara NPC</button>
+                <button class="lci-tab" data-tab="coin">Ambil Koin</button>
+                <button class="lci-tab" data-tab="hazard">Kena Duri/Hit</button>
             </div>
 
             <div class="lci-status-bar">
-                <div>Status: <span id="lci-status-text" class="lci-state-label">⏸️ DIAM (IDLE)</span></div>
+                <div>Status: <span id="lci-status-text" class="lci-state-label">DIAM (IDLE)</span></div>
                 <div id="lci-coords-text">vX: 0 | diTanah: YA</div>
             </div>
 
@@ -579,16 +579,16 @@ export class CodeInspector {
                 <!-- 1. BLOK KODE: GERAK & LOMPAT -->
                 <div class="lci-code-block" id="lci-block-move" style="display: flex;">
                     <div class="lci-line" id="lci-l1"><span class="lci-num">1</span><span class="lci-text"><span class="lci-kw">if</span> (left) {</span></div>
-                    <div class="lci-line" id="lci-l2"><span class="lci-num">2</span><span class="lci-text">    player.<span class="lci-fn">setVelocityX</span>(-speed); <span class="lci-comment">// ◀ Jalan Kiri</span></span></div>
+                    <div class="lci-line" id="lci-l2"><span class="lci-num">2</span><span class="lci-text">    player.<span class="lci-fn">setVelocityX</span>(-speed); <span class="lci-comment">// Jalan Kiri</span></span></div>
                     <div class="lci-line" id="lci-l3"><span class="lci-num">3</span><span class="lci-text">    player.<span class="lci-fn">setFlipX</span>(true);</span></div>
                     <div class="lci-line" id="lci-l4"><span class="lci-num">4</span><span class="lci-text">} <span class="lci-kw">else if</span> (right) {</span></div>
-                    <div class="lci-line" id="lci-l5"><span class="lci-num">5</span><span class="lci-text">    player.<span class="lci-fn">setVelocityX</span>(speed);  <span class="lci-comment">// ▶ Jalan Kanan</span></span></div>
+                    <div class="lci-line" id="lci-l5"><span class="lci-num">5</span><span class="lci-text">    player.<span class="lci-fn">setVelocityX</span>(speed);  <span class="lci-comment">// Jalan Kanan</span></span></div>
                     <div class="lci-line" id="lci-l6"><span class="lci-num">6</span><span class="lci-text">    player.<span class="lci-fn">setFlipX</span>(false);</span></div>
                     <div class="lci-line" id="lci-l7"><span class="lci-num">7</span><span class="lci-text">} <span class="lci-kw">else</span> {</span></div>
-                    <div class="lci-line" id="lci-l8"><span class="lci-num">8</span><span class="lci-text">    player.<span class="lci-fn">setVelocityX</span>(0);      <span class="lci-comment">// ⏸️ Berhenti (Idle)</span></span></div>
+                    <div class="lci-line" id="lci-l8"><span class="lci-num">8</span><span class="lci-text">    player.<span class="lci-fn">setVelocityX</span>(0);      <span class="lci-comment">// Berhenti (Idle)</span></span></div>
                     <div class="lci-line" id="lci-l9"><span class="lci-num">9</span><span class="lci-text">}</span></div>
                     <div class="lci-line" id="lci-l10"><span class="lci-num">10</span><span class="lci-text"><span class="lci-kw">if</span> (jump &amp;&amp; player.body.blocked.down) {</span></div>
-                    <div class="lci-line" id="lci-l11"><span class="lci-num">11</span><span class="lci-text">    player.<span class="lci-fn">setVelocityY</span>(jumpSpeed); <span class="lci-comment">// 🚀 LOMPAT!</span></span></div>
+                    <div class="lci-line" id="lci-l11"><span class="lci-num">11</span><span class="lci-text">    player.<span class="lci-fn">setVelocityY</span>(jumpSpeed); <span class="lci-comment">// LOMPAT!</span></span></div>
                     <div class="lci-line" id="lci-l12"><span class="lci-num">12</span><span class="lci-text">    AudioManager.<span class="lci-fn">playJump</span>();</span></div>
                     <div class="lci-line" id="lci-l13"><span class="lci-num">13</span><span class="lci-text">}</span></div>
                 </div>
@@ -598,7 +598,7 @@ export class CodeInspector {
                     <div class="lci-line" id="lci-npc-l1"><span class="lci-num">1</span><span class="lci-text"><span class="lci-comment">// Cek jarak antara pemain dan karakter NPC</span></span></div>
                     <div class="lci-line" id="lci-npc-l2"><span class="lci-num">2</span><span class="lci-text"><span class="lci-kw">const</span> dist = Distance(player.x, player.y, npc.x, npc.y);</span></div>
                     <div class="lci-line" id="lci-npc-l3"><span class="lci-num">3</span><span class="lci-text"><span class="lci-kw">if</span> (dist &lt; 75 &amp;&amp; isInteractPressed) {</span></div>
-                    <div class="lci-line" id="lci-npc-l4"><span class="lci-num">4</span><span class="lci-text">    dialogBox.<span class="lci-fn">start</span>(npc.nama, npc.dialog); <span class="lci-comment">// 💬 Buka Dialog RPG!</span></span></div>
+                    <div class="lci-line" id="lci-npc-l4"><span class="lci-num">4</span><span class="lci-text">    dialogBox.<span class="lci-fn">start</span>(npc.nama, npc.dialog); <span class="lci-comment">// Buka Dialog RPG!</span></span></div>
                     <div class="lci-line" id="lci-npc-l5"><span class="lci-num">5</span><span class="lci-text">    AudioManager.<span class="lci-fn">playClick</span>();</span></div>
                     <div class="lci-line" id="lci-npc-l6"><span class="lci-num">6</span><span class="lci-text">}</span></div>
                 </div>
@@ -607,9 +607,9 @@ export class CodeInspector {
                 <div class="lci-code-block" id="lci-block-coin" style="display: none;">
                     <div class="lci-line" id="lci-coin-l1"><span class="lci-num">1</span><span class="lci-text"><span class="lci-comment">// Deteksi tabrakan fisika (overlap) pemain dengan item</span></span></div>
                     <div class="lci-line" id="lci-coin-l2"><span class="lci-num">2</span><span class="lci-text">physics.add.<span class="lci-fn">overlap</span>(player, items, (player, item) =&gt; {</span></div>
-                    <div class="lci-line" id="lci-coin-l3"><span class="lci-num">3</span><span class="lci-text">    item.<span class="lci-fn">destroy</span>(); <span class="lci-comment">// 🗑️ Hapus koin dari layar</span></span></div>
-                    <div class="lci-line" id="lci-coin-l4"><span class="lci-num">4</span><span class="lci-text">    inventory.<span class="lci-fn">push</span>({ id, nama, icon: <span class="lci-comment">'🪙'</span> }); <span class="lci-comment">// 🎒 Simpan ke Tas!</span></span></div>
-                    <div class="lci-line" id="lci-coin-l5"><span class="lci-num">5</span><span class="lci-text">    AudioManager.<span class="lci-fn">playCoin</span>(); <span class="lci-comment">// 🔔 Suara ting!</span></span></div>
+                    <div class="lci-line" id="lci-coin-l3"><span class="lci-num">3</span><span class="lci-text">    item.<span class="lci-fn">destroy</span>(); <span class="lci-comment">// Hapus koin dari layar</span></span></div>
+                    <div class="lci-line" id="lci-coin-l4"><span class="lci-num">4</span><span class="lci-text">    inventory.<span class="lci-fn">push</span>({ id, nama, icon: <span class="lci-comment">''</span> }); <span class="lci-comment">// Simpan ke Tas!</span></span></div>
+                    <div class="lci-line" id="lci-coin-l5"><span class="lci-num">5</span><span class="lci-text">    AudioManager.<span class="lci-fn">playCoin</span>(); <span class="lci-comment">// Suara ting!</span></span></div>
                     <div class="lci-line" id="lci-coin-l6"><span class="lci-num">6</span><span class="lci-text">    quest.selesai = <span class="lci-kw">true</span>;</span></div>
                     <div class="lci-line" id="lci-coin-l7"><span class="lci-num">7</span><span class="lci-text">});</span></div>
                 </div>
@@ -618,9 +618,9 @@ export class CodeInspector {
                 <div class="lci-code-block" id="lci-block-hazard" style="display: none;">
                     <div class="lci-line" id="lci-haz-l1"><span class="lci-num">1</span><span class="lci-text"><span class="lci-fn">takeDamage</span>(amount) {</span></div>
                     <div class="lci-line" id="lci-haz-l2"><span class="lci-num">2</span><span class="lci-text">    <span class="lci-kw">if</span> (isInvincible || isGameOver) <span class="lci-kw">return</span>;</span></div>
-                    <div class="lci-line" id="lci-haz-l3"><span class="lci-num">3</span><span class="lci-text">    hp = Math.<span class="lci-fn">max</span>(0, hp - amount); <span class="lci-comment">// 💔 Kurangi 1 HP</span></span></div>
+                    <div class="lci-line" id="lci-haz-l3"><span class="lci-num">3</span><span class="lci-text">    hp = Math.<span class="lci-fn">max</span>(0, hp - amount); <span class="lci-comment">// Kurangi 1 HP</span></span></div>
                     <div class="lci-line" id="lci-haz-l4"><span class="lci-num">4</span><span class="lci-text">    AudioManager.<span class="lci-fn">playHurt</span>();</span></div>
-                    <div class="lci-line" id="lci-haz-l5"><span class="lci-num">5</span><span class="lci-text">    isInvincible = <span class="lci-kw">true</span>; <span class="lci-comment">// 🛡️ Mode Kebal Sementara</span></span></div>
+                    <div class="lci-line" id="lci-haz-l5"><span class="lci-num">5</span><span class="lci-text">    isInvincible = <span class="lci-kw">true</span>; <span class="lci-comment">// Mode Kebal Sementara</span></span></div>
                     <div class="lci-line" id="lci-haz-l6"><span class="lci-num">6</span><span class="lci-text">    playerBlinkTween(4); <span class="lci-comment">// Animasi kedip</span></span></div>
                     <div class="lci-line" id="lci-haz-l7"><span class="lci-num">7</span><span class="lci-text">}</span></div>
                 </div>
@@ -628,17 +628,17 @@ export class CodeInspector {
 
             <!-- SLIDER PANEL (LIVE PARAMETER TWEAKER) -->
             <div class="lci-sliders-panel">
-                <div class="lci-sliders-title">🎛️ COBA GESER ANGKA VARIABEL (REAL-TIME):</div>
+                <div class="lci-sliders-title">COBA GESER ANGKA VARIABEL (REAL-TIME):</div>
                 <div class="lci-slider-row">
-                    <span class="lci-slider-label">🏃 Kecepatan: <b id="lci-val-speed">220</b></span>
+                    <span class="lci-slider-label">Kecepatan: <b id="lci-val-speed">220</b></span>
                     <input type="range" class="lci-slider" id="lci-input-speed" min="100" max="600" value="220" />
                 </div>
                 <div class="lci-slider-row">
-                    <span class="lci-slider-label">🚀 Daya Lompat: <b id="lci-val-jump">440</b></span>
+                    <span class="lci-slider-label">Daya Lompat: <b id="lci-val-jump">440</b></span>
                     <input type="range" class="lci-slider" id="lci-input-jump" min="200" max="800" value="440" />
                 </div>
                 <div class="lci-slider-row">
-                    <span class="lci-slider-label">🌍 Gravitasi: <b id="lci-val-grav">650</b></span>
+                    <span class="lci-slider-label">Gravitasi: <b id="lci-val-grav">650</b></span>
                     <input type="range" class="lci-slider" id="lci-input-grav" min="100" max="1400" value="650" />
                     <button class="lci-btn-reset" id="lci-btn-reset" title="Kembalikan nilai ke normal">↺ Reset</button>
                 </div>
@@ -825,7 +825,7 @@ export class CodeInspector {
             if (l2) l2.classList.add('active-move');
             if (l3) l3.classList.add('active-move');
             if (statusText) {
-                statusText.textContent = '◀ BERJALAN KIRI';
+                statusText.textContent = 'BERJALAN KIRI';
                 statusText.style.color = '#4ade80';
             }
         } else if (right) {
@@ -833,14 +833,14 @@ export class CodeInspector {
             if (l5) l5.classList.add('active-move');
             if (l6) l6.classList.add('active-move');
             if (statusText) {
-                statusText.textContent = '▶ BERJALAN KANAN';
+                statusText.textContent = 'BERJALAN KANAN';
                 statusText.style.color = '#4ade80';
             }
         } else {
             if (l7) l7.classList.add('active-idle');
             if (l8) l8.classList.add('active-idle');
             if (statusText) {
-                statusText.textContent = '⏸️ DIAM (IDLE)';
+                statusText.textContent = 'DIAM (IDLE)';
                 statusText.style.color = '#38bdf8';
             }
         }
@@ -851,19 +851,19 @@ export class CodeInspector {
             if (l11) l11.classList.add('active-jump');
             if (l12) l12.classList.add('active-jump');
             if (statusText) {
-                statusText.textContent = '🚀 MELOMPAT (JUMP)!';
+                statusText.textContent = 'MELOMPAT (JUMP)!';
                 statusText.style.color = '#facc15';
             }
         } else if (!grounded) {
             if (vy < 0) {
                 if (l11) l11.classList.add('active-jump');
                 if (statusText && !left && !right) {
-                    statusText.textContent = '⬆️ NAIK KE ATAS';
+                    statusText.textContent = 'NAIK KE ATAS';
                     statusText.style.color = '#facc15';
                 }
             } else {
                 if (statusText && !left && !right) {
-                    statusText.textContent = '⬇️ JATUH (GRAVITASI)';
+                    statusText.textContent = 'JATUH (GRAVITASI)';
                     statusText.style.color = '#cbd5e1';
                 }
             }

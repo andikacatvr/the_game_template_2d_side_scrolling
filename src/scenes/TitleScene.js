@@ -316,8 +316,8 @@ export class TitleScene extends Phaser.Scene {
         this.deleteModal = this.add.container(400, 225).setDepth(80).setVisible(false);
         const ov = this.add.rectangle(0, 0, 800, 450, 0x000000, 0.82).setInteractive();
         const box = this.add.rectangle(0, 0, 440, 230, 0x0a0f1e, 0.98).setStrokeStyle(2, 0xef4444);
-        const ico = this.add.text(0, -72, '⚠️', { fontSize: '28px' }).setOrigin(0.5);
-        const hdr = this.add.text(0, -36, 'HAPUS DATA PETUALANGAN?', {
+        const ico = this.add.text(0, -66, '[ ! ]', { fontSize: '18px', fontStyle: 'bold', fill: '#ef4444', fontFamily: FONT_BODY }).setOrigin(0.5);
+        const hdr = this.add.text(0, -32, 'HAPUS DATA PETUALANGAN?', {
             fontSize: '15px', fontStyle: 'bold', fill: '#ef4444', fontFamily: FONT_BODY
         }).setOrigin(0.5);
         const inf = this.add.text(0, 4,
@@ -357,7 +357,7 @@ export class TitleScene extends Phaser.Scene {
         const qModal = this.add.container(400, 225).setDepth(90);
         const ov = this.add.rectangle(0, 0, 800, 450, 0x000000, 0.85).setInteractive();
         const box = this.add.rectangle(0, 0, 380, 190, 0x0a0f1e, 0.98).setStrokeStyle(2, 0xef4444);
-        const ico = this.add.text(0, -60, '🚪', { fontSize: '28px' }).setOrigin(0.5);
+        const ico = this.add.text(0, -55, '[ KELUAR ]', { fontSize: '13px', fontStyle: 'bold', fill: '#f87171', fontFamily: FONT_BODY }).setOrigin(0.5);
         const hdr = this.add.text(0, -24, 'Quit Game?', {
             fontSize: '18px', fontStyle: 'bold', fill: '#f87171', fontFamily: FONT_BODY
         }).setOrigin(0.5);

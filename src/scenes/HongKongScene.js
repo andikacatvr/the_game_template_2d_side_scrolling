@@ -11,7 +11,7 @@ import { CodeInspector } from '../utils/CodeInspector.js';
 import { CommandConsole } from '../utils/CommandConsole.js';
 
 // ===============================================================
-// 🏙️ SCENE 2: VICTORIA HARBOUR, HONG KONG (PARALLAX + WEATHER)
+// SCENE 2: VICTORIA HARBOUR, HONG KONG (PARALLAX + WEATHER)
 // Standard Identik dengan Scene 1 (HUD, Save, Controls, Modals)
 // ===============================================================
 export class HongKongScene extends Phaser.Scene {
@@ -142,7 +142,7 @@ export class HongKongScene extends Phaser.Scene {
     }
 
     // ===============================================================
-    // 🌊 PEMBUATAN DUNIA HONG KONG DENGAN 5 LAYER PARALLAX
+    // PEMBUATAN DUNIA HONG KONG DENGAN 5 LAYER PARALLAX
     // ===============================================================
     createHongKongWorld() {
         const W = 3200; // Lebar extra agar mencakup seluruh jangkauan zoom-out tanpa celah hitam
@@ -255,7 +255,7 @@ export class HongKongScene extends Phaser.Scene {
         // HAZARD: Ombak Pasang / Semburan Air Asin (x: 880, y: 418)
         // -------------------------------------------------------------
         this.hazard = this.physics.add.staticSprite(880, 412, 'skeleton_hazard').setDepth(8);
-        this.hazardText = this.add.text(880, 382, '⚠️ Ombak Pecah', {
+        this.hazardText = this.add.text(880, 382, 'Ombak Pecah', {
             fontSize: '10px', fontStyle: 'bold', fill: '#67e8f9', fontFamily: FONT_BODY
         }).setOrigin(0.5).setDepth(12);
 
@@ -285,7 +285,7 @@ export class HongKongScene extends Phaser.Scene {
         // -------------------------------------------------------------
         this.portalBack = this.add.container(90, 396).setDepth(12);
         const pBackRing = this.add.circle(0, 0, 22, 0x38bdf8, 0.25).setStrokeStyle(2, 0x7dd3fc);
-        const pBackIcon = this.add.text(0, 0, '🌀', { fontSize: '20px' }).setOrigin(0.5);
+        const pBackIcon = this.add.text(0, 0, '<', { fontSize: '18px', fontStyle: 'bold', fill: '#bae6fd', fontFamily: FONT_BODY }).setOrigin(0.5);
         const pBackLabel = this.add.text(0, -32, '← Scene 1', { fontSize: '11px', fontStyle: 'bold', fill: '#bae6fd', fontFamily: FONT_BODY }).setOrigin(0.5);
         this.portalBack.add([pBackRing, pBackIcon, pBackLabel]);
         this.tweens.add({
@@ -301,7 +301,7 @@ export class HongKongScene extends Phaser.Scene {
         // -------------------------------------------------------------
         this.portalEnd = this.add.container(1820, 396).setDepth(12);
         const pEndRing = this.add.circle(0, 0, 24, 0xf59e0b, 0.25).setStrokeStyle(2, 0xfbbf24);
-        const pEndIcon = this.add.text(0, 0, '🚢', { fontSize: '22px' }).setOrigin(0.5);
+        const pEndIcon = this.add.text(0, 0, '[FERI]', { fontSize: '10px', fontStyle: 'bold', fill: '#fef08a', fontFamily: FONT_BODY }).setOrigin(0.5);
         const pEndLabel = this.add.text(0, -34, 'Feri Ekspedisi', { fontSize: '11px', fontStyle: 'bold', fill: '#fef08a', fontFamily: FONT_BODY }).setOrigin(0.5);
         this.portalEnd.add([pEndRing, pEndIcon, pEndLabel]);
         this.tweens.add({
@@ -326,7 +326,7 @@ export class HongKongScene extends Phaser.Scene {
     }
 
     // ===============================================================
-    // 🌧️ EFEK CUACA: RINTIK HUJAN DINAMIS & KILAT PETIR SESEKALI
+    // EFEK CUACA: RINTIK HUJAN DINAMIS & KILAT PETIR SESEKALI
     // ===============================================================
     createWeatherEffects() {
         // 1. Partikel Hujan (Diagonal Sleek Rain)
@@ -374,7 +374,7 @@ export class HongKongScene extends Phaser.Scene {
     }
 
     // ===============================================================
-    // 🚶 PEMBUATAN KARAKTER PLAYER & KOLISI
+    // PEMBUATAN KARAKTER PLAYER & KOLISI
     // ===============================================================
     createPlayer() {
         const spawnX = this.savedSpawnPos ? this.savedSpawnPos.x : (this.startData?.spawnX || 160);
@@ -406,7 +406,7 @@ export class HongKongScene extends Phaser.Scene {
                         id: 'mutiara_victoria',
                         nama: 'Mutiara Teluk Victoria',
                         deskripsi: 'Mutiara berkilau misterius dari teluk Hong Kong saat malam badai.',
-                        icon: '🦪'
+                        icon: ''
                     });
                     this.updateInventoryBadge();
                     this.showFloatingToast('+1 Mutiara Victoria Berhasil Diambil!', 0x38bdf8);
@@ -428,7 +428,7 @@ export class HongKongScene extends Phaser.Scene {
     }
 
     // ===============================================================
-    // 📊 TOP NAVBAR HUD (IDENTIK 100% STANDAR SCENE 1)
+    // TOP NAVBAR HUD (IDENTIK 100% STANDAR SCENE 1)
     // ===============================================================
     createGoblinStyleHUD() {
         // A. HP DISPLAY
@@ -446,15 +446,15 @@ export class HongKongScene extends Phaser.Scene {
         this.hpHeartTexts = [];
         if (!isCompact) {
             for (let i = 0; i < this.maxHp; i++) {
-                const heart = this.add.text(30 + i * 20, 4, '❤️', { fontSize: '13px' });
+                const heart = this.add.text(30 + i * 18, 4, '■', { fontSize: '13px', fill: '#f43f5e' });
                 this.hpHeartTexts.push(heart);
             }
-            this.hpNumericText = this.add.text(32 + this.maxHp * 20 + 4, 5, `${this.hp}/${this.maxHp}`, {
+            this.hpNumericText = this.add.text(32 + this.maxHp * 18 + 4, 5, `${this.hp}/${this.maxHp}`, {
                 fontSize: '11px', fontStyle: 'bold', fill: '#fda4af', fontFamily: FONT_BODY
             });
             this.healthContainer.add([hpBg, hpLabel, ...this.hpHeartTexts, this.hpNumericText]);
         } else {
-            const singleHeart = this.add.text(28, 4, '❤️', { fontSize: '14px' });
+            const singleHeart = this.add.text(28, 4, '■', { fontSize: '13px', fill: '#f43f5e' });
             this.hpNumericText = this.add.text(50, 5, `${this.hp}/${this.maxHp}`, {
                 fontSize: '12px', fontStyle: 'bold', fill: '#fda4af', fontFamily: FONT_BODY
             });
@@ -535,7 +535,7 @@ export class HongKongScene extends Phaser.Scene {
         const menuBtnBg = this.add.rectangle(0, 0, 36, 36, 0x0f172a, 0.9)
             .setStrokeStyle(2, 0x64748b)
             .setInteractive({ useHandCursor: true });
-        const menuTxt = this.add.text(0, 0, '⚙️', { fontSize: '15px' }).setOrigin(0.5);
+        const menuTxt = this.add.text(0, 0, 'MENU', { fontSize: '10px', fontStyle: 'bold', fill: '#94a3b8', fontFamily: FONT_BODY }).setOrigin(0.5);
         this.menuBtnContainer.add([menuBtnBg, menuTxt]);
         menuBtnBg.on('pointerdown', () => this.toggleSettingsModal());
         menuBtnBg.on('pointerover', () => {
@@ -575,10 +575,11 @@ export class HongKongScene extends Phaser.Scene {
         if (this.hpHeartTexts) {
             for (let i = 0; i < this.maxHp; i++) {
                 if (this.hpHeartTexts[i]) {
+                    this.hpHeartTexts[i].setText('■');
                     if (i < this.hp) {
-                        this.hpHeartTexts[i].setText('❤️').setAlpha(1);
+                        this.hpHeartTexts[i].setColor('#f43f5e').setAlpha(1);
                     } else {
-                        this.hpHeartTexts[i].setText('🖤').setAlpha(0.35);
+                        this.hpHeartTexts[i].setColor('#334155').setAlpha(0.4);
                     }
                 }
             }
@@ -632,7 +633,7 @@ export class HongKongScene extends Phaser.Scene {
         const overlay = this.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.85).setInteractive();
         const box = this.add.rectangle(0, 0, 480, 260, 0x180509, 0.98).setStrokeStyle(2.5, 0xef4444);
 
-        const skull = this.add.text(0, -75, '☠️', { fontSize: '34px' }).setOrigin(0.5);
+        const skull = this.add.text(0, -68, '[ GAME OVER ]', { fontSize: '14px', fontStyle: 'bold', fill: '#ef4444', fontFamily: FONT_TITLE }).setOrigin(0.5);
         const title = this.add.text(0, -32, 'GAME OVER', {
             fontSize: '32px', fontStyle: 'bold', fill: '#ef4444', fontFamily: FONT_TITLE
         }).setOrigin(0.5);
@@ -680,7 +681,7 @@ export class HongKongScene extends Phaser.Scene {
     }
 
     // ===============================================================
-    // 📱 KONTROL TOUCH SCREEN MOBILE/TABLET
+    // KONTROL TOUCH SCREEN MOBILE/TABLET
     // ===============================================================
     createGoblinStyleTouchControls() {
         if (!isMobileOrTablet()) {
@@ -738,7 +739,7 @@ export class HongKongScene extends Phaser.Scene {
     }
 
     // ===============================================================
-    // 📜 MODALS & UI HELPERS
+    // MODALS & UI HELPERS
     // ===============================================================
     createQuestModalUI() {
         const cx = this.scale ? this.scale.width / 2 : 400;
@@ -841,7 +842,7 @@ export class HongKongScene extends Phaser.Scene {
 
             const item = this.inventory[i];
             if (item) {
-                const iconTxt = this.add.text(x, y - 6, item.icon || '📦', { fontSize: '24px' }).setOrigin(0.5);
+                const iconTxt = this.add.text(x, y - 6, item.icon || '[ITEM]', { fontSize: '11px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_BODY }).setOrigin(0.5);
                 const nameTxt = this.add.text(x, y + 20, item.nama, {
                     fontSize: '8px', fill: '#94a3b8', fontFamily: FONT_BODY, wordWrap: { width: slotSize }
                 }).setOrigin(0.5);
@@ -869,7 +870,7 @@ export class HongKongScene extends Phaser.Scene {
         const overlay = this.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.8).setInteractive();
         const box = this.add.rectangle(0, 0, 480, 260, 0x062118, 0.98).setStrokeStyle(2.5, 0x10b981);
 
-        const icon = this.add.text(0, -75, '🏆', { fontSize: '34px' }).setOrigin(0.5);
+        const icon = this.add.text(0, -68, '[ SELESAI ]', { fontSize: '14px', fontStyle: 'bold', fill: '#34d399', fontFamily: FONT_TITLE }).setOrigin(0.5);
         const title = this.add.text(0, -32, 'MISI SELESAI!', {
             fontSize: '28px', fontStyle: 'bold', fill: '#34d399', fontFamily: FONT_TITLE
         }).setOrigin(0.5);
@@ -1069,7 +1070,7 @@ export class HongKongScene extends Phaser.Scene {
     }
 
     // ===============================================================
-    // 🔄 UPDATE LOOP: PARALLAX, HUJAN, & KONTROL
+    // UPDATE LOOP: PARALLAX, HUJAN, & KONTROL
     // ===============================================================
     update(time, delta) {
         // 1. Gerakan Parallax Mengikuti Kamera & Ombak Berayun Dinamis
@@ -1137,7 +1138,7 @@ export class HongKongScene extends Phaser.Scene {
             CodeInspector.record('jump');
         }
 
-        // ⚡ Update Live Code Inspector jika sedang aktif (60 FPS)
+        // Update Live Code Inspector jika sedang aktif (60 FPS)
         if (CodeInspector.isActive()) {
             CodeInspector.updateRealtime({
                 left,

@@ -1,5 +1,5 @@
 // ===============================================================
-// ⚙️ SETTINGS MANAGER (AUDIO, GAMEPLAY, DISPLAY & CONTROLS)
+// SETTINGS MANAGER (AUDIO, GAMEPLAY, DISPLAY & CONTROLS)
 // ===============================================================
 export const SettingsManager = {
     KEY: 'template_game_settings_v1',

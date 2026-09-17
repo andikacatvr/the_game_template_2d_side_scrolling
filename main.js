@@ -13,7 +13,7 @@ export { SaveManager } from './src/utils/SaveManager.js';
 CommandConsole.init();
 
 // ===============================================================
-// 🎮 PHASER GAME CONFIG & INITIALIZATION
+// PHASER GAME CONFIG & INITIALIZATION
 // ===============================================================
 const config = {
     type: Phaser.AUTO,

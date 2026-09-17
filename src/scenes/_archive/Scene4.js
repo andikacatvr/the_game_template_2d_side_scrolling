@@ -8,7 +8,7 @@ import { CameraZoomManager } from '../utils/CameraZoomManager.js';
 import { GameHUD } from '../ui/GameHUD.js';
 
 // ===============================================================
-// ❄️ SCENE 4: TEBING BERSALJU (TEMPLATE KOSONGAN)
+//  SCENE 4: TEBING BERSALJU (TEMPLATE KOSONGAN)
 // ===============================================================
 // Karakteristik: Layar lebar (lebar 1400px), kamera follow player,
 // dilengkapi pintu kembali ke Scene 3 dan portal maju ke Scene 5 (Final).
@@ -52,7 +52,7 @@ export class Scene4 extends Phaser.Scene {
         this.buildTiledPlatform(800, 210, 5);
         this.buildTiledPlatform(1050, 280, 4);
 
-        // 💡 [SLOT KONTEN]: Tempat menaruh musuh / rintangan / item
+        //  [SLOT KONTEN]: Tempat menaruh musuh / rintangan / item
         this.hazards.create(550, 412, 'skeleton_hazard').refreshBody();
         this.hazards.create(1050, 412, 'skeleton_hazard').refreshBody();
 

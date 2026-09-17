@@ -81,7 +81,7 @@ export class BootScene extends Phaser.Scene {
         pG.generateTexture('skeleton_player', 32, 44);
 
         // ===============================================================
-        // ❄️ TILESET TANAH & PLATFORM BERSALJU (SNOW & PERMAFROST)
+        // TILESET TANAH & PLATFORM BERSALJU (SNOW & PERMAFROST)
         // ===============================================================
         
         // 1. Tile Salju Tengah (tile_grass_mid / snow ground)
@@ -297,7 +297,7 @@ export class BootScene extends Phaser.Scene {
         portG.generateTexture('skeleton_portal', 44, 60);
 
         // ===============================================================
-        // 🗡️ DUNGEON ENEMY (Prajurit Kegelapan — Merah Gelap 32×44)
+        // DUNGEON ENEMY (Prajurit Kegelapan — Merah Gelap 32×44)
         // ===============================================================
         const enemyG = this.make.graphics({ x: 0, y: 0, add: false });
         // Tubuh
@@ -324,7 +324,7 @@ export class BootScene extends Phaser.Scene {
         enemyG.generateTexture('dungeon_enemy', 32, 44);
 
         // ===============================================================
-        // 🔮 DUNGEON RANGED MAGE (Penyihir Kegelapan — Jubah Ungu 32×44)
+        // DUNGEON RANGED MAGE (Penyihir Kegelapan — Jubah Ungu 32×44)
         // ===============================================================
         if (this.textures.exists('dungeon_mage')) this.textures.remove('dungeon_mage');
         const mageG = this.make.graphics({ x: 0, y: 0, add: false });
@@ -363,7 +363,7 @@ export class BootScene extends Phaser.Scene {
         orbG.generateTexture('proj_dark_orb', 16, 16);
 
         // ===============================================================
-        // ⚔️ WEAPON TEXTURES (Senjata yang bisa dipungut player)
+        // WEAPON TEXTURES (Senjata yang bisa dipungut player)
         // ===============================================================
 
         // 1. PEDANG (weapon_sword) — 20×48px, blade perak, guard emas
@@ -451,7 +451,7 @@ export class BootScene extends Phaser.Scene {
         arrG.generateTexture('proj_arrow', 16, 6);
 
         // ===============================================================
-        // 💧 EFEK EMBUN & KABUT (DEW & MIST TEXTURES)
+        // EFEK EMBUN & KABUT (DEW & MIST TEXTURES)
         // ===============================================================
         
         // 1. Dew Droplet Kecil (8x8)
@@ -506,7 +506,7 @@ export class BootScene extends Phaser.Scene {
         dewPart.generateTexture('fx_dew_part', 4, 4);
 
         // ===============================================================
-        // 🌫️ SEAMLESS FOG TEXTURES (KABUT MENGALIR REALISTIS)
+        // SEAMLESS FOG TEXTURES (KABUT MENGALIR REALISTIS)
         // ===============================================================
 
         // 6. Dense Rolling Fog Texture (512x220)

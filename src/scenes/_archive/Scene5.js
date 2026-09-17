@@ -8,7 +8,7 @@ import { CameraZoomManager } from '../utils/CameraZoomManager.js';
 import { GameHUD } from '../ui/GameHUD.js';
 
 // ===============================================================
-// 👑 SCENE 5: PUNCAK MENARA AKHIR (BOSS / FINALE TEMPLATE)
+//  SCENE 5: PUNCAK MENARA AKHIR (BOSS / FINALE TEMPLATE)
 // ===============================================================
 // Karakteristik: Area arena terakhir (lebar 1000px), portal akhir
 // menuju kemenangan (Tamat / Victory), dan pintu kembali ke Scene 4.
@@ -52,7 +52,7 @@ export class Scene5 extends Phaser.Scene {
         this.buildTiledPlatform(500, 240, 6);
         this.buildTiledPlatform(740, 320, 4);
 
-        // 💡 [SLOT KONTEN]: Taruh Bos / Musuh Akhir di sini
+        //  [SLOT KONTEN]: Taruh Bos / Musuh Akhir di sini
         // Contoh: this.boss = this.physics.add.sprite(500, 180, 'skeleton_npc').setTint(0xef4444);
 
         // 3. Pintu Kembali (ke Scene 4) & Portal Kemenangan Akhir (Tamat)
@@ -144,7 +144,7 @@ export class Scene5 extends Phaser.Scene {
 
         const overlay = this.add.rectangle(0, 0, 800, 450, 0x000000, 0.88).setInteractive();
         const box = this.add.rectangle(0, 0, 480, 280, 0x071510, 0.98).setStrokeStyle(2.5, 0x22c55e);
-        const icon = this.add.text(0, -95, '🏆', { fontSize: '42px' }).setOrigin(0.5);
+        const icon = this.add.text(0, -95, '[ SELESAI ]', { fontSize: '42px' }).setOrigin(0.5);
         const title = this.add.text(0, -50, 'SELURUH PETUALANGAN TAMAT!', {
             fontSize: '22px', fontStyle: 'bold', fill: '#4ade80', fontFamily: FONT_TITLE
         }).setOrigin(0.5);

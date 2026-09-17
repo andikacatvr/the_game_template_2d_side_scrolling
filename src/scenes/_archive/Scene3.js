@@ -8,7 +8,7 @@ import { CameraZoomManager } from '../utils/CameraZoomManager.js';
 import { GameHUD } from '../ui/GameHUD.js';
 
 // ===============================================================
-// 🏛️ SCENE 3: RERUNTUHAN KUNO (TEMPLATE KOSONGAN)
+//  SCENE 3: RERUNTUHAN KUNO (TEMPLATE KOSONGAN)
 // ===============================================================
 // Karakteristik: Layar sedang (lebar 1200px), kamera follow player,
 // dilengkapi pintu kembali ke Scene 2 dan portal maju ke Scene 4.
@@ -51,10 +51,10 @@ export class Scene3 extends Phaser.Scene {
         this.buildTiledPlatform(600, 250, 5);
         this.buildTiledPlatform(880, 310, 4);
 
-        // 💡 [SLOT KONTEN]: Tambahkan Musuh / Rintangan Baru di sini
+        //  [SLOT KONTEN]: Tambahkan Musuh / Rintangan Baru di sini
         this.hazards.create(600, 412, 'skeleton_hazard').refreshBody();
 
-        // 💡 [SLOT KONTEN]: Tambahkan Item / Koin Pengambilan di sini
+        //  [SLOT KONTEN]: Tambahkan Item / Koin Pengambilan di sini
         // Contoh: this.koin = this.physics.add.sprite(600, 200, 'skeleton_item');
 
         // 3. Pintu Kembali (ke Scene 2) & Pintu Maju (ke Scene 4)

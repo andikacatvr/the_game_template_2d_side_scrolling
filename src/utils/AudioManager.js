@@ -1,7 +1,8 @@
 import { SettingsManager } from './SettingsManager.js';
 
 // ===============================================================
-// 🎵 AUDIO MANAGER (SYNTHESIZED SFX & AMBIENT BGM)
+// AUDIO MANAGER (SYNTHESIZED SFX & AMBIENT BGM)
+// Web Audio API Procedural Synthesizer tanpa butuh file audio eksternal!
 // ===============================================================
 class AudioManagerClass {
     constructor() {

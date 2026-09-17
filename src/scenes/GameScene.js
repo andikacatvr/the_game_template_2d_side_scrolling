@@ -222,7 +222,7 @@ export class GameScene extends Phaser.Scene {
         this.items = this.physics.add.group();
         const daftarKoin = (Array.isArray(map.koin) && map.koin.length > 0) 
             ? map.koin 
-            : [{ x: 560, y: 220, id: 'koin_emas', nama: 'Koin Emas Murni', icon: '🪙' }];
+            : [{ x: 560, y: 220, id: 'koin_emas', nama: 'Koin Emas Murni', icon: '' }];
 
         daftarKoin.forEach(k => {
             if (!this.collectedItemIds.includes(k.id)) {
@@ -284,10 +284,10 @@ export class GameScene extends Phaser.Scene {
 
         this.portalScene2 = this.add.container(portalX, portalY).setDepth(12);
         const pRing = this.add.circle(0, 0, 24, 0x38bdf8, 0.25).setStrokeStyle(2, 0x38bdf8);
-        const pIcon = this.add.text(0, 0, '🌀', { fontSize: '22px' }).setOrigin(0.5);
+        const pIcon = this.add.text(0, 0, 'O', { fontSize: '18px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_BODY }).setOrigin(0.5);
 
         const targetMapObj = Array.isArray(DAFTAR_MAP) && DAFTAR_MAP.find(m => m.id === this.portalTargetMapId);
-        let portalLabel = 'Gerbang Selesai 🏆';
+        let portalLabel = 'Gerbang Selesai';
         if (this.portalTargetMapId === 'Scene2' || this.portalTargetMapId === 'HongKongScene') {
             portalLabel = 'Ke Teluk Hong Kong →';
         } else if (targetMapObj) {
@@ -426,7 +426,7 @@ export class GameScene extends Phaser.Scene {
         if (this.items) {
             this.physics.add.overlap(this.player, this.items, (player, item) => {
                 if (item && item.active) {
-                    const kData = item.coinData || { id: 'koin_emas', nama: 'Koin Emas Murni', icon: '🪙' };
+                    const kData = item.coinData || { id: 'koin_emas', nama: 'Koin Emas Murni', icon: '' };
                     item.destroy();
                     CodeInspector.record('coin');
                     CodeInspector.triggerEvent('coin', { item: kData.nama });
@@ -435,7 +435,7 @@ export class GameScene extends Phaser.Scene {
                         id: kData.id,
                         nama: kData.nama,
                         deskripsi: 'Koin berharga yang berhasil diambil dari petualangan.',
-                        icon: kData.icon || '🪙'
+                        icon: kData.icon || ''
                     });
                     this.updateInventoryBadge();
                     this.showFloatingToast(`+1 ${kData.nama} (Masuk Tas!)`, 0xfacc15);
@@ -480,15 +480,15 @@ export class GameScene extends Phaser.Scene {
         this.hpHeartTexts = [];
         if (!isCompact) {
             for (let i = 0; i < this.maxHp; i++) {
-                const heart = this.add.text(30 + i * 20, 4, '❤️', { fontSize: '13px' });
+                const heart = this.add.text(30 + i * 18, 4, '■', { fontSize: '13px', fill: '#f43f5e' });
                 this.hpHeartTexts.push(heart);
             }
-            this.hpNumericText = this.add.text(32 + this.maxHp * 20 + 4, 5, `${this.hp}/${this.maxHp}`, {
+            this.hpNumericText = this.add.text(32 + this.maxHp * 18 + 4, 5, `${this.hp}/${this.maxHp}`, {
                 fontSize: '11px', fontStyle: 'bold', fill: '#fda4af', fontFamily: FONT_BODY
             });
             this.healthContainer.add([hpBg, hpLabel, ...this.hpHeartTexts, this.hpNumericText]);
         } else {
-            const singleHeart = this.add.text(28, 4, '❤️', { fontSize: '14px' });
+            const singleHeart = this.add.text(28, 4, '■', { fontSize: '13px', fill: '#f43f5e' });
             this.hpNumericText = this.add.text(50, 5, `${this.hp}/${this.maxHp}`, {
                 fontSize: '12px', fontStyle: 'bold', fill: '#fda4af', fontFamily: FONT_BODY
             });
@@ -625,12 +625,11 @@ export class GameScene extends Phaser.Scene {
         if (this.hpHeartTexts) {
             for (let i = 0; i < this.maxHp; i++) {
                 if (this.hpHeartTexts[i]) {
+                    this.hpHeartTexts[i].setText('■');
                     if (i < this.hp) {
-                        this.hpHeartTexts[i].setText('❤️');
-                        this.hpHeartTexts[i].setAlpha(1);
+                        this.hpHeartTexts[i].setColor('#f43f5e').setAlpha(1);
                     } else {
-                        this.hpHeartTexts[i].setText('🖤');
-                        this.hpHeartTexts[i].setAlpha(0.35);
+                        this.hpHeartTexts[i].setColor('#334155').setAlpha(0.4);
                     }
                 }
             }
@@ -688,7 +687,7 @@ export class GameScene extends Phaser.Scene {
         const overlay = this.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.85).setInteractive();
         const box = this.add.rectangle(0, 0, 480, 260, 0x180509, 0.98).setStrokeStyle(2.5, 0xef4444);
 
-        const skull = this.add.text(0, -75, '☠️', { fontSize: '34px' }).setOrigin(0.5);
+        const skull = this.add.text(0, -68, '[ GAME OVER ]', { fontSize: '14px', fontStyle: 'bold', fill: '#ef4444', fontFamily: FONT_TITLE }).setOrigin(0.5);
         const title = this.add.text(0, -32, 'GAME OVER', {
             fontSize: '32px', fontStyle: 'bold', fill: '#ef4444', fontFamily: FONT_TITLE
         }).setOrigin(0.5);
@@ -988,7 +987,7 @@ export class GameScene extends Phaser.Scene {
 
             const item = this.inventory[i];
             if (item) {
-                const icon = this.add.text(x, startY - 12, item.icon || '📦', { fontSize: '26px' }).setOrigin(0.5);
+                const icon = this.add.text(x, startY - 12, item.icon || '[ITEM]', { fontSize: '11px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_BODY }).setOrigin(0.5);
                 const name = this.add.text(x, startY + 18, item.nama || 'Item', {
                     fontSize: '10px', fill: '#f8fafc', align: 'center', wordWrap: { width: 68 }, fontFamily: FONT_BODY
                 }).setOrigin(0.5);
@@ -1027,7 +1026,7 @@ export class GameScene extends Phaser.Scene {
         const overlay = this.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.85).setInteractive();
         const box = this.add.rectangle(0, 0, 480, 260, 0x071526, 0.98).setStrokeStyle(2.5, 0x38bdf8);
 
-        const icon = this.add.text(0, -75, '🏆', { fontSize: '36px' }).setOrigin(0.5);
+        const icon = this.add.text(0, -68, '[ SELESAI ]', { fontSize: '14px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_TITLE }).setOrigin(0.5);
         const title = this.add.text(0, -32, 'PETUALANGAN SELESAI!', {
             fontSize: '24px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_TITLE
         }).setOrigin(0.5);
@@ -1266,7 +1265,7 @@ export class GameScene extends Phaser.Scene {
             CodeInspector.record('jump');
         }
 
-        // ⚡ Update Live Code Inspector jika sedang aktif (60 FPS)
+        // Update Live Code Inspector jika sedang aktif (60 FPS)
         if (CodeInspector.isActive()) {
             CodeInspector.updateRealtime({
                 left,

@@ -8,7 +8,7 @@ import { CameraZoomManager } from '../utils/CameraZoomManager.js';
 import { GameHUD } from '../ui/GameHUD.js';
 
 // ===============================================================
-// 🏔️ SCENE 2: LEMBAH PANJANG (HORIZONTAL SCROLLING)
+//  SCENE 2: LEMBAH PANJANG (HORIZONTAL SCROLLING)
 // ===============================================================
 // Karakteristik: Layar panjang (lebar 2000px), kamera mengikuti player,
 // dilengkapi pintu kembali ke Scene 1 dan portal maju ke Scene 3.
@@ -55,7 +55,7 @@ export class Scene2 extends Phaser.Scene {
         this.buildTiledPlatform(1520, 320, 5);
         this.buildTiledPlatform(1760, 250, 4);
 
-        // 💡 [SLOT TEMPLATE KONTEN]: Contoh Duri Rintangan
+        //  [SLOT TEMPLATE KONTEN]: Contoh Duri Rintangan
         this.hazards.create(928, 412, 'skeleton_hazard').refreshBody();
 
         // 4. Pintu Masuk (Kiri - dari Scene 1) & Pintu Keluar (Kanan - ke Scene 3)

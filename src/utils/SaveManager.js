@@ -1,5 +1,5 @@
 // ===============================================================
-// 💾 SAVE & LOAD MANAGER (LOCALSTORAGE)
+// SAVE & LOAD MANAGER (LOCALSTORAGE)
 // ===============================================================
 export const SaveManager = {
     KEY: 'template_game_save_v1',

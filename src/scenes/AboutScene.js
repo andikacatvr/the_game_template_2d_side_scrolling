@@ -63,7 +63,7 @@ export class AboutScene extends Phaser.Scene {
         
         // Badge Tujuan Edukasi
         const eduBadge = this.add.rectangle(-140, -128, 140, 24, 0x0f172a, 1);
-        const eduBadgeTxt = this.add.text(-140, -128, '🎓 TUJUAN GAME', {
+        const eduBadgeTxt = this.add.text(-140, -128, 'TUJUAN GAME', {
             fontSize: '11px', fontStyle: 'bold', fill: '#dcff78', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -99,14 +99,14 @@ export class AboutScene extends Phaser.Scene {
 
         // Badge Kreator
         const creatorBadge = this.add.rectangle(-55, -128, 115, 24, 0x0f172a, 1);
-        const creatorBadgeTxt = this.add.text(-55, -128, '👨‍💻 KREATOR', {
+        const creatorBadgeTxt = this.add.text(-55, -128, 'KREATOR', {
             fontSize: '11px', fontStyle: 'bold', fill: '#dcff78', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
         // Foto / Avatar Placeholder Simpel atau Icon
         const avatarCircle = this.add.circle(0, -65, 28, 0xdcff78)
             .setStrokeStyle(2, 0x0f172a);
-        const avatarIcon = this.add.text(0, -65, '⚡', { fontSize: '24px' }).setOrigin(0.5);
+        const avatarIcon = this.add.text(0, -65, 'DEV', { fontSize: '13px', fontStyle: 'bold', fill: '#0f172a', fontFamily: FONT_BODY }).setOrigin(0.5);
 
         // Nama Pembuat (Sesuai Permintaan User)
         const authorHandle = this.add.text(0, -22, '@andikacatvr', {

@@ -1,5 +1,5 @@
 // ===============================================================
-// 💬 RETRO 2D CHAT BOX & COMMAND CONSOLE
+// RETRO 2D CHAT BOX & COMMAND CONSOLE
 // ===============================================================
 // UI Chat Log & Command Console Interaktif:
 // 1. Panel Cyan/Teal Semi-transparan dengan border Navy & Bevel Cyan
@@ -552,12 +552,12 @@ export class CommandConsole {
                         <span class="gt-header-title">CHAT &amp; COMMAND CONSOLE</span>
                     </div>
                     <div class="gt-header-actions">
-                        <button class="gt-btn-tool" id="gt-btn-quick-inspect" style="background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);">⚡ /inspect</button>
-                        <button class="gt-btn-tool" id="gt-btn-quick-learn">🔍 /learn</button>
-                        <button class="gt-btn-tool" id="gt-btn-quick-help">❓ /help</button>
-                        <button class="gt-btn-tool" id="gt-btn-clear">🗑️ Clear</button>
+                        <button class="gt-btn-tool" id="gt-btn-quick-inspect" style="background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);">/inspect</button>
+                        <button class="gt-btn-tool" id="gt-btn-quick-learn">/learn</button>
+                        <button class="gt-btn-tool" id="gt-btn-quick-help">/help</button>
+                        <button class="gt-btn-tool" id="gt-btn-clear">Clear</button>
                         <button class="gt-btn-tool" id="gt-btn-minimize" title="Minimize / Perkecil chat box">−</button>
-                        <button class="gt-btn-tool" id="gt-btn-toggle" title="Tutup Chat Bar">✕</button>
+                        <button class="gt-btn-tool" id="gt-btn-toggle" title="Tutup Chat Bar">X</button>
                     </div>
                 </div>
 
@@ -581,7 +581,7 @@ export class CommandConsole {
         this.floatingBtn.className = 'gt-floating-btn active';
         this.floatingBtn.title = 'Buka / Fokuskan Chat Bar (Tekan Enter atau /)';
         this.floatingBtn.innerHTML = `
-            <span>💬</span>
+            <span>&gt;_</span>
             <span class="gt-btn-text">Chat Bar</span>
         `;
         document.body.appendChild(this.floatingBtn);
@@ -1012,7 +1012,7 @@ export class CommandConsole {
     }
 
     // ===============================================================
-    // 💬 MESSAGE RENDERERS
+    // MESSAGE RENDERERS
     // ===============================================================
 
     /**
@@ -1121,7 +1121,7 @@ export class CommandConsole {
     }
 
     // ===============================================================
-    // ⚙️ COMMAND EXECUTOR
+    // COMMAND EXECUTOR
     // ===============================================================
     runCommand(inputStr) {
         const trimmed = inputStr.trim();
@@ -1181,7 +1181,7 @@ export class CommandConsole {
     }
 
     // ===============================================================
-    // 📋 COMMAND HANDLERS
+    // COMMAND HANDLERS
     // ===============================================================
     cmdHelp() {
         this.logInfo('<b>--- DAFTAR PERINTAH GAME CONSOLE ---</b>');
@@ -1198,7 +1198,7 @@ export class CommandConsole {
     cmdInspect() {
         const active = CodeInspector.toggleLive();
         if (active) {
-            this.logInfo('⚡ <b>Live Code Inspector DIAKTIFKAN!</b> Coba gerakkan karakter dengan <b>A / D</b> atau lompat dengan <b>W / Spasi</b> untuk melihat baris kode menyala.');
+            this.logInfo('<b>Live Code Inspector DIAKTIFKAN!</b> Coba gerakkan karakter dengan <b>A / D</b> atau lompat dengan <b>W / Spasi</b> untuk melihat baris kode menyala.');
         } else {
             this.logInfo('Live Code Inspector DINONAKTIFKAN.');
         }
@@ -1216,7 +1216,7 @@ export class CommandConsole {
         card.className = 'gt-code-card';
         card.innerHTML = `
             <div class="gt-code-header">
-                <span>📘 ${data.title}</span>
+                <span>${data.title}</span>
                 <span style="font-size: 11px; color: #94a3b8;">${data.file}</span>
             </div>
             <div class="gt-code-desc">${data.description}</div>
@@ -1252,7 +1252,7 @@ export class CommandConsole {
         const current = this.getActiveScene();
         if (current) {
             current.scene.start(targetName);
-            this.logInfo(`🚀 Teleportasi ke scene <b>${targetName}</b> berhasil!`);
+            this.logInfo(`Teleportasi ke scene <b>${targetName}</b> berhasil!`);
         }
     }
 
@@ -1266,7 +1266,7 @@ export class CommandConsole {
         const scene = this.getActiveScene();
         if (scene) {
             scene.customSpeed = num;
-            this.logInfo(`⚡ Kecepatan gerak diatur ke <b>${num}</b> (Default: 220).`);
+            this.logInfo(`Kecepatan gerak diatur ke <b>${num}</b> (Default: 220).`);
         }
     }
 
@@ -1280,7 +1280,7 @@ export class CommandConsole {
         const scene = this.getActiveScene();
         if (scene) {
             scene.customJump = -Math.abs(num);
-            this.logInfo(`🦘 Kekuatan dorong lompat diatur ke <b>-${Math.abs(num)}</b> (Default: -330).`);
+            this.logInfo(`Kekuatan dorong lompat diatur ke <b>-${Math.abs(num)}</b> (Default: -330).`);
         }
     }
 
@@ -1295,7 +1295,7 @@ export class CommandConsole {
         if (scene && scene.hp !== undefined) {
             scene.hp = num;
             if (scene.updateHPDisplay) scene.updateHPDisplay();
-            this.logInfo(`❤️ HP pemain diatur ke <b>${num}</b>.`);
+            this.logInfo(`HP pemain diatur ke <b>${num}</b>.`);
         }
     }
 
@@ -1304,7 +1304,7 @@ export class CommandConsole {
         if (scene) {
             scene.isGodMode = !scene.isGodMode;
             scene.isInvincible = scene.isGodMode;
-            this.logInfo(`🛡️ God Mode (Kebal Kerusakan): <b>${scene.isGodMode ? 'AKTIF' : 'NONAKTIF'}</b>`);
+            this.logInfo(`God Mode (Kebal Kerusakan): <b>${scene.isGodMode ? 'AKTIF' : 'NONAKTIF'}</b>`);
         }
     }
 

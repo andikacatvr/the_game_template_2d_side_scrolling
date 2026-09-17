@@ -42,15 +42,15 @@ export class GameHUD {
         this.hpHeartTexts = [];
         if (!isCompact) {
             for (let i = 0; i < s.maxHp; i++) {
-                const heart = s.add.text(30 + i * 20, 4, '❤️', { fontSize: '13px' });
+                const heart = s.add.text(30 + i * 18, 4, '■', { fontSize: '13px', fill: '#f43f5e' });
                 this.hpHeartTexts.push(heart);
             }
-            this.hpNumericText = s.add.text(32 + s.maxHp * 20 + 4, 5, `${s.hp}/${s.maxHp}`, {
+            this.hpNumericText = s.add.text(32 + s.maxHp * 18 + 4, 5, `${s.hp}/${s.maxHp}`, {
                 fontSize: '11px', fontStyle: 'bold', fill: '#fda4af', fontFamily: FONT_BODY
             });
             this.healthContainer.add([hpBg, hpLabel, ...this.hpHeartTexts, this.hpNumericText]);
         } else {
-            const singleHeart = s.add.text(28, 4, '❤️', { fontSize: '14px' });
+            const singleHeart = s.add.text(28, 4, '■', { fontSize: '13px', fill: '#f43f5e' });
             this.hpNumericText = s.add.text(50, 5, `${s.hp}/${s.maxHp}`, {
                 fontSize: '12px', fontStyle: 'bold', fill: '#fda4af', fontFamily: FONT_BODY
             });
@@ -293,7 +293,7 @@ export class GameHUD {
         const overlay = s.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.85).setInteractive();
         const box = s.add.rectangle(0, 0, 480, 260, 0x180509, 0.98).setStrokeStyle(2.5, 0xef4444);
 
-        const skull = s.add.text(0, -75, '☠️', { fontSize: '34px' }).setOrigin(0.5);
+        const skull = s.add.text(0, -68, '[ GAME OVER ]', { fontSize: '14px', fontStyle: 'bold', fill: '#ef4444', fontFamily: FONT_TITLE }).setOrigin(0.5);
         const title = s.add.text(0, -32, 'GAME OVER', {
             fontSize: '32px', fontStyle: 'bold', fill: '#ef4444', fontFamily: FONT_TITLE
         }).setOrigin(0.5);
@@ -353,7 +353,7 @@ export class GameHUD {
         const overlay = s.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.85).setInteractive();
         const box = s.add.rectangle(0, 0, 480, 260, 0x071b26, 0.98).setStrokeStyle(2.5, 0x38bdf8);
 
-        const icon = s.add.text(0, -75, '🏆', { fontSize: '36px' }).setOrigin(0.5);
+        const icon = s.add.text(0, -68, '[ SELESAI ]', { fontSize: '14px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_TITLE }).setOrigin(0.5);
         const title = s.add.text(0, -32, 'PETUALANGAN SELESAI!', {
             fontSize: '24px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_TITLE
         }).setOrigin(0.5);
@@ -514,12 +514,11 @@ export class GameHUD {
         if (this.hpHeartTexts) {
             for (let i = 0; i < s.maxHp; i++) {
                 if (this.hpHeartTexts[i]) {
+                    this.hpHeartTexts[i].setText('■');
                     if (i < s.hp) {
-                        this.hpHeartTexts[i].setText('❤️');
-                        this.hpHeartTexts[i].setAlpha(1);
+                        this.hpHeartTexts[i].setColor('#f43f5e').setAlpha(1);
                     } else {
-                        this.hpHeartTexts[i].setText('🖤');
-                        this.hpHeartTexts[i].setAlpha(0.35);
+                        this.hpHeartTexts[i].setColor('#334155').setAlpha(0.4);
                     }
                 }
             }
@@ -588,7 +587,7 @@ export class GameHUD {
 
             const item = inventory[i];
             if (item) {
-                const icon = s.add.text(x, startY - 12, item.icon || '📦', { fontSize: '26px' }).setOrigin(0.5);
+                const icon = s.add.text(x, startY - 12, item.icon || '[ITEM]', { fontSize: '11px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_BODY }).setOrigin(0.5);
                 const name = s.add.text(x, startY + 18, item.nama || 'Item', {
                     fontSize: '10px', fill: '#f8fafc', align: 'center', wordWrap: { width: 68 }, fontFamily: FONT_BODY
                 }).setOrigin(0.5);
