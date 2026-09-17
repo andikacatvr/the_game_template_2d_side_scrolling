@@ -74,7 +74,7 @@ export const DAFTAR_MAP = [
 
         // Rintangan Duri / Hazard { x, y, lebar }
         duri: [
-            { x: 580, y: 430, lebar: 90 }
+            { x: 580, y: 406, lebar: 90 }
         ],
 
         // Karakter NPC yang bisa diajak ngobrol
@@ -124,8 +124,8 @@ export const DAFTAR_MAP = [
 
         // Duri rintangan di lantai
         duri: [
-            { x: 490, y: 430, lebar: 80 },
-            { x: 760, y: 430, lebar: 90 }
+            { x: 490, y: 406, lebar: 80 },
+            { x: 760, y: 406, lebar: 90 }
         ],
 
         // NPC Level 2

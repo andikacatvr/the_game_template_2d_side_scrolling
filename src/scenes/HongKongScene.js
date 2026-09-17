@@ -230,6 +230,8 @@ export class HongKongScene extends Phaser.Scene {
         if (!this.collectedItemIds.includes('mutiara_victoria')) {
             this.questItem = this.physics.add.sprite(1140, 250, 'hk_pearl_item').setDepth(15);
             this.questItem.body.setAllowGravity(false);
+            this.questItem.body.immovable = true;
+            this.questItem.body.moves = false;
             this.tweens.add({
                 targets: this.questItem,
                 y: 242,

@@ -219,7 +219,10 @@ export class GameScene extends Phaser.Scene {
         }
 
         // 3. Item Koin dari data map (Bisa jamak)
-        this.items = this.physics.add.group();
+        this.items = this.physics.add.group({
+            allowGravity: false,
+            immovable: true
+        });
         const daftarKoin = (Array.isArray(map.koin) && map.koin.length > 0) 
             ? map.koin 
             : [{ x: 560, y: 220, id: 'koin_emas', nama: 'Koin Emas Murni', icon: '' }];
@@ -227,9 +230,12 @@ export class GameScene extends Phaser.Scene {
         daftarKoin.forEach(k => {
             if (!this.collectedItemIds.includes(k.id)) {
                 const item = this.physics.add.sprite(k.x, k.y, 'skeleton_item');
-                item.body.setAllowGravity(false);
-                item.coinData = k;
                 this.items.add(item);
+                item.body.setAllowGravity(false);
+                item.body.immovable = true;
+                item.body.moves = false;
+                item.setDepth(15);
+                item.coinData = k;
                 this.tweens.add({
                     targets: item,
                     y: k.y - 8,
@@ -248,7 +254,16 @@ export class GameScene extends Phaser.Scene {
             : [{ x: 400, y: 406 }];
 
         daftarDuri.forEach(d => {
-            this.hazards.create(d.x, d.y || 406, 'skeleton_hazard');
+            const targetY = (!d.y || d.y >= 418) ? 406 : d.y;
+            const lebar = d.lebar || 24;
+            const count = Math.max(1, Math.round(lebar / 24));
+            const startX = d.x - ((count - 1) * 24) / 2;
+
+            for (let i = 0; i < count; i++) {
+                const hz = this.hazards.create(startX + i * 24, targetY, 'skeleton_hazard');
+                hz.setDepth(10);
+                hz.refreshBody();
+            }
         });
 
         // 5. NPC
