@@ -1,0 +1,22 @@
+🎨 FOLDER ASET MURID (DROP & PLAY)
+=====================================
+Halo adik-adik dan teman-teman!
+Di folder ini, kalian bisa menaruh file gambar karya kalian sendiri:
+
+1. GAMBAR KARAKTER HERO:
+   - Simpan gambar kalian di sini, misalnya: "karakter.png" atau "robot.png"
+   - Format: PNG transparan (disarankan) atau JPG
+   - Di file 'cerita.js', cukup tulis:
+     gambar: "karakter.png"
+
+2. GAMBAR BACKGROUND:
+   - Simpan gambar pemandangan di sini, misalnya: "hutan.png" atau "luar_angkasa.png"
+   - Di file 'cerita.js', cukup tulis:
+     background: "hutan.png"
+
+3. AVATAR NPC:
+   - Simpan foto wajah NPC di sini, misalnya: "guru.png"
+   - Di file 'cerita.js', cukup tulis:
+     portrait: "guru.png"
+
+Selamat berkreasi! 🚀
