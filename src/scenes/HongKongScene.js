@@ -397,11 +397,14 @@ export class HongKongScene extends Phaser.Scene {
         if (this.questItem) {
             this.physics.add.overlap(this.player, this.questItem, () => {
                 if (this.questItem && this.questItem.active) {
+                    this.questItem.disableBody(true, true);
                     this.questItem.destroy();
                     this.questItem = null;
                     CodeInspector.record('coin');
                     CodeInspector.triggerEvent('coin', { item: 'Mutiara Teluk Victoria' });
-                    this.collectedItemIds.push('mutiara_victoria');
+                    if (!this.collectedItemIds.includes('mutiara_victoria')) {
+                        this.collectedItemIds.push('mutiara_victoria');
+                    }
                     this.inventory.push({
                         id: 'mutiara_victoria',
                         nama: 'Mutiara Teluk Victoria',
@@ -414,7 +417,7 @@ export class HongKongScene extends Phaser.Scene {
 
                     this.quest.selesai = true;
                     this.quest.deskripsi = 'Mutiara telah diamankan! Pergilah ke Feri Ekspedisi di ujung kanan dermaga.';
-                    this.autoSave(true);
+                    this.autoSave(false);
                 }
             });
         }
@@ -974,6 +977,10 @@ export class HongKongScene extends Phaser.Scene {
     }
 
     showFloatingToast(text, color = 0x38bdf8) {
+        if (this.activeFloatingToast && this.activeFloatingToast.destroy) {
+            this.activeFloatingToast.destroy();
+            this.activeFloatingToast = null;
+        }
         const toast = this.add.container(this.scale.width / 2, 80).setDepth(50).setScrollFactor(0);
         const bg = this.add.rectangle(0, 0, Math.max(260, text.length * 9), 32, 0x0f172a, 0.95)
             .setStrokeStyle(1.5, color);
@@ -981,14 +988,20 @@ export class HongKongScene extends Phaser.Scene {
             fontSize: '12px', fontStyle: 'bold', fill: '#f8fafc', fontFamily: FONT_BODY
         }).setOrigin(0.5);
         toast.add([bg, txt]);
+        this.activeFloatingToast = toast;
 
         this.tweens.add({
             targets: toast,
             y: 65,
             alpha: { from: 1, to: 0 },
-            delay: 1800,
-            duration: 500,
-            onComplete: () => toast.destroy()
+            delay: 1500,
+            duration: 400,
+            onComplete: () => {
+                if (this.activeFloatingToast === toast) {
+                    this.activeFloatingToast = null;
+                }
+                toast.destroy();
+            }
         });
     }
 

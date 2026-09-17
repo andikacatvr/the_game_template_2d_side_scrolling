@@ -427,10 +427,13 @@ export class GameScene extends Phaser.Scene {
             this.physics.add.overlap(this.player, this.items, (player, item) => {
                 if (item && item.active) {
                     const kData = item.coinData || { id: 'koin_emas', nama: 'Koin Emas Murni', icon: '' };
+                    item.disableBody(true, true);
                     item.destroy();
                     CodeInspector.record('coin');
                     CodeInspector.triggerEvent('coin', { item: kData.nama });
-                    this.collectedItemIds.push(kData.id);
+                    if (!this.collectedItemIds.includes(kData.id)) {
+                        this.collectedItemIds.push(kData.id);
+                    }
                     this.inventory.push({
                         id: kData.id,
                         nama: kData.nama,
@@ -443,7 +446,7 @@ export class GameScene extends Phaser.Scene {
 
                     this.quest.selesai = true;
                     this.quest.deskripsi = 'Item berhasil diambil! Masuki Portal Gerbang untuk lanjut.';
-                    this.autoSave(true);
+                    this.autoSave(false);
                 }
             });
         }
@@ -1005,17 +1008,27 @@ export class GameScene extends Phaser.Scene {
     }
 
     showFloatingToast(msg, color = 0x38bdf8) {
+        if (this.activeFloatingToast && this.activeFloatingToast.destroy) {
+            this.activeFloatingToast.destroy();
+            this.activeFloatingToast = null;
+        }
         const hexColor = '#' + color.toString(16).padStart(6, '0');
         const toast = this.add.text(this.player.x, this.player.y - 35, msg, {
             fontSize: '11px', fontStyle: 'bold', fill: hexColor, backgroundColor: '#0f172acc', padding: { x: 6, y: 3 }, fontFamily: FONT_BODY
         }).setOrigin(0.5).setDepth(30);
+        this.activeFloatingToast = toast;
 
         this.tweens.add({
             targets: toast,
             y: toast.y - 25,
             alpha: 0,
             duration: 1200,
-            onComplete: () => toast.destroy()
+            onComplete: () => {
+                if (this.activeFloatingToast === toast) {
+                    this.activeFloatingToast = null;
+                }
+                toast.destroy();
+            }
         });
     }
 
