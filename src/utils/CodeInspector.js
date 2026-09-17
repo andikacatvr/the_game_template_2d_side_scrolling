@@ -367,14 +367,65 @@ export class CodeInspector {
 
                 .lci-status-bar {
                     background: #030712;
-                    padding: 5px 12px;
+                    padding: 6px 12px;
                     font-size: 11px;
                     color: #94a3b8;
                     font-family: 'Segoe UI', Tahoma, sans-serif;
                     display: flex;
+                    flex-direction: column;
+                    gap: 5px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                }
+
+                .lci-status-row {
+                    display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                }
+
+                .lci-coord-row {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    background: rgba(15, 23, 42, 0.7);
+                    border: 1px solid rgba(56, 189, 248, 0.2);
+                    padding: 3px 8px;
+                    border-radius: 4px;
+                    font-size: 10.5px;
+                    transition: border-color 0.2s, background 0.2s;
+                }
+
+                .lci-coord-row.idle {
+                    background: rgba(16, 185, 129, 0.12);
+                    border-color: rgba(52, 211, 153, 0.45);
+                }
+
+                .lci-coord-idle {
+                    color: #34d399;
+                    font-weight: 800;
+                    text-shadow: 0 0 6px rgba(52, 211, 153, 0.4);
+                }
+
+                .lci-coord-move {
+                    color: #38bdf8;
+                    font-weight: 700;
+                }
+
+                .lci-btn-copy {
+                    background: #1e293b;
+                    border: 1px solid #38bdf8;
+                    color: #38bdf8;
+                    font-size: 10px;
+                    font-weight: bold;
+                    padding: 2px 7px;
+                    border-radius: 3px;
+                    cursor: pointer;
+                    transition: all 0.15s;
+                    font-family: 'Segoe UI', sans-serif;
+                }
+                .lci-btn-copy:hover {
+                    background: #0284c7;
+                    color: #ffffff;
                 }
 
                 .lci-state-label {
@@ -571,8 +622,14 @@ export class CodeInspector {
             </div>
 
             <div class="lci-status-bar">
-                <div>Status: <span id="lci-status-text" class="lci-state-label">DIAM (IDLE)</span></div>
-                <div id="lci-coords-text">vX: 0 | diTanah: YA</div>
+                <div class="lci-status-row">
+                    <div>Status: <span id="lci-status-text" class="lci-state-label">DIAM (IDLE)</span></div>
+                    <div id="lci-coords-text">vX: 0 | diTanah: YA</div>
+                </div>
+                <div class="lci-coord-row idle" id="lci-coord-row">
+                    <div><span id="lci-coord-label">Titik Koordinat (Diam):</span> <span id="lci-coord-val" class="lci-coord-idle">X: 0 | Y: 0</span></div>
+                    <button class="lci-btn-copy" id="lci-btn-copy-coord" title="Salin koordinat { x, y } untuk cerita.js">Salin {x, y}</button>
+                </div>
             </div>
 
             <div class="lci-code-body">
@@ -700,6 +757,30 @@ export class CodeInspector {
             });
         }
 
+        // Event copy coordinate
+        const copyCoordBtn = this.container.querySelector('#lci-btn-copy-coord');
+        if (copyCoordBtn) {
+            copyCoordBtn.addEventListener('click', () => {
+                const px = this.lastX !== undefined ? this.lastX : 0;
+                const py = this.lastY !== undefined ? this.lastY : 0;
+                const text = `{ x: ${px}, y: ${py} }`;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text);
+                }
+                const oldText = copyCoordBtn.textContent;
+                copyCoordBtn.textContent = 'Tersalin!';
+                copyCoordBtn.style.background = '#059669';
+                copyCoordBtn.style.borderColor = '#34d399';
+                copyCoordBtn.style.color = '#ffffff';
+                setTimeout(() => {
+                    copyCoordBtn.textContent = oldText;
+                    copyCoordBtn.style.background = '#1e293b';
+                    copyCoordBtn.style.borderColor = '#38bdf8';
+                    copyCoordBtn.style.color = '#38bdf8';
+                }, 1200);
+            });
+        }
+
         // Event close
         const closeBtn = this.container.querySelector('#lci-btn-close');
         if (closeBtn) {
@@ -780,11 +861,10 @@ export class CodeInspector {
 
     /**
      * Dipanggil setiap frame (60 FPS) dari update() game scene
-     * Hanya memperbarui state gerak & lompat jika tab aktif adalah 'move'
+     * Menampilkan koordinat player secara live dan menghighlight logika saat tab 'move'
      */
     static updateRealtime(state) {
         if (!this.isLiveActive || !this.container) return;
-        if (this.currentTab !== 'move') return;
 
         const left = Boolean(state.left);
         const right = Boolean(state.right);
@@ -792,8 +872,33 @@ export class CodeInspector {
         const grounded = Boolean(state.grounded);
         const vx = Math.round(state.vx || 0);
         const vy = Math.round(state.vy || 0);
+        const px = Math.round(state.x || 0);
+        const py = Math.round(state.y || 0);
+        this.lastX = px;
+        this.lastY = py;
 
-        const stateKey = `${left}_${right}_${jump}_${grounded}_${vx}_${vy}`;
+        const isIdle = !left && !right && !jump && grounded;
+
+        const coordLabel = this.container.querySelector('#lci-coord-label');
+        const coordVal = this.container.querySelector('#lci-coord-val');
+        const coordRow = this.container.querySelector('#lci-coord-row');
+
+        if (coordVal) {
+            coordVal.textContent = `X: ${px} | Y: ${py}`;
+            if (isIdle) {
+                if (coordLabel) coordLabel.textContent = 'Titik Koordinat (Diam):';
+                coordVal.className = 'lci-coord-idle';
+                if (coordRow) coordRow.classList.add('idle');
+            } else {
+                if (coordLabel) coordLabel.textContent = 'Koordinat Bergerak:';
+                coordVal.className = 'lci-coord-move';
+                if (coordRow) coordRow.classList.remove('idle');
+            }
+        }
+
+        if (this.currentTab !== 'move') return;
+
+        const stateKey = `${left}_${right}_${jump}_${grounded}_${vx}_${vy}_${px}_${py}`;
         if (this.lastStateKey === stateKey) return;
         this.lastStateKey = stateKey;
 

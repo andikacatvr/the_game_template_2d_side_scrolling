@@ -1161,7 +1161,9 @@ export class HongKongScene extends Phaser.Scene {
                 jump,
                 grounded: this.player.body.touching.down || this.player.body.blocked.down,
                 vx: this.player.body.velocity.x,
-                vy: this.player.body.velocity.y
+                vy: this.player.body.velocity.y,
+                x: this.player.x,
+                y: this.player.y
             });
         }
     }
