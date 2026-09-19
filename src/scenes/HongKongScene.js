@@ -4,6 +4,7 @@ import { DisplayManager } from '../utils/DisplayManager.js';
 import { SaveManager } from '../utils/SaveManager.js';
 import { FONT_TITLE, FONT_BODY, isMobileOrTablet } from '../utils/helpers.js';
 import { SettingsModal } from '../ui/SettingsModal.js';
+import { InventoryModal } from '../ui/InventoryModal.js';
 import { DialogBox } from '../ui/DialogBox.js';
 import { AudioManager } from '../utils/AudioManager.js';
 import { CameraZoomManager } from '../utils/CameraZoomManager.js';
@@ -399,6 +400,7 @@ export class HongKongScene extends Phaser.Scene {
         if (this.questItem) {
             this.physics.add.overlap(this.player, this.questItem, () => {
                 if (this.questItem && this.questItem.active) {
+                    this.createCoinSparkle(this.questItem.x, this.questItem.y);
                     this.questItem.disableBody(true, true);
                     this.questItem.destroy();
                     this.questItem = null;
@@ -554,7 +556,7 @@ export class HongKongScene extends Phaser.Scene {
 
         // Modals
         this.createQuestModalUI();
-        this.createInventoryModalUI();
+        this.inventoryModal = new InventoryModal(this);
         this.settingsModal = new SettingsModal(this, {
             onRestart: () => {
                 SaveManager.clear();
@@ -650,7 +652,7 @@ export class HongKongScene extends Phaser.Scene {
         const reloadBtn = this.add.rectangle(0, 56, 240, 36, 0x2563eb, 0.95)
             .setStrokeStyle(1.5, 0x60a5fa)
             .setInteractive({ useHandCursor: true });
-        const reloadText = this.add.text(0, 56, 'Muat Checkpoint Terakhir', {
+        const reloadText = this.add.text(0, 56, 'Load Last Checkpoint', {
             fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -663,7 +665,7 @@ export class HongKongScene extends Phaser.Scene {
         const menuBtn = this.add.rectangle(0, 104, 240, 32, 0x1e293b, 0.95)
             .setStrokeStyle(1.5, 0x64748b)
             .setInteractive({ useHandCursor: true });
-        const menuText = this.add.text(0, 104, 'Kembali ke Menu Utama', {
+        const menuText = this.add.text(0, 104, 'Return to Main Menu', {
             fontSize: '11px', fill: '#94a3b8', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -753,7 +755,7 @@ export class HongKongScene extends Phaser.Scene {
         const overlay = this.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.65).setInteractive();
         const box = this.add.rectangle(0, 0, 460, 270, 0x0b1a32, 0.98).setStrokeStyle(2, 0x38bdf8);
 
-        const header = this.add.text(0, -100, 'MISI & QUEST SCENE 2', {
+        const header = this.add.text(0, -100, 'ACTIVE QUEST - SCENE 2', {
             fontSize: '16px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -768,7 +770,7 @@ export class HongKongScene extends Phaser.Scene {
         const closeBtn = this.add.rectangle(0, 95, 120, 32, 0x1e293b, 1)
             .setStrokeStyle(1.5, 0x64748b)
             .setInteractive({ useHandCursor: true });
-        const closeText = this.add.text(0, 95, 'Tutup [Q]', {
+        const closeText = this.add.text(0, 95, 'Close [Q]', {
             fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -797,7 +799,7 @@ export class HongKongScene extends Phaser.Scene {
         const overlay = this.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.65).setInteractive();
         const box = this.add.rectangle(0, 0, 480, 280, 0x0b1a32, 0.98).setStrokeStyle(2, 0x153154);
 
-        const header = this.add.text(0, -108, 'TAS INVENTARIS PETUALANG', {
+        const header = this.add.text(0, -108, 'ADVENTURER\'S INVENTORY', {
             fontSize: '15px', fontStyle: 'bold', fill: '#fbbf24', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -806,7 +808,7 @@ export class HongKongScene extends Phaser.Scene {
         const closeBtn = this.add.rectangle(0, 105, 120, 32, 0x1e293b, 1)
             .setStrokeStyle(1.5, 0x64748b)
             .setInteractive({ useHandCursor: true });
-        const closeText = this.add.text(0, 105, 'Tutup [I]', {
+        const closeText = this.add.text(0, 105, 'Close [I]', {
             fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -817,14 +819,15 @@ export class HongKongScene extends Phaser.Scene {
     }
 
     toggleInventoryModal(forceState) {
-        this.isInvOpen = (forceState !== undefined) ? forceState : !this.isInvOpen;
-        if (this.isInvOpen) {
+        const nextState = (forceState !== undefined) ? forceState : (this.inventoryModal ? !this.inventoryModal.isOpen() : !this.isInvOpen);
+        if (nextState) {
             this.toggleQuestModal(false);
             this.toggleSettingsModal(false);
-            this.renderInventorySlots();
-            this.updateModalsCenter();
+            if (this.inventoryModal) this.inventoryModal.show();
+        } else {
+            if (this.inventoryModal) this.inventoryModal.hide();
         }
-        this.invModal.setVisible(this.isInvOpen);
+        this.isInvOpen = this.inventoryModal ? this.inventoryModal.isOpen() : false;
     }
 
     renderInventorySlots() {
@@ -887,7 +890,7 @@ export class HongKongScene extends Phaser.Scene {
         const replayBtn = this.add.rectangle(0, 60, 220, 36, 0x059669, 0.95)
             .setStrokeStyle(1.5, 0x34d399)
             .setInteractive({ useHandCursor: true });
-        const replayText = this.add.text(0, 60, 'Kembali ke Scene 1', {
+        const replayText = this.add.text(0, 60, 'Back to Scene 1', {
             fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -899,7 +902,7 @@ export class HongKongScene extends Phaser.Scene {
         const menuBtn = this.add.rectangle(0, 106, 220, 32, 0x1e293b, 0.95)
             .setStrokeStyle(1.5, 0x64748b)
             .setInteractive({ useHandCursor: true });
-        const menuText = this.add.text(0, 106, 'Menu Utama', {
+        const menuText = this.add.text(0, 106, 'Main Menu', {
             fontSize: '11px', fill: '#94a3b8', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -1147,11 +1150,16 @@ export class HongKongScene extends Phaser.Scene {
             this.player.setVelocityX(0);
         }
 
-        if (jump && (this.player.body.touching.down || this.player.body.blocked.down)) {
+        const isGrounded = !!(this.player.body.touching.down || this.player.body.blocked.down);
+        if (jump && isGrounded) {
             this.player.setVelocityY(jumpSpeed);
             AudioManager.playJump();
             CodeInspector.record('jump');
+            this.createDustEffect(this.player.x, this.player.y + (this.player.displayHeight ? this.player.displayHeight / 2 : 22));
+        } else if (!this.wasGrounded && isGrounded && this.player.body.velocity.y >= 0) {
+            this.createDustEffect(this.player.x, this.player.y + (this.player.displayHeight ? this.player.displayHeight / 2 : 22));
         }
+        this.wasGrounded = isGrounded;
 
         // Update Live Code Inspector jika sedang aktif (60 FPS)
         if (CodeInspector.isActive()) {
@@ -1159,7 +1167,7 @@ export class HongKongScene extends Phaser.Scene {
                 left,
                 right,
                 jump,
-                grounded: this.player.body.touching.down || this.player.body.blocked.down,
+                grounded: isGrounded,
                 vx: this.player.body.velocity.x,
                 vy: this.player.body.velocity.y,
                 x: this.player.x,
@@ -1167,4 +1175,41 @@ export class HongKongScene extends Phaser.Scene {
             });
         }
     }
+
+    createDustEffect(x, y) {
+        for (let i = 0; i < 6; i++) {
+            const dust = this.add.circle(x + Phaser.Math.Between(-10, 10), y - 2, Phaser.Math.Between(2, 4), 0xe2e8f0, 0.7).setDepth(11);
+            this.tweens.add({
+                targets: dust,
+                x: dust.x + Phaser.Math.Between(-16, 16),
+                y: dust.y - Phaser.Math.Between(4, 10),
+                scale: 0.2,
+                alpha: 0,
+                duration: Phaser.Math.Between(250, 400),
+                ease: 'Quad.easeOut',
+                onComplete: () => dust.destroy()
+            });
+        }
+    }
+
+    createCoinSparkle(x, y) {
+        const colors = [0x38bdf8, 0x7dd3fc, 0xffffff, 0xbae6fd];
+        for (let i = 0; i < 10; i++) {
+            const col = colors[i % colors.length];
+            const p = this.add.circle(x, y, Phaser.Math.Between(2, 4), col, 1).setDepth(20);
+            const angle = (i / 10) * Math.PI * 2 + Phaser.Math.FloatBetween(-0.2, 0.2);
+            const dist = Phaser.Math.Between(15, 34);
+            this.tweens.add({
+                targets: p,
+                x: x + Math.cos(angle) * dist,
+                y: y + Math.sin(angle) * dist,
+                scale: 0,
+                alpha: 0,
+                duration: Phaser.Math.Between(350, 500),
+                ease: 'Cubic.easeOut',
+                onComplete: () => p.destroy()
+            });
+        }
+    }
 }
+

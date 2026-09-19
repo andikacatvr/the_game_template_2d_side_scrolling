@@ -91,7 +91,7 @@ export class TitleScene extends Phaser.Scene {
         // FOOTER
         // ─────────────────────────────────────────────────────────
         this.add.text(centerX, H - 12,
-            `${CONFIG_SKELETON.namaKelompok || 'Kelompok Developer'}  •  Phaser 3  •  Template 2D`, {
+            `${CONFIG_SKELETON.namaKelompok || 'Kelompok Developer'}`, {
             fontSize: '10px', fontStyle: 'bold', fill: '#1e293b', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -317,23 +317,23 @@ export class TitleScene extends Phaser.Scene {
         const ov = this.add.rectangle(0, 0, 800, 450, 0x000000, 0.82).setInteractive();
         const box = this.add.rectangle(0, 0, 440, 230, 0x0a0f1e, 0.98).setStrokeStyle(2, 0xef4444);
         const ico = this.add.text(0, -66, '[ ! ]', { fontSize: '18px', fontStyle: 'bold', fill: '#ef4444', fontFamily: FONT_BODY }).setOrigin(0.5);
-        const hdr = this.add.text(0, -32, 'HAPUS DATA PETUALANGAN?', {
+        const hdr = this.add.text(0, -32, 'DELETE ADVENTURE DATA?', {
             fontSize: '15px', fontStyle: 'bold', fill: '#ef4444', fontFamily: FONT_BODY
         }).setOrigin(0.5);
         const inf = this.add.text(0, 4,
-            'Seluruh progres (HP, item tas, posisi)\nakan dihapus secara permanen.', {
+            'All progress (HP, inventory items, position)\nwill be permanently deleted.', {
             fontSize: '11px', fill: '#94a3b8', align: 'center', lineSpacing: 4, fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
         const canBg = this.add.rectangle(-78, 64, 120, 34, 0x1e293b, 1).setStrokeStyle(1.5, 0x475569).setInteractive({ useHandCursor: true });
-        const canTxt = this.add.text(-78, 64, 'Batal', { fontSize: '12px', fontStyle: 'bold', fill: '#cbd5e1', fontFamily: FONT_BODY }).setOrigin(0.5);
+        const canTxt = this.add.text(-78, 64, 'Cancel', { fontSize: '12px', fontStyle: 'bold', fill: '#cbd5e1', fontFamily: FONT_BODY }).setOrigin(0.5);
         canBg.on('pointerover', () => canBg.setFillStyle(0x334155, 1));
         canBg.on('pointerout', () => canBg.setFillStyle(0x1e293b, 1));
         canBg.on('pointerdown', () => this._toggleDeleteModal(false));
         ov.on('pointerdown', () => this._toggleDeleteModal(false));
 
         const delBg = this.add.rectangle(78, 64, 138, 34, 0xdc2626, 1).setStrokeStyle(1.5, 0xfca5a5).setInteractive({ useHandCursor: true });
-        const delTxt = this.add.text(78, 64, 'Ya, Hapus', { fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY }).setOrigin(0.5);
+        const delTxt = this.add.text(78, 64, 'Yes, Delete', { fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY }).setOrigin(0.5);
         delBg.on('pointerover', () => delBg.setFillStyle(0xb91c1c, 1));
         delBg.on('pointerout', () => delBg.setFillStyle(0xdc2626, 1));
         delBg.on('pointerdown', () => {

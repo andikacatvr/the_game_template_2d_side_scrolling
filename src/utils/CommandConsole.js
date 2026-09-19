@@ -19,16 +19,19 @@ export class CommandConsole {
 
     constructor() {
         if (CommandConsole.instance) {
-            CommandConsole.instance.height = 420;
+            CommandConsole.instance.height = 138;
+            CommandConsole.instance.isMinimized = false;
             CommandConsole.instance.initDOM();
             return CommandConsole.instance;
         }
         CommandConsole.instance = this;
 
         this.isOpen = true; // Default terbuka
-        this.height = 420;  // Ukuran jauh lebih besar dan leluasa dibaca
-        this.minHeight = 240;
+        this.height = 138;  // Tinggi default sesuai gambar (header + 1 baris pesan + input bar)
+        this.minHeight = 96;
         this.maxHeight = Math.min(window.innerHeight * 0.85, 800);
+        this.isMinimized = false;
+        this.savedHeight = 380;
         this.isDragging = false;
         this.dragStartY = 0;
         this.dragStartH = 0;
@@ -67,16 +70,29 @@ export class CommandConsole {
     }
 
     setVisible(visible, openPanel = true, focusInput = false) {
-        if (this.container) {
-            this.container.style.display = visible ? '' : 'none';
-        }
-        if (this.floatingBtn) {
-            this.floatingBtn.style.display = visible ? '' : 'none';
-        }
-        if (visible) {
-            if (openPanel) {
-                this.open(focusInput);
+        if (!visible) {
+            this.isOpen = false;
+            if (this.container) {
+                this.container.style.display = 'none';
+                this.container.classList.add('collapsed');
             }
+            if (this.floatingBtn) {
+                this.floatingBtn.style.display = 'none';
+                this.floatingBtn.classList.remove('active');
+            }
+            if (this.inputEl) {
+                this.inputEl.blur();
+            }
+            this.togglePhaserInput(true);
+            return;
+        }
+
+        // Jika visible = true
+        if (this.container) {
+            this.container.style.display = '';
+        }
+        if (openPanel) {
+            this.open(focusInput);
         } else {
             this.close();
         }
@@ -106,9 +122,9 @@ export class CommandConsole {
 
                 #gt-command-console {
                     position: fixed;
-                    bottom: 64px;
+                    bottom: 16px;
                     right: 16px;
-                    width: min(860px, calc(100vw - 32px));
+                    width: min(650px, calc(100vw - 32px));
                     z-index: 99999;
                     font-family: 'Nunito', 'Century Gothic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                     box-sizing: border-box;
@@ -133,7 +149,7 @@ export class CommandConsole {
                 /* PANEL BODY: TRANSLUCENT TEAL GLASS (TEMBUS PANDANG)             */
                 /* =============================================================== */
                 .gt-console-panel {
-                    background: linear-gradient(180deg, rgba(14, 55, 72, 0.6) 0%, rgba(8, 34, 46, 0.72) 100%);
+                    background: linear-gradient(180deg, rgba(14, 55, 72, 0.7) 0%, rgba(8, 34, 46, 0.8) 100%);
                     backdrop-filter: blur(8px);
                     -webkit-backdrop-filter: blur(8px);
                     border: 2px solid rgba(73, 191, 222, 0.7);
@@ -141,10 +157,17 @@ export class CommandConsole {
                     border-radius: 12px;
                     display: flex;
                     flex-direction: column;
-                    height: 420px;
+                    height: 138px;
                     width: 100%;
                     position: relative;
                     box-sizing: border-box;
+                    overflow: hidden;
+                    transition: height 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+
+                #gt-command-console.resizing .gt-console-panel,
+                #gt-command-console.dragging .gt-console-panel {
+                    transition: none !important;
                 }
 
                 /* Header Console - Drag Bar */
@@ -168,7 +191,9 @@ export class CommandConsole {
                 .gt-header-left {
                     display: flex;
                     align-items: center;
-                    gap: 10px;
+                    gap: 8px;
+                    white-space: nowrap;
+                    flex-shrink: 0;
                 }
 
                 .gt-mini-badge {
@@ -176,25 +201,29 @@ export class CommandConsole {
                     border: 1px solid #162b37;
                     color: #0f172a;
                     font-weight: 900;
-                    font-size: 12px;
+                    font-size: 11.5px;
                     padding: 2px 7px;
                     border-radius: 4px;
                     text-shadow: none;
                     letter-spacing: 0.5px;
+                    flex-shrink: 0;
                 }
 
                 .gt-header-title {
-                    font-size: 15px;
+                    font-size: 13.5px;
                     font-weight: 800;
                     color: #e0f7fe;
                     text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
                     letter-spacing: 0.3px;
+                    white-space: nowrap;
+                    flex-shrink: 0;
                 }
 
                 .gt-header-actions {
                     display: flex;
                     align-items: center;
-                    gap: 8px;
+                    gap: 6px;
+                    flex-shrink: 0;
                 }
 
                 .gt-btn-tool {
@@ -228,13 +257,13 @@ export class CommandConsole {
                 .gt-console-logs {
                     flex: 1;
                     overflow-y: auto;
-                    padding: 6px 12px;
+                    padding: 4px 12px;
                     display: flex;
                     flex-direction: column;
                     gap: 3px;
-                    font-size: 17px;
+                    font-size: 16px;
                     font-weight: 800;
-                    line-height: 1.45;
+                    line-height: 1.4;
                     color: #ffffff;
                     letter-spacing: 0.3px;
                     scroll-behavior: smooth;
@@ -478,23 +507,22 @@ export class CommandConsole {
 
                 .gt-resizer-topleft {
                     position: absolute;
-                    top: -8px;
-                    left: -8px;
-                    width: 20px;
-                    height: 20px;
+                    top: 0;
+                    left: 0;
+                    width: 16px;
+                    height: 16px;
                     cursor: nwse-resize;
                     z-index: 55;
                     touch-action: none;
                     user-select: none;
-                    border-top: 3.5px solid #38bdf8;
-                    border-left: 3.5px solid #38bdf8;
-                    border-top-left-radius: 6px;
-                    transition: transform 0.15s, border-color 0.15s, background 0.15s;
+                    border-top: 2.5px solid transparent;
+                    border-left: 2.5px solid transparent;
+                    border-top-left-radius: 10px;
+                    transition: border-color 0.15s, background 0.15s;
                 }
                 .gt-resizer-topleft:hover, .gt-resizer-topleft.active {
-                    transform: scale(1.3);
-                    border-color: #67e8f9;
-                    background: rgba(56, 189, 248, 0.4);
+                    border-color: #38bdf8;
+                    background: rgba(56, 189, 248, 0.35);
                 }
 
                 /* =============================================================== */
@@ -564,8 +592,8 @@ export class CommandConsole {
                 <div class="gt-console-logs" id="gt-logs"></div>
 
                 <div class="gt-console-input-bar">
-                    <input type="text" class="gt-input" id="gt-input-cmd" placeholder="Ketik pesan chat atau perintah (/inspect, /help, /learn, /tp, /god)..." autocomplete="off" />
-                    <button class="gt-btn-send" id="gt-btn-send">KIRIM ↵</button>
+                    <input type="text" class="gt-input" id="gt-input-cmd" placeholder="Type a chat message or command (/inspect, /help, /learn, /tp, /god)..." autocomplete="off" />
+                    <button class="gt-btn-send" id="gt-btn-send">SEND ↵</button>
                 </div>
 
                 <!-- Corner Resizer -->
@@ -575,11 +603,12 @@ export class CommandConsole {
 
         document.body.appendChild(this.container);
 
-        // Tombol Floating Chat Bar terpisah di body agar tidak ikut hilang saat panel ditutup/dibuka
+        // Tombol Floating Chat Bar terpisah di body (hanya tampil saat panel ditutup [X])
         this.floatingBtn = document.createElement('button');
         this.floatingBtn.id = 'gt-floating-btn';
-        this.floatingBtn.className = 'gt-floating-btn active';
-        this.floatingBtn.title = 'Buka / Fokuskan Chat Bar (Tekan Enter atau /)';
+        this.floatingBtn.className = 'gt-floating-btn';
+        this.floatingBtn.style.display = 'none'; // Sembunyi default karena panel sudah terbuka
+        this.floatingBtn.title = 'Buka Chat Bar (Tekan Enter atau /)';
         this.floatingBtn.innerHTML = `
             <span>&gt;_</span>
             <span class="gt-btn-text">Chat Bar</span>
@@ -594,9 +623,18 @@ export class CommandConsole {
 
         // Event Buttons
         this.container.querySelector('#gt-btn-clear').addEventListener('click', () => this.clearLogs());
-        this.container.querySelector('#gt-btn-quick-inspect').addEventListener('click', () => this.runCommand('/inspect'));
-        this.container.querySelector('#gt-btn-quick-help').addEventListener('click', () => this.runCommand('/help'));
-        this.container.querySelector('#gt-btn-quick-learn').addEventListener('click', () => this.runCommand('/learn'));
+        this.container.querySelector('#gt-btn-quick-inspect').addEventListener('click', () => {
+            if (this.isMinimized) this.toggleMinimize(false);
+            this.runCommand('/inspect');
+        });
+        this.container.querySelector('#gt-btn-quick-help').addEventListener('click', () => {
+            if (this.isMinimized) this.toggleMinimize(false);
+            this.runCommand('/help');
+        });
+        this.container.querySelector('#gt-btn-quick-learn').addEventListener('click', () => {
+            if (this.isMinimized) this.toggleMinimize(false);
+            this.runCommand('/learn');
+        });
         this.container.querySelector('#gt-btn-send').addEventListener('click', () => this.handleSubmit());
         this.toggleBtn.addEventListener('click', () => this.close());
         this.floatingBtn.addEventListener('click', (e) => {
@@ -611,7 +649,6 @@ export class CommandConsole {
         });
 
         // Tombol Minimize & Double-Click Header untuk minimize/restore
-        this.isMinimized = false;
         this.minimizeBtn = this.container.querySelector('#gt-btn-minimize');
         if (this.minimizeBtn) {
             this.minimizeBtn.addEventListener('click', (e) => {
@@ -621,6 +658,14 @@ export class CommandConsole {
         }
         if (this.container.querySelector('.gt-console-header')) {
             this.container.querySelector('.gt-console-header').addEventListener('dblclick', () => this.toggleMinimize());
+        }
+
+        // Terapkan status awal: mode mini-chat (tinggi 138px dengan 1-2 baris pesan)
+        this.panel.style.height = '138px';
+        this.logsContainer.style.display = 'flex';
+        if (this.minimizeBtn) {
+            this.minimizeBtn.textContent = '−';
+            this.minimizeBtn.title = 'Minimize / Perkecil Chat Bar';
         }
 
         // Setup Window Drag & Multi-Resizer (Kiri, Atas, Pojok)
@@ -709,23 +754,38 @@ export class CommandConsole {
         }, { passive: true });
     }
 
-    toggleMinimize() {
-        this.isMinimized = !this.isMinimized;
-        if (this.isMinimized) {
-            this.savedHeight = this.panel.offsetHeight;
-            this.panel.style.height = '104px'; // compact: header + input bar
+    toggleMinimize(forceState = null) {
+        const currentH = this.panel.offsetHeight;
+        if (currentH > 160) {
+            // Sedang di-expand besar -> ciutkan ke mode mini-chat (138px)
+            this.savedHeight = currentH;
+            this.panel.style.height = '138px';
+            this.logsContainer.style.display = 'flex';
+            this.isMinimized = false;
+            if (this.minimizeBtn) {
+                this.minimizeBtn.textContent = '−';
+                this.minimizeBtn.title = 'Minimize / Perkecil Chat Bar';
+            }
+        } else if (currentH > 110) {
+            // Sedang di mode mini-chat (138px) -> ciutkan ke ultra-compact (96px, sembunyikan log)
+            this.panel.style.height = '96px';
             this.logsContainer.style.display = 'none';
+            this.isMinimized = true;
             if (this.minimizeBtn) {
                 this.minimizeBtn.textContent = '+';
                 this.minimizeBtn.title = 'Restore / Perbesar Chat Bar';
             }
         } else {
-            const restoreH = this.savedHeight || this.height || 420;
-            this.panel.style.height = `${restoreH}px`;
+            // Sedang di mode ultra-compact (96px) -> kembalikan ke mode mini-chat (138px)
+            this.panel.style.height = '138px';
             this.logsContainer.style.display = 'flex';
+            this.isMinimized = false;
             if (this.minimizeBtn) {
                 this.minimizeBtn.textContent = '−';
                 this.minimizeBtn.title = 'Minimize / Perkecil Chat Bar';
+            }
+            if (this.logsContainer) {
+                this.logsContainer.scrollTop = this.logsContainer.scrollHeight;
             }
         }
     }
@@ -798,6 +858,31 @@ export class CommandConsole {
 
             this.container.style.width = `${newW}px`;
             this.panel.style.height = `${newH}px`;
+
+            // Sinkronkan status minimize dengan tinggi drag
+            if (newH > 160) {
+                this.savedHeight = newH;
+                this.isMinimized = false;
+                this.logsContainer.style.display = 'flex';
+                if (this.minimizeBtn) {
+                    this.minimizeBtn.textContent = '−';
+                    this.minimizeBtn.title = 'Minimize / Perkecil Chat Bar';
+                }
+            } else if (newH <= 110) {
+                this.isMinimized = true;
+                this.logsContainer.style.display = 'none';
+                if (this.minimizeBtn) {
+                    this.minimizeBtn.textContent = '+';
+                    this.minimizeBtn.title = 'Restore / Perbesar Chat Bar';
+                }
+            } else {
+                this.isMinimized = false;
+                this.logsContainer.style.display = 'flex';
+                if (this.minimizeBtn) {
+                    this.minimizeBtn.textContent = '−';
+                    this.minimizeBtn.title = 'Minimize / Perkecil Chat Bar';
+                }
+            }
             this.height = newH;
 
             // Sembunyikan logs otomatis jika diperkecil sangat pendek (di bawah 130px)
@@ -944,7 +1029,7 @@ export class CommandConsole {
         this.isOpen = true;
         this.container.classList.remove('collapsed');
         if (this.floatingBtn) {
-            this.floatingBtn.classList.add('active');
+            this.floatingBtn.style.display = 'none'; // Sembunyikan floating button saat panel terbuka
         }
 
         if (focusInput) {
@@ -962,6 +1047,7 @@ export class CommandConsole {
         this.isOpen = false;
         this.container.classList.add('collapsed');
         if (this.floatingBtn) {
+            this.floatingBtn.style.display = 'flex'; // Tampilkan tombol pill jika panel ditutup dengan [X]
             this.floatingBtn.classList.remove('active');
         }
         this.inputEl.blur();
@@ -1138,6 +1224,11 @@ export class CommandConsole {
         if (!trimmed.startsWith('/')) {
             this.logPlayerChat(this.playerName, trimmed);
             return;
+        }
+
+        // Jika user menjalankan perintah (/help, /learn, /inspect, dll), auto-expand agar hasilnya langsung terbaca
+        if (this.isMinimized) {
+            this.toggleMinimize(false);
         }
 
         const parts = trimmed.slice(1).split(' ');
@@ -1322,7 +1413,8 @@ export class CommandConsole {
 if (import.meta.hot) {
     import.meta.hot.accept(() => {
         if (CommandConsole.instance) {
-            CommandConsole.instance.height = 420;
+            CommandConsole.instance.height = 138;
+            CommandConsole.instance.isMinimized = false;
             CommandConsole.instance.initDOM();
         }
     });

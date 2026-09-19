@@ -1,6 +1,6 @@
-# 🎮 Panduan Template Game 2D (Skeleton / Wireframe Kosongan)
+# 🎮 Panduan The Game Template 2D (Phaser 4 Edition)
 
-Template game ini dirancang sebagai **Frame / Skeleton kosongan** (tanpa alur cerita, karakter khusus, ataupun aset dunia bawaan). Sangat cocok sebagai fondasi belajar untuk kelompok agar bebas berkreasi dari nol!
+Template game edukasi ini ditenagai oleh engine **Phaser 4** (`v4.2.1`) yang modern, cepat, dan ringan. Dirancang dengan UI tombol berbahasa Inggris yang bersih, sistem partikel debu lompatan & kemilau koin (*coin sparkles*), serta karakter *Villain Gatekeeper* yang siap dikembangkan oleh murid!
 
 ---
 

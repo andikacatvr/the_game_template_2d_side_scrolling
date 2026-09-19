@@ -6,6 +6,7 @@ import bgTitle from '../assets/bg_title.jpg';
 import titleLogo from '../assets/title_logo.png';
 import npcPortrait from '../assets/npc_portrait.png';
 import npcFireflyImg from '../assets/npc_firefly.png';
+import aboutFooterLogo from '../assets/the_game_template.png';
 
 // ===============================================================
 // 1. BOOT SCENE: TEXTURE GENERATOR (POLOSAN / SKELETON)
@@ -21,6 +22,8 @@ export class BootScene extends Phaser.Scene {
         this.load.image('title_logo', titleLogo);
         this.load.image('npc_portrait', npcPortrait);
         this.load.image('npc_firefly', npcFireflyImg);
+        this.load.image('about_footer_logo', aboutFooterLogo);
+        this.load.image('villain_template', '/VILLAIN_TEMPLATE.png');
 
         // Hong Kong Victoria Harbour Parallax Assets
         this.load.image('hk_layer_1_sky', '/assets/hongkong/layer_1_sky_500.png');

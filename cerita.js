@@ -9,7 +9,7 @@
 
 export const CONFIG_SKELETON = {
     // 1. Informasi Proyek
-    judulGame: "Game Petualangan 2D",
+    judulGame: "The Game Template",
     subJudul: "Dunia Eksplorasi Kreatif",
     namaKelompok: "Kelompok Juara Digital",
 

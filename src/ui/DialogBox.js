@@ -30,10 +30,10 @@ export class DialogBox {
             .setStrokeStyle(2, 0xa855f7)
             .setInteractive({ useHandCursor: true });
 
-        // Name badge container (di atas tepi kiri dialog box, di depan karakter)
-        this.nameBg = scene.add.rectangle(-230, -58, 160, 26, 0x1e1035, 1)
+        // Name badge container (di atas tengah dialog box)
+        this.nameBg = scene.add.rectangle(0, -58, 160, 26, 0x1e1035, 1)
             .setStrokeStyle(1.5, 0xc084fc);
-        this.nameText = scene.add.text(-230, -58, 'NPC', {
+        this.nameText = scene.add.text(0, -58, 'NPC', {
             fontSize: '12px', fontStyle: 'bold', fill: '#e9d5ff', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -43,7 +43,7 @@ export class DialogBox {
         });
 
         // Prompt advance hint
-        this.hintText = scene.add.text(310, 42, 'Tekan [E] atau Klik', {
+        this.hintText = scene.add.text(310, 42, 'Press [E] or Click', {
             fontSize: '10px', fontStyle: 'bold', fill: '#c084fc', fontFamily: FONT_BODY
         }).setOrigin(1, 0.5);
 
@@ -84,6 +84,10 @@ export class DialogBox {
         this.currentLineIdx = 0;
         this.onCompleteCallback = onComplete;
         this.nameText.setText(speakerName || 'Karakter');
+        if (this.nameBg && this.nameText) {
+            const badgeW = Math.max(140, this.nameText.width + 36);
+            this.nameBg.setSize(badgeW, 26);
+        }
 
         const pKey = portraitKey || 'npc_portrait';
         if (pKey && this.scene.textures.exists(pKey)) {

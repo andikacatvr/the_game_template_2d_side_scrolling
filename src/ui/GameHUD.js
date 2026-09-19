@@ -187,7 +187,7 @@ export class GameHUD {
         const qOverlay = s.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.65).setInteractive();
         const qBox = s.add.rectangle(0, 0, 460, 270, 0x0b1a32, 0.98).setStrokeStyle(2, 0x38bdf8);
 
-        const qHeader = s.add.text(0, -100, 'MISI & QUEST PETUALANGAN', {
+        const qHeader = s.add.text(0, -100, 'ACTIVE QUEST', {
             fontSize: '16px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -202,7 +202,7 @@ export class GameHUD {
         const qCloseBtn = s.add.rectangle(0, 95, 120, 32, 0x1e293b, 1)
             .setStrokeStyle(1.5, 0x64748b)
             .setInteractive({ useHandCursor: true });
-        const qCloseText = s.add.text(0, 95, 'Tutup [Q]', {
+        const qCloseText = s.add.text(0, 95, 'Close [Q]', {
             fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -216,7 +216,7 @@ export class GameHUD {
         const invOverlay = s.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.65).setInteractive();
         const invBox = s.add.rectangle(0, 0, 480, 280, 0x0b1a32, 0.98).setStrokeStyle(2, 0x153154);
 
-        const invHeader = s.add.text(0, -108, 'TAS INVENTARIS PETUALANG', {
+        const invHeader = s.add.text(0, -108, "ADVENTURER'S INVENTORY", {
             fontSize: '15px', fontStyle: 'bold', fill: '#fbbf24', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -225,7 +225,7 @@ export class GameHUD {
         const invCloseBtn = s.add.rectangle(0, 105, 120, 32, 0x1e293b, 1)
             .setStrokeStyle(1.5, 0x64748b)
             .setInteractive({ useHandCursor: true });
-        const invCloseText = s.add.text(0, 105, 'Tutup [I]', {
+        const invCloseText = s.add.text(0, 105, 'Close [I]', {
             fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -298,15 +298,15 @@ export class GameHUD {
             fontSize: '32px', fontStyle: 'bold', fill: '#ef4444', fontFamily: FONT_TITLE
         }).setOrigin(0.5);
 
-        const subtitle = s.add.text(0, 8, 'Karakter Anda telah kehabisan HP!', {
+        const subtitle = s.add.text(0, 8, 'Your character has run out of HP!', {
             fontSize: '13px', fill: '#fca5a5', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
-        // Tombol 1: Muat Checkpoint Terakhir
+        // Tombol 1: Load Last Checkpoint
         const reloadBtn = s.add.rectangle(0, 56, 240, 36, 0x2563eb, 0.95)
             .setStrokeStyle(1.5, 0x60a5fa)
             .setInteractive({ useHandCursor: true });
-        const reloadText = s.add.text(0, 56, 'Muat Checkpoint Terakhir', {
+        const reloadText = s.add.text(0, 56, 'Load Last Checkpoint', {
             fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -322,11 +322,11 @@ export class GameHUD {
             }
         });
 
-        // Tombol 2: Kembali ke Menu Utama
+        // Tombol 2: Return to Main Menu
         const menuBtn = s.add.rectangle(0, 102, 240, 34, 0x1e293b, 1)
             .setStrokeStyle(1.5, 0x64748b)
             .setInteractive({ useHandCursor: true });
-        const menuText = s.add.text(0, 102, 'Kembali ke Menu Utama', {
+        const menuText = s.add.text(0, 102, 'Return to Main Menu', {
             fontSize: '12px', fontStyle: 'bold', fill: '#cbd5e1', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -353,19 +353,19 @@ export class GameHUD {
         const overlay = s.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.85).setInteractive();
         const box = s.add.rectangle(0, 0, 480, 260, 0x071b26, 0.98).setStrokeStyle(2.5, 0x38bdf8);
 
-        const icon = s.add.text(0, -68, '[ SELESAI ]', { fontSize: '14px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_TITLE }).setOrigin(0.5);
-        const title = s.add.text(0, -32, 'PETUALANGAN SELESAI!', {
+        const icon = s.add.text(0, -68, '[ COMPLETE ]', { fontSize: '14px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_TITLE }).setOrigin(0.5);
+        const title = s.add.text(0, -32, 'ADVENTURE COMPLETE!', {
             fontSize: '24px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_TITLE
         }).setOrigin(0.5);
 
-        const desc = s.add.text(0, 10, 'Selamat! Kamu telah berhasil menjelajahi dunia,\nmenyelesaikan misi, dan menuntaskan template game ini!', {
+        const desc = s.add.text(0, 10, 'Congratulations! You explored the world,\ncompleted missions, and finished this game template!', {
             fontSize: '12px', fill: '#cbd5e1', align: 'center', wordWrap: { width: 420 }, lineSpacing: 4, fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
         const toMenuBtn = s.add.rectangle(0, 80, 220, 36, 0x2563eb, 0.95)
             .setStrokeStyle(1.5, 0x60a5fa)
             .setInteractive({ useHandCursor: true });
-        const toMenuText = s.add.text(0, 80, 'Kembali ke Menu Utama', {
+        const toMenuText = s.add.text(0, 80, 'Return to Main Menu', {
             fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 

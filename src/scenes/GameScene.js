@@ -4,6 +4,7 @@ import { DisplayManager } from '../utils/DisplayManager.js';
 import { SaveManager } from '../utils/SaveManager.js';
 import { FONT_TITLE, FONT_BODY, isMobileOrTablet } from '../utils/helpers.js';
 import { SettingsModal } from '../ui/SettingsModal.js';
+import { InventoryModal } from '../ui/InventoryModal.js';
 import { DialogBox } from '../ui/DialogBox.js';
 import { AudioManager } from '../utils/AudioManager.js';
 import { CameraZoomManager } from '../utils/CameraZoomManager.js';
@@ -283,7 +284,7 @@ export class GameScene extends Phaser.Scene {
         // Floating Prompt di atas NPC
         this.npcPrompt = this.add.container(npcX, npcY - 36).setDepth(25).setVisible(false);
         const npcPill = this.add.rectangle(0, 0, 80, 20, 0x1e1035, 0.95).setStrokeStyle(1.5, 0xc084fc);
-        const npcTxt = this.add.text(0, 0, '[E] Bicara', { fontSize: '10px', fontStyle: 'bold', fill: '#e9d5ff', fontFamily: FONT_BODY }).setOrigin(0.5);
+        const npcTxt = this.add.text(0, 0, '[E] Talk', { fontSize: '10px', fontStyle: 'bold', fill: '#e9d5ff', fontFamily: FONT_BODY }).setOrigin(0.5);
         this.npcPrompt.add([npcPill, npcTxt]);
         npcPill.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.handleInteract());
 
@@ -322,9 +323,43 @@ export class GameScene extends Phaser.Scene {
 
         this.portalPrompt = this.add.container(portalX, portalY - 51).setDepth(25).setVisible(false);
         const pPill = this.add.rectangle(0, 0, 130, 22, 0x0f172a, 0.95).setStrokeStyle(1.5, 0x38bdf8);
-        const pTxt = this.add.text(0, 0, '[E] Masuk Portal', { fontSize: '10px', fontStyle: 'bold', fill: '#e0f2fe', fontFamily: FONT_BODY }).setOrigin(0.5);
+        const pTxt = this.add.text(0, 0, '[E] Enter Portal', { fontSize: '10px', fontStyle: 'bold', fill: '#e0f2fe', fontFamily: FONT_BODY }).setOrigin(0.5);
         this.portalPrompt.add([pPill, pTxt]);
         pPill.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.handleInteract());
+
+        // 7. Villain Gatekeeper Character
+        if (this.textures.exists('villain_template')) {
+            const villainX = portalX - 95;
+            const villainY = portalY - 10;
+            const aura = this.add.circle(villainX, villainY, 26, 0xd946ef, 0.18).setDepth(11);
+            this.tweens.add({
+                targets: aura,
+                scale: 1.3,
+                alpha: 0.38,
+                duration: 1200,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+
+            this.villain = this.add.image(villainX, villainY, 'villain_template').setDepth(12);
+            this.villain.setDisplaySize(56, 56);
+            this.tweens.add({
+                targets: this.villain,
+                y: villainY - 6,
+                duration: 1500,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+
+            this.add.text(villainX, villainY - 35, 'Gatekeeper Shadow', {
+                fontSize: '10px',
+                fontStyle: 'bold',
+                fill: '#e879f9',
+                fontFamily: FONT_BODY
+            }).setOrigin(0.5).setDepth(12);
+        }
     }
 
     buildTiledGround(startX, y, tileCount = 25) {
@@ -442,6 +477,7 @@ export class GameScene extends Phaser.Scene {
             this.physics.add.overlap(this.player, this.items, (player, item) => {
                 if (item && item.active) {
                     const kData = item.coinData || { id: 'koin_emas', nama: 'Koin Emas Murni', icon: '' };
+                    this.createCoinSparkle(item.x, item.y);
                     item.disableBody(true, true);
                     item.destroy();
                     CodeInspector.record('coin');
@@ -615,7 +651,7 @@ export class GameScene extends Phaser.Scene {
 
         // Buat Popup Modals (Quest, Inventory, & Settings/Resolution)
         this.createQuestModalUI();
-        this.createInventoryModalUI();
+        this.inventoryModal = new InventoryModal(this);
         this.settingsModal = new SettingsModal(this, {
             isGameScene: true,
             isTouchEnabled: this.touchControlsEnabled,
@@ -718,7 +754,7 @@ export class GameScene extends Phaser.Scene {
         const reloadBtn = this.add.rectangle(0, 56, 240, 36, 0x2563eb, 0.95)
             .setStrokeStyle(1.5, 0x60a5fa)
             .setInteractive({ useHandCursor: true });
-        const reloadText = this.add.text(0, 56, 'Muat Checkpoint Terakhir', {
+        const reloadText = this.add.text(0, 56, 'Load Last Checkpoint', {
             fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -730,11 +766,11 @@ export class GameScene extends Phaser.Scene {
             this.scene.restart({ isLoadGame: true });
         });
 
-        // Tombol 2: Kembali ke Menu Utama
+        // Tombol 2: Return to Main Menu
         const menuBtn = this.add.rectangle(0, 102, 240, 34, 0x1e293b, 1)
             .setStrokeStyle(1.5, 0x64748b)
             .setInteractive({ useHandCursor: true });
-        const menuText = this.add.text(0, 102, 'Kembali ke Menu Utama', {
+        const menuText = this.add.text(0, 102, 'Return to Main Menu', {
             fontSize: '12px', fontStyle: 'bold', fill: '#cbd5e1', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -915,7 +951,7 @@ export class GameScene extends Phaser.Scene {
         const overlay = this.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.65).setInteractive();
         const box = this.add.rectangle(0, 0, 460, 270, 0x0b1a32, 0.98).setStrokeStyle(2, 0x38bdf8);
 
-        const header = this.add.text(0, -100, 'MISI & QUEST SKELETON', {
+        const header = this.add.text(0, -100, 'ACTIVE QUEST', {
             fontSize: '16px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -930,7 +966,7 @@ export class GameScene extends Phaser.Scene {
         const closeBtn = this.add.rectangle(0, 95, 120, 32, 0x1e293b, 1)
             .setStrokeStyle(1.5, 0x64748b)
             .setInteractive({ useHandCursor: true });
-        const closeText = this.add.text(0, 95, 'Tutup [Q]', {
+        const closeText = this.add.text(0, 95, 'Close [Q]', {
             fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -959,7 +995,7 @@ export class GameScene extends Phaser.Scene {
         const overlay = this.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.65).setInteractive();
         const box = this.add.rectangle(0, 0, 480, 280, 0x0b1a32, 0.98).setStrokeStyle(2, 0x153154);
 
-        const header = this.add.text(0, -108, 'TAS INVENTARIS SKELETON', {
+        const header = this.add.text(0, -108, 'ADVENTURER\'S INVENTORY', {
             fontSize: '15px', fontStyle: 'bold', fill: '#fbbf24', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -968,7 +1004,7 @@ export class GameScene extends Phaser.Scene {
         const closeBtn = this.add.rectangle(0, 105, 120, 32, 0x1e293b, 1)
             .setStrokeStyle(1.5, 0x64748b)
             .setInteractive({ useHandCursor: true });
-        const closeText = this.add.text(0, 105, 'Tutup [I]', {
+        const closeText = this.add.text(0, 105, 'Close [I]', {
             fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -979,14 +1015,15 @@ export class GameScene extends Phaser.Scene {
     }
 
     toggleInventoryModal(forceState) {
-        this.isInvOpen = (forceState !== undefined) ? forceState : !this.isInvOpen;
-        if (this.isInvOpen) {
+        const nextState = (forceState !== undefined) ? forceState : (this.inventoryModal ? !this.inventoryModal.isOpen() : !this.isInvOpen);
+        if (nextState) {
             this.toggleQuestModal(false);
             this.toggleSettingsModal(false);
-            this.renderInventorySlots();
-            this.updateModalsCenter();
+            if (this.inventoryModal) this.inventoryModal.show();
+        } else {
+            if (this.inventoryModal) this.inventoryModal.hide();
         }
-        this.invModal.setVisible(this.isInvOpen);
+        this.isInvOpen = this.inventoryModal ? this.inventoryModal.isOpen() : false;
     }
 
     renderInventorySlots() {
@@ -1063,11 +1100,11 @@ export class GameScene extends Phaser.Scene {
             fontSize: '12px', fill: '#cbd5e1', align: 'center', wordWrap: { width: 420 }, lineSpacing: 4, fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
-        // Tombol 1: Main Lagi
+        // Tombol 1: Play Again
         const replayBtn = this.add.rectangle(-90, 72, 140, 36, 0x2563eb, 0.95)
             .setStrokeStyle(1.5, 0x60a5fa)
             .setInteractive({ useHandCursor: true });
-        const replayText = this.add.text(-90, 72, 'Main Lagi', {
+        const replayText = this.add.text(-90, 72, 'Play Again', {
             fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -1076,11 +1113,11 @@ export class GameScene extends Phaser.Scene {
             this.scene.restart({ isNewGame: true });
         });
 
-        // Tombol 2: Menu Utama
+        // Tombol 2: Main Menu
         const menuBtn = this.add.rectangle(90, 72, 140, 36, 0x1e293b, 1)
             .setStrokeStyle(1.5, 0x64748b)
             .setInteractive({ useHandCursor: true });
-        const menuText = this.add.text(90, 72, 'Menu Utama', {
+        const menuText = this.add.text(90, 72, 'Main Menu', {
             fontSize: '12px', fontStyle: 'bold', fill: '#cbd5e1', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -1287,11 +1324,16 @@ export class GameScene extends Phaser.Scene {
             this.player.setVelocityX(0);
         }
 
-        if (jump && (this.player.body.touching.down || this.player.body.blocked.down)) {
+        const isGrounded = !!(this.player.body.touching.down || this.player.body.blocked.down);
+        if (jump && isGrounded) {
             this.player.setVelocityY(jumpSpeed);
             AudioManager.playJump();
             CodeInspector.record('jump');
+            this.createDustEffect(this.player.x, this.player.y + (this.player.displayHeight ? this.player.displayHeight / 2 : 22));
+        } else if (!this.wasGrounded && isGrounded && this.player.body.velocity.y >= 0) {
+            this.createDustEffect(this.player.x, this.player.y + (this.player.displayHeight ? this.player.displayHeight / 2 : 22));
         }
+        this.wasGrounded = isGrounded;
 
         // Update Live Code Inspector jika sedang aktif (60 FPS)
         if (CodeInspector.isActive()) {
@@ -1299,11 +1341,47 @@ export class GameScene extends Phaser.Scene {
                 left,
                 right,
                 jump,
-                grounded: this.player.body.touching.down || this.player.body.blocked.down,
+                grounded: isGrounded,
                 vx: this.player.body.velocity.x,
                 vy: this.player.body.velocity.y,
                 x: this.player.x,
                 y: this.player.y
+            });
+        }
+    }
+
+    createDustEffect(x, y) {
+        for (let i = 0; i < 6; i++) {
+            const dust = this.add.circle(x + Phaser.Math.Between(-10, 10), y - 2, Phaser.Math.Between(2, 4), 0xe2e8f0, 0.7).setDepth(11);
+            this.tweens.add({
+                targets: dust,
+                x: dust.x + Phaser.Math.Between(-16, 16),
+                y: dust.y - Phaser.Math.Between(4, 10),
+                scale: 0.2,
+                alpha: 0,
+                duration: Phaser.Math.Between(250, 400),
+                ease: 'Quad.easeOut',
+                onComplete: () => dust.destroy()
+            });
+        }
+    }
+
+    createCoinSparkle(x, y) {
+        const colors = [0xfef08a, 0xfacc15, 0xffffff, 0xfde047];
+        for (let i = 0; i < 10; i++) {
+            const col = colors[i % colors.length];
+            const p = this.add.circle(x, y, Phaser.Math.Between(2, 4), col, 1).setDepth(20);
+            const angle = (i / 10) * Math.PI * 2 + Phaser.Math.FloatBetween(-0.2, 0.2);
+            const dist = Phaser.Math.Between(15, 34);
+            this.tweens.add({
+                targets: p,
+                x: x + Math.cos(angle) * dist,
+                y: y + Math.sin(angle) * dist,
+                scale: 0,
+                alpha: 0,
+                duration: Phaser.Math.Between(350, 500),
+                ease: 'Cubic.easeOut',
+                onComplete: () => p.destroy()
             });
         }
     }
