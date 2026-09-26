@@ -731,69 +731,6 @@ export class ProjectHubModal {
                         </button>
                     </div>
                 </div>
-
-                <!-- Row 2: Crystal Cave (Arsip / Scene 3 Alternatif) -->
-                <div class="gt-uhub-row" data-name="gua kristal purba crystal cave">
-                    <div class="gt-uhub-col-name">
-                        <span class="gt-uhub-project-name">
-                            <span>💎</span> Gua Kristal Purba (Crystal Cave)
-                        </span>
-                        <span class="gt-uhub-project-path">src/scenes/CrystalCaveScene.js</span>
-                    </div>
-                    <div>
-                        <span class="gt-uhub-badge-tag gt-tag-sample">Dungeon Canvas</span>
-                    </div>
-                    <div class="gt-uhub-badge-platform">
-                        <span>Tersedia</span>
-                    </div>
-                    <div class="gt-uhub-col-action">
-                        <button class="gt-uhub-btn-open" id="btn-open-crystal">
-                            <span>▶</span> Open World
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Row 3: Tutorial Lembah Salju -->
-                <div class="gt-uhub-row" data-name="lembah salju level 1">
-                    <div class="gt-uhub-col-name">
-                        <span class="gt-uhub-project-name">
-                            <span>🏔️</span> Level 1: Lembah Bersalju
-                        </span>
-                        <span class="gt-uhub-project-path">src/scenes/GameScene.js</span>
-                    </div>
-                    <div>
-                        <span class="gt-uhub-badge-tag gt-tag-tutorial">Tutorial Sample</span>
-                    </div>
-                    <div class="gt-uhub-badge-platform">
-                        <span>Bawaan</span>
-                    </div>
-                    <div class="gt-uhub-col-action">
-                        <button class="gt-uhub-btn-open" id="btn-open-gamescene">
-                            <span>▶</span> Play Sample
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Row 4: Showcase Hong Kong -->
-                <div class="gt-uhub-row" data-name="teluk hong kong level 2">
-                    <div class="gt-uhub-col-name">
-                        <span class="gt-uhub-project-name">
-                            <span>🌃</span> Level 2: Teluk Hong Kong
-                        </span>
-                        <span class="gt-uhub-project-path">src/scenes/HongKongScene.js</span>
-                    </div>
-                    <div>
-                        <span class="gt-uhub-badge-tag gt-tag-sample">Showcase Level</span>
-                    </div>
-                    <div class="gt-uhub-badge-platform">
-                        <span>Bawaan</span>
-                    </div>
-                    <div class="gt-uhub-col-action">
-                        <button class="gt-uhub-btn-open" id="btn-open-scene2">
-                            <span>▶</span> Play Sample
-                        </button>
-                    </div>
-                </div>
             </div>
         `;
 
@@ -810,15 +747,6 @@ export class ProjectHubModal {
         // Launch buttons
         container.querySelector('#btn-open-scene3').addEventListener('click', () => {
             this.launchScene('Scene3');
-        });
-        container.querySelector('#btn-open-crystal').addEventListener('click', () => {
-            this.launchScene('Scene3');
-        });
-        container.querySelector('#btn-open-gamescene').addEventListener('click', () => {
-            this.launchScene('GameScene');
-        });
-        container.querySelector('#btn-open-scene2').addEventListener('click', () => {
-            this.launchScene('Scene2');
         });
 
         // New Project Wizard
