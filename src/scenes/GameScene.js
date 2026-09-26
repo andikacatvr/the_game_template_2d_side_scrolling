@@ -298,20 +298,11 @@ export class GameScene extends Phaser.Scene {
         this.portalLockedMsg = portalConfig.pesanTerkunci || 'Gerbang Terkunci! Kamu harus mengambil koin terlebih dahulu.';
         this.portalOpenMsg = portalConfig.pesanTerbuka || 'Gerbang Terbuka!';
 
+        // Portal Polos ke Scene 2 (Bersih, tanpa musuh penghalang)
         this.portalScene2 = this.add.container(portalX, portalY).setDepth(12);
         const pRing = this.add.circle(0, 0, 24, 0x38bdf8, 0.25).setStrokeStyle(2, 0x38bdf8);
         const pIcon = this.add.text(0, 0, 'O', { fontSize: '18px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_BODY }).setOrigin(0.5);
-
-        const targetMapObj = Array.isArray(DAFTAR_MAP) && DAFTAR_MAP.find(m => m.id === this.portalTargetMapId);
-        let portalLabel = 'Gerbang Selesai';
-        if (this.portalTargetMapId === 'Scene2' || this.portalTargetMapId === 'HongKongScene') {
-            portalLabel = 'Ke Teluk Hong Kong →';
-        } else if (targetMapObj) {
-            portalLabel = `Ke ${targetMapObj.nama} →`;
-        } else if (this.portalTargetMapId) {
-            portalLabel = 'Ke Level Selanjutnya →';
-        }
-        const pLabel = this.add.text(0, -34, portalLabel, { fontSize: '11px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_BODY }).setOrigin(0.5);
+        const pLabel = this.add.text(0, -34, 'Ke Scene 2 →', { fontSize: '11px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_BODY }).setOrigin(0.5);
         this.portalScene2.add([pRing, pIcon, pLabel]);
         this.tweens.add({
             targets: pRing,
@@ -323,43 +314,9 @@ export class GameScene extends Phaser.Scene {
 
         this.portalPrompt = this.add.container(portalX, portalY - 51).setDepth(25).setVisible(false);
         const pPill = this.add.rectangle(0, 0, 130, 22, 0x0f172a, 0.95).setStrokeStyle(1.5, 0x38bdf8);
-        const pTxt = this.add.text(0, 0, '[E] Enter Portal', { fontSize: '10px', fontStyle: 'bold', fill: '#e0f2fe', fontFamily: FONT_BODY }).setOrigin(0.5);
+        const pTxt = this.add.text(0, 0, '[E] Masuk Scene 2', { fontSize: '10px', fontStyle: 'bold', fill: '#e0f2fe', fontFamily: FONT_BODY }).setOrigin(0.5);
         this.portalPrompt.add([pPill, pTxt]);
         pPill.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.handleInteract());
-
-        // 7. Villain Gatekeeper Character
-        if (this.textures.exists('villain_template')) {
-            const villainX = portalX - 95;
-            const villainY = portalY - 10;
-            const aura = this.add.circle(villainX, villainY, 26, 0xd946ef, 0.18).setDepth(11);
-            this.tweens.add({
-                targets: aura,
-                scale: 1.3,
-                alpha: 0.38,
-                duration: 1200,
-                yoyo: true,
-                repeat: -1,
-                ease: 'Sine.easeInOut'
-            });
-
-            this.villain = this.add.image(villainX, villainY, 'villain_template').setDepth(12);
-            this.villain.setDisplaySize(56, 56);
-            this.tweens.add({
-                targets: this.villain,
-                y: villainY - 6,
-                duration: 1500,
-                yoyo: true,
-                repeat: -1,
-                ease: 'Sine.easeInOut'
-            });
-
-            this.add.text(villainX, villainY - 35, 'Gatekeeper Shadow', {
-                fontSize: '10px',
-                fontStyle: 'bold',
-                fill: '#e879f9',
-                fontFamily: FONT_BODY
-            }).setOrigin(0.5).setDepth(12);
-        }
     }
 
     buildTiledGround(startX, y, tileCount = 25) {
@@ -1237,20 +1194,16 @@ export class GameScene extends Phaser.Scene {
         const pY = this.portalY !== undefined ? this.portalY : 396;
         const distPortal = Phaser.Math.Distance.Between(this.player.x, this.player.y, pX, pY);
         if (distPortal < 80) {
-            if (!this.quest.selesai) {
-                AudioManager.playClick();
-                this.showFloatingToast(this.portalLockedMsg || 'Gerbang Terkunci! Ambil Koin terlebih dahulu.', 0xef4444);
-                return;
-            }
             AudioManager.playClick();
 
-            // Cek jika targetnya adalah Scene2 / Hong Kong
-            if (this.portalTargetMapId === 'Scene2' || this.portalTargetMapId === 'HongKongScene') {
-                this.showFloatingToast(this.portalOpenMsg || 'Gerbang Terbuka! Berlayar ke Teluk Hong Kong...', 0x38bdf8);
+            // Masuk langsung ke Scene 2 (Polos tanpa syarat terkunci)
+            if (this.portalTargetMapId === 'Scene2' || this.portalTargetMapId === 'HongKongScene' || !this.portalTargetMapId) {
+                this.showFloatingToast('Berlayar ke Scene 2...', 0x38bdf8);
                 this.scene.start('Scene2', {
                     hp: this.hp,
                     maxHp: this.maxHp,
-                    inventory: this.inventory
+                    inventory: this.inventory,
+                    collectedItemIds: this.collectedItemIds
                 });
                 return;
             }

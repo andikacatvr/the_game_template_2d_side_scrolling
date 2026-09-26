@@ -12,6 +12,7 @@
 // ===============================================================
 
 import { CodeInspector } from './CodeInspector.js';
+import { SceneTemplates } from './SceneTemplates.js';
 import { CONFIG_SKELETON } from '../../cerita.js';
 
 export class CommandConsole {
@@ -372,6 +373,58 @@ export class CommandConsole {
                     border: 1px solid #163847;
                 }
 
+                .gt-btn-copy-code {
+                    position: absolute;
+                    top: 8px;
+                    right: 8px;
+                    background: rgba(14, 116, 144, 0.9);
+                    border: 1px solid rgba(56, 189, 248, 0.6);
+                    border-radius: 6px;
+                    color: #f0f9ff;
+                    padding: 5px 12px;
+                    font-size: 12px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    z-index: 10;
+                    transition: all 0.15s ease;
+                    font-family: 'Nunito', sans-serif;
+                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+                }
+
+                .gt-btn-copy-code:hover {
+                    background: #0284c7;
+                    border-color: #38bdf8;
+                    transform: scale(1.05);
+                }
+
+                .gt-builder-chips {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                    margin-top: 10px;
+                }
+
+                .gt-chip-btn {
+                    background: rgba(15, 23, 42, 0.85);
+                    border: 1px solid rgba(56, 189, 248, 0.35);
+                    color: #bae6fd;
+                    padding: 6px 12px;
+                    border-radius: 8px;
+                    font-size: 12.5px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    font-family: 'Nunito', sans-serif;
+                    transition: all 0.15s ease;
+                }
+
+                .gt-chip-btn:hover {
+                    background: #0284c7;
+                    color: #ffffff;
+                    border-color: #38bdf8;
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 10px rgba(2, 132, 199, 0.35);
+                }
+
                 /* =============================================================== */
                 /* =============================================================== */
                 /* INPUT BAR                                                        */
@@ -401,6 +454,9 @@ export class CommandConsole {
                     font-family: inherit;
                     box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
                     text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+                    user-select: text !important;
+                    -webkit-user-select: text !important;
+                    touch-action: auto !important;
                 }
 
                 .gt-input:focus {
@@ -580,6 +636,7 @@ export class CommandConsole {
                         <span class="gt-header-title">CHAT &amp; COMMAND CONSOLE</span>
                     </div>
                     <div class="gt-header-actions">
+                        <button class="gt-btn-tool" id="gt-btn-quick-create" style="background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%); font-weight: 800;" title="Buka World & Scene Builder">+/create</button>
                         <button class="gt-btn-tool" id="gt-btn-quick-inspect" style="background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);">/inspect</button>
                         <button class="gt-btn-tool" id="gt-btn-quick-learn">/learn</button>
                         <button class="gt-btn-tool" id="gt-btn-quick-help">/help</button>
@@ -626,6 +683,10 @@ export class CommandConsole {
         this.container.querySelector('#gt-btn-quick-inspect').addEventListener('click', () => {
             if (this.isMinimized) this.toggleMinimize(false);
             this.runCommand('/inspect');
+        });
+        this.container.querySelector('#gt-btn-quick-create').addEventListener('click', () => {
+            if (this.isMinimized) this.toggleMinimize(false);
+            this.runCommand('/create');
         });
         this.container.querySelector('#gt-btn-quick-help').addEventListener('click', () => {
             if (this.isMinimized) this.toggleMinimize(false);
@@ -977,8 +1038,17 @@ export class CommandConsole {
         });
 
         // Key listener khusus di dalam input bar
+        const stopLeak = (e) => {
+            e.stopPropagation();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        };
+
+        this.inputEl.addEventListener('keyup', stopLeak);
+        this.inputEl.addEventListener('keypress', stopLeak);
+
         this.inputEl.addEventListener('keydown', (e) => {
-            e.stopPropagation(); // Cegah event bocor ke karakter Phaser!
+            e.stopPropagation();
+            if (e.stopImmediatePropagation) e.stopImmediatePropagation();
 
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -995,6 +1065,20 @@ export class CommandConsole {
                 this.togglePhaserInput(true);
             }
         });
+
+        // Tangkap di Capture Phase pada window agar Phaser tidak mem-prevent default pada Space & tombol lainnya
+        window.addEventListener('keydown', (e) => {
+            if (document.activeElement === this.inputEl || (e.target && e.target === this.inputEl)) {
+                if (window.__templateGame && window.__templateGame.input && window.__templateGame.input.keyboard) {
+                    window.__templateGame.input.keyboard.preventDefault = false;
+                }
+                // Jika tombol Space ditekan di input, pastikan event tidak di-block
+                if (e.code === 'Space' || e.key === ' ') {
+                    e.stopPropagation();
+                    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+                }
+            }
+        }, true);
 
         // Saat input fokus (pemain mulai mengetik): matikan kontrol karakter agar WASD tidak bikin lari/lompat
         this.inputEl.addEventListener('focus', () => {
@@ -1020,8 +1104,24 @@ export class CommandConsole {
     }
 
     togglePhaserInput(enabled) {
-        if (window.__templateGame && window.__templateGame.input && window.__templateGame.input.keyboard) {
-            window.__templateGame.input.keyboard.enabled = enabled;
+        if (window.__templateGame) {
+            if (window.__templateGame.input && window.__templateGame.input.keyboard) {
+                window.__templateGame.input.keyboard.enabled = enabled;
+                window.__templateGame.input.keyboard.preventDefault = enabled;
+            }
+            if (window.__templateGame.scene && window.__templateGame.scene.scenes) {
+                window.__templateGame.scene.scenes.forEach(scene => {
+                    if (scene && scene.input && scene.input.keyboard) {
+                        scene.input.keyboard.enabled = enabled;
+                        if (!enabled) {
+                            scene.input.keyboard.disableGlobalCapture?.();
+                            scene.input.keyboard.resetKeys?.();
+                        } else {
+                            scene.input.keyboard.enableGlobalCapture?.();
+                        }
+                    }
+                });
+            }
         }
     }
 
@@ -1239,6 +1339,9 @@ export class CommandConsole {
             case 'inspect':
                 this.cmdInspect();
                 break;
+            case 'create':
+                this.cmdCreate(args[0]);
+                break;
             case 'help':
                 this.cmdHelp();
                 break;
@@ -1276,9 +1379,10 @@ export class CommandConsole {
     // ===============================================================
     cmdHelp() {
         this.logInfo('<b>--- DAFTAR PERINTAH GAME CONSOLE ---</b>');
+        this.logInfo('• <span class="gt-c-yellow">/create [elemen]</span> : Ambil template kode game (scene, tile, player, npc, dialogue, quest, obstacle, parallax, cutscene, portal).');
         this.logInfo('• <span class="gt-c-yellow">/inspect</span> : Melihat kode logika game (jalan/lompat) berjalan secara real-time!');
         this.logInfo('• <span class="gt-c-yellow">/learn [topik]</span> : Melihat kode logika game (jump, move, npc, coin, hazard, zoom, portal).');
-        this.logInfo('• <span class="gt-c-yellow">/tp &lt;scene&gt;</span> : Teleport scene (GameScene, Scene2, Scene3, Scene4, Scene5, DungeonScene, dll).');
+        this.logInfo('• <span class="gt-c-yellow">/tp &lt;scene&gt;</span> : Teleport scene (GameScene, Scene2, Scene3, TitleScene, dll).');
         this.logInfo('• <span class="gt-c-yellow">/speed &lt;angka&gt;</span> : Ubah kecepatan lari karakter secara live (contoh: /speed 350).');
         this.logInfo('• <span class="gt-c-yellow">/jump &lt;angka&gt;</span> : Ubah kekuatan lompat karakter secara live (contoh: /jump 450).');
         this.logInfo('• <span class="gt-c-yellow">/hp &lt;angka&gt;</span> : Atur jumlah HP karakter saat ini.');
@@ -1293,6 +1397,108 @@ export class CommandConsole {
         } else {
             this.logInfo('Live Code Inspector DINONAKTIFKAN.');
         }
+    }
+
+    cmdCreate(topic) {
+        if (!topic) {
+            // Tampilkan Menu Pilihan Interaktif Seluruh Template
+            const card = document.createElement('div');
+            card.className = 'gt-code-card';
+            card.innerHTML = `
+                <div class="gt-code-header" style="color: #38bdf8; font-size: 15px;">
+                    <span>🛠️ <b>WORLD &amp; SCENE BUILDER</b></span>
+                    <span style="font-size: 11px; background: rgba(56, 189, 248, 0.2); color: #7dd3fc; padding: 2px 6px; border-radius: 4px;">/create</span>
+                </div>
+                <div class="gt-code-desc" style="color: #e2e8f0; font-size: 13.5px; margin: 6px 0 10px 0;">
+                    Pilih elemen template yang ingin kamu bangun. Klik salah satu tombol di bawah atau ketik <code>/create &lt;nama&gt;</code>:
+                </div>
+                <div class="gt-builder-chips">
+                    <button class="gt-chip-btn" data-create="scene">🌍 1 File Scene</button>
+                    <button class="gt-chip-btn" data-create="tile">🧱 Tile / Lantai</button>
+                    <button class="gt-chip-btn" data-create="player">🏃 Sprite Player</button>
+                    <button class="gt-chip-btn" data-create="npc">🧙 Karakter NPC</button>
+                    <button class="gt-chip-btn" data-create="dialogue">💬 Dialog Multi-NPC</button>
+                    <button class="gt-chip-btn" data-create="quest">📋 Misi / Quest</button>
+                    <button class="gt-chip-btn" data-create="obstacle">⚠️ Duri / Rintangan</button>
+                    <button class="gt-chip-btn" data-create="parallax">🌄 Parallax Background</button>
+                    <button class="gt-chip-btn" data-create="cutscene">🎬 Cutscene Kamera</button>
+                    <button class="gt-chip-btn" data-create="portal">🌀 Portal Aman Hub</button>
+                </div>
+            `;
+
+            // Bind click event untuk setiap chip tombol
+            card.querySelectorAll('.gt-chip-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const target = btn.getAttribute('data-create');
+                    this.runCommand(`/create ${target}`);
+                });
+            });
+
+            this.appendLog(card);
+            return;
+        }
+
+        const data = SceneTemplates.get(topic);
+        if (!data) {
+            const catalog = SceneTemplates.getCatalog().map(c => `<b>${c.key}</b>`).join(', ');
+            this.logInfo(`Template "<b>${this.escapeHTML(topic)}</b>" tidak ditemukan.`);
+            this.logInfo(`Pilihan yang tersedia: ${catalog}`);
+            return;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'gt-code-card';
+        card.innerHTML = `
+            <div class="gt-code-header">
+                <span>${data.icon} ${data.title}</span>
+                <span style="font-size: 11px; background: rgba(56, 189, 248, 0.25); color: #7dd3fc; padding: 2px 6px; border-radius: 4px;">${data.badge}</span>
+            </div>
+            <div class="gt-code-desc">
+                <div>${data.description}</div>
+                <div style="margin-top: 5px; font-size: 12px; color: #fbbf24;">
+                    📌 <b>Lokasi Paste:</b> ${this.escapeHTML(data.targetPlace)} (<code>${this.escapeHTML(data.targetFile)}</code>)
+                </div>
+            </div>
+            <div style="position: relative;">
+                <button class="gt-btn-copy-code" title="Salin kode ke Clipboard">📋 Salin Kode</button>
+                <pre class="gt-code-content"><code>${this.escapeHTML(data.code)}</code></pre>
+            </div>
+        `;
+
+        const copyBtn = card.querySelector('.gt-btn-copy-code');
+        copyBtn.addEventListener('click', async () => {
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(data.code);
+                } else {
+                    const ta = document.createElement('textarea');
+                    ta.value = data.code;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    ta.remove();
+                }
+                copyBtn.innerHTML = '✓ Tersalin!';
+                copyBtn.style.background = '#15803d';
+                copyBtn.style.borderColor = '#22c55e';
+                setTimeout(() => {
+                    copyBtn.innerHTML = '📋 Salin Kode';
+                    copyBtn.style.background = '';
+                    copyBtn.style.borderColor = '';
+                }, 2000);
+            } catch (err) {
+                const ta = document.createElement('textarea');
+                ta.value = data.code;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                ta.remove();
+                copyBtn.innerHTML = '✓ Tersalin!';
+                setTimeout(() => { copyBtn.innerHTML = '📋 Salin Kode'; }, 2000);
+            }
+        });
+
+        this.appendLog(card);
     }
 
     cmdLearn(topic) {
@@ -1319,7 +1525,7 @@ export class CommandConsole {
 
     cmdTeleport(sceneName) {
         if (!sceneName) {
-            this.logInfo('Gunakan: <span class="gt-c-yellow">/tp &lt;nama_scene&gt;</span> (Pilihan: GameScene, Scene2, hongkong, scene1, scene2)');
+            this.logInfo('Gunakan: <span class="gt-c-yellow">/tp &lt;nama_scene&gt;</span> (Pilihan: GameScene, Scene2, Scene3, hongkong, cave, title)');
             return;
         }
 
@@ -1329,6 +1535,10 @@ export class CommandConsole {
             'scene2': 'Scene2',
             'hongkong': 'Scene2',
             'hk': 'Scene2',
+            'scene3': 'Scene3',
+            'cave': 'Scene3',
+            'kristal': 'Scene3',
+            'crystal': 'Scene3',
             'title': 'TitleScene',
             'titlescene': 'TitleScene'
         };

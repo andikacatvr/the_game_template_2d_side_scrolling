@@ -876,21 +876,39 @@ export class HongKongScene extends Phaser.Scene {
         const cy = this.scale ? this.scale.height / 2 : 225;
         this.victoryModal = this.add.container(cx, cy).setDepth(60).setVisible(false).setScrollFactor(0);
         const overlay = this.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.8).setInteractive();
-        const box = this.add.rectangle(0, 0, 480, 260, 0x062118, 0.98).setStrokeStyle(2.5, 0x10b981);
+        const box = this.add.rectangle(0, 0, 480, 290, 0x062118, 0.98).setStrokeStyle(2.5, 0x10b981);
 
-        const icon = this.add.text(0, -68, '[ SELESAI ]', { fontSize: '14px', fontStyle: 'bold', fill: '#34d399', fontFamily: FONT_TITLE }).setOrigin(0.5);
-        const title = this.add.text(0, -32, 'MISI SELESAI!', {
+        const icon = this.add.text(0, -82, '[ SELESAI ]', { fontSize: '14px', fontStyle: 'bold', fill: '#34d399', fontFamily: FONT_TITLE }).setOrigin(0.5);
+        const title = this.add.text(0, -48, 'MISI SELESAI!', {
             fontSize: '28px', fontStyle: 'bold', fill: '#34d399', fontFamily: FONT_TITLE
         }).setOrigin(0.5);
 
-        const subtitle = this.add.text(0, 10, 'Kamu berhasil menyeberangi Victoria Harbour!', {
+        const subtitle = this.add.text(0, -10, 'Kamu berhasil menyeberangi Victoria Harbour!', {
             fontSize: '13px', fill: '#a7f3d0', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
-        const replayBtn = this.add.rectangle(0, 60, 220, 36, 0x059669, 0.95)
+        // Tombol Lanjut ke Scene 3: Gua Kristal
+        const nextSceneBtn = this.add.rectangle(0, 32, 260, 34, 0x7c3aed, 0.95)
+            .setStrokeStyle(1.5, 0xc084fc)
+            .setInteractive({ useHandCursor: true });
+        const nextSceneText = this.add.text(0, 32, 'Menuju Sandbox World (Scene 3) 🚀', {
+            fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
+        }).setOrigin(0.5);
+
+        nextSceneBtn.on('pointerdown', () => {
+            this.victoryModal.setVisible(false);
+            this.scene.start('Scene3', {
+                hp: this.hp,
+                maxHp: this.maxHp,
+                inventory: this.inventory,
+                collectedItemIds: this.collectedItemIds
+            });
+        });
+
+        const replayBtn = this.add.rectangle(0, 74, 260, 32, 0x059669, 0.95)
             .setStrokeStyle(1.5, 0x34d399)
             .setInteractive({ useHandCursor: true });
-        const replayText = this.add.text(0, 60, 'Back to Scene 1', {
+        const replayText = this.add.text(0, 74, 'Kembali ke Scene 1', {
             fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -899,10 +917,10 @@ export class HongKongScene extends Phaser.Scene {
             this.scene.start('GameScene');
         });
 
-        const menuBtn = this.add.rectangle(0, 106, 220, 32, 0x1e293b, 0.95)
+        const menuBtn = this.add.rectangle(0, 114, 260, 30, 0x1e293b, 0.95)
             .setStrokeStyle(1.5, 0x64748b)
             .setInteractive({ useHandCursor: true });
-        const menuText = this.add.text(0, 106, 'Main Menu', {
+        const menuText = this.add.text(0, 114, 'Menu Utama', {
             fontSize: '11px', fill: '#94a3b8', fontFamily: FONT_BODY
         }).setOrigin(0.5);
 
@@ -912,7 +930,7 @@ export class HongKongScene extends Phaser.Scene {
             this.scene.start('TitleScene');
         });
 
-        this.victoryModal.add([overlay, box, icon, title, subtitle, replayBtn, replayText, menuBtn, menuText]);
+        this.victoryModal.add([overlay, box, icon, title, subtitle, nextSceneBtn, nextSceneText, replayBtn, replayText, menuBtn, menuText]);
     }
 
     updateModalsCenter(zoom) {

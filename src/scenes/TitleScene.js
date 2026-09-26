@@ -3,6 +3,7 @@ import { CONFIG_SKELETON } from '../../cerita.js';
 import { SaveManager } from '../utils/SaveManager.js';
 import { FONT_TITLE, FONT_BODY } from '../utils/helpers.js';
 import { SettingsModal } from '../ui/SettingsModal.js';
+import { ProjectHubModal } from '../ui/ProjectHubModal.js';
 import { CommandConsole } from '../utils/CommandConsole.js';
 
 // ===============================================================
@@ -54,32 +55,40 @@ export class TitleScene extends Phaser.Scene {
         // ─────────────────────────────────────────────────────────
         const rightCenterX = centerX + 178; // x = 578 (Margin kanan = 107px)
         const btnW = 230; // Diperlebar agar seimbang dengan logo dan sisi kanan kokoh
-        const btnH = 40;  // Tinggi presisi agar total rentang 3 tombol persis sama dengan logo
-        const btnSpacing = 47;
+        const btnH = 34;  // Tinggi presisi agar 4 tombol tersusun seimbang dengan logo
+        const btnSpacing = 42;
 
-        // Tombol 1: Start (Puncak atas sejajar pucuk huruf "The" logo)
-        const btnStart = this._makeButton(rightCenterX, centerY - btnSpacing,
-            'Start', '#0f172a', 0xffffff, 0x0f172a, true,
+        // Tombol 1: Play Tutorial (Level 1 Salju -> Level 2 Hong Kong)
+        const btnTutorial = this._makeButton(rightCenterX, centerY - btnSpacing * 1.5,
+            'Play Tutorial', '#0f172a', 0xffffff, 0x0f172a, true,
             '', () => {
                 this._transitionTo('GameScene', { isNewGame: true });
-            }, btnW, 0xf1f5f9, btnH, '15px'
+            }, btnW, 0xf1f5f9, btnH, '14px'
         );
 
-        // Tombol 2: Settings (Tepat di tengah centerY sejajar kata "for")
-        const btnSettings = this._makeButton(rightCenterX, centerY,
+        // Tombol 2: My Projects (World Hub ala Unity Hub / VS Code)
+        const btnProjects = this._makeButton(rightCenterX, centerY - btnSpacing * 0.5,
+            'My Projects', '#ffffff', 0x0284c7, 0x0f172a, true,
+            '', () => {
+                this.projectHubModal.show();
+            }, btnW, 0x0ea5e9, btnH, '14px'
+        );
+
+        // Tombol 3: Settings
+        const btnSettings = this._makeButton(rightCenterX, centerY + btnSpacing * 0.5,
             'Settings', '#ffffff', 0x0f172a, 0x0f172a, true,
-            '', () => this.settingsModal.show(), btnW, 0x1e293b, btnH, '15px'
+            '', () => this.settingsModal.show(), btnW, 0x1e293b, btnH, '14px'
         );
 
-        // Tombol 3: Quit (Dasar bawah sejajar dasar huruf "Education", dengan border hitam)
-        const btnQuit = this._makeButton(rightCenterX, centerY + btnSpacing,
+        // Tombol 4: Quit
+        const btnQuit = this._makeButton(rightCenterX, centerY + btnSpacing * 1.5,
             'Quit', '#ffffff', 0xef4444, 0x000000, true,
-            '', () => this._confirmQuit(), btnW, 0xdc2626, btnH, '15px'
+            '', () => this._confirmQuit(), btnW, 0xdc2626, btnH, '14px'
         );
 
         // Animasi melayang lembut bersamaan (Sinkron agar selalu sejajar)
         this.tweens.add({
-            targets: [titleContainer, btnStart, btnSettings, btnQuit],
+            targets: [titleContainer, btnTutorial, btnProjects, btnSettings, btnQuit],
             y: '-=6',
             duration: 2500,
             yoyo: true,
@@ -135,6 +144,7 @@ export class TitleScene extends Phaser.Scene {
         this.settingsModal = new SettingsModal(this, {
             onDeleteSave: () => this._toggleDeleteModal(true)
         });
+        this.projectHubModal = new ProjectHubModal(this);
     }
 
     // ─────────────────────────────────────────────────────────

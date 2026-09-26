@@ -585,5 +585,160 @@ export class BootScene extends Phaser.Scene {
         pearlG.fillStyle(0xffffff, 1);
         pearlG.fillCircle(12, 11, 4);
         pearlG.generateTexture('hk_pearl_item', 28, 28);
+
+        // ===============================================================
+        // SCENE 3: CRYSTAL CAVE PROCEDURAL TEXTURES
+        // ===============================================================
+        
+        // 10. Crystal Cave Ground Tile (32x32)
+        const caveGroundG = this.make.graphics({ x: 0, y: 0, add: false });
+        caveGroundG.fillStyle(0x130924, 1);
+        caveGroundG.fillRect(0, 0, 32, 32);
+        // Crystal border top
+        caveGroundG.fillStyle(0x4c1d95, 1);
+        caveGroundG.fillRect(0, 0, 32, 6);
+        caveGroundG.fillStyle(0xa855f7, 0.9);
+        caveGroundG.fillRect(0, 0, 32, 2);
+        // Subtle crystal flecks
+        caveGroundG.fillStyle(0xc084fc, 0.8);
+        caveGroundG.fillRect(4, 2, 3, 2);
+        caveGroundG.fillRect(16, 1, 4, 2);
+        caveGroundG.fillRect(26, 2, 3, 2);
+        caveGroundG.fillStyle(0x2e1065, 1);
+        caveGroundG.fillRect(6, 14, 5, 4);
+        caveGroundG.fillRect(20, 20, 6, 4);
+        caveGroundG.fillStyle(0x38bdf8, 0.5);
+        caveGroundG.fillRect(7, 15, 2, 2);
+        caveGroundG.generateTexture('crystal_tile_cave_ground', 32, 32);
+
+        // 11. Crystal Cluster Purple (Amethyst - 32x48)
+        const shardG = this.make.graphics({ x: 0, y: 0, add: false });
+        // Main crystal spire
+        shardG.fillStyle(0x9333ea, 0.9);
+        shardG.beginPath();
+        shardG.moveTo(16, 2);
+        shardG.lineTo(26, 18);
+        shardG.lineTo(24, 46);
+        shardG.lineTo(8, 46);
+        shardG.lineTo(6, 18);
+        shardG.closePath();
+        shardG.fillPath();
+        // Inner highlight facet
+        shardG.fillStyle(0xd8b4fe, 0.85);
+        shardG.beginPath();
+        shardG.moveTo(16, 2);
+        shardG.lineTo(20, 18);
+        shardG.lineTo(19, 46);
+        shardG.lineTo(16, 46);
+        shardG.closePath();
+        shardG.fillPath();
+        // Left side crystal
+        shardG.fillStyle(0x7e22ce, 0.95);
+        shardG.beginPath();
+        shardG.moveTo(8, 16);
+        shardG.lineTo(14, 28);
+        shardG.lineTo(10, 46);
+        shardG.lineTo(2, 46);
+        shardG.lineTo(3, 26);
+        shardG.closePath();
+        shardG.fillPath();
+        // Sparkle tip
+        shardG.fillStyle(0xffffff, 1);
+        shardG.fillCircle(16, 3, 2);
+        shardG.generateTexture('crystal_cluster_purple', 32, 48);
+
+        // 12. Crystal Cluster Cyan (Celestial - 32x48)
+        const cyanShardG = this.make.graphics({ x: 0, y: 0, add: false });
+        cyanShardG.fillStyle(0x0284c7, 0.9);
+        cyanShardG.beginPath();
+        cyanShardG.moveTo(16, 4);
+        cyanShardG.lineTo(27, 20);
+        cyanShardG.lineTo(25, 46);
+        cyanShardG.lineTo(7, 46);
+        cyanShardG.lineTo(5, 20);
+        cyanShardG.closePath();
+        cyanShardG.fillPath();
+        cyanShardG.fillStyle(0x7dd3fc, 0.9);
+        cyanShardG.beginPath();
+        cyanShardG.moveTo(16, 4);
+        cyanShardG.lineTo(21, 20);
+        cyanShardG.lineTo(20, 46);
+        cyanShardG.lineTo(16, 46);
+        cyanShardG.closePath();
+        cyanShardG.fillPath();
+        cyanShardG.fillStyle(0xffffff, 1);
+        cyanShardG.fillCircle(16, 5, 2);
+        cyanShardG.generateTexture('crystal_cluster_cyan', 32, 48);
+
+        // 13. Celestial Star Gem Quest Item (36x36)
+        const starGemG = this.make.graphics({ x: 0, y: 0, add: false });
+        // Outer glow
+        starGemG.fillStyle(0xa855f7, 0.35);
+        starGemG.fillCircle(18, 18, 17);
+        starGemG.fillStyle(0x38bdf8, 0.5);
+        starGemG.fillCircle(18, 18, 13);
+        // Star diamond shape
+        starGemG.fillStyle(0xec4899, 0.9);
+        starGemG.beginPath();
+        starGemG.moveTo(18, 2);
+        starGemG.lineTo(24, 12);
+        starGemG.lineTo(34, 18);
+        starGemG.lineTo(24, 24);
+        starGemG.lineTo(18, 34);
+        starGemG.lineTo(12, 24);
+        starGemG.lineTo(2, 18);
+        starGemG.lineTo(12, 12);
+        starGemG.closePath();
+        starGemG.fillPath();
+        // Inner core
+        starGemG.fillStyle(0xfde047, 1);
+        starGemG.fillCircle(18, 18, 6);
+        starGemG.fillStyle(0xffffff, 1);
+        starGemG.fillCircle(17, 16, 3);
+        starGemG.generateTexture('crystal_star_gem', 36, 36);
+
+        // 14. Crystal Spikes Hazard (32x24)
+        const spikeG = this.make.graphics({ x: 0, y: 0, add: false });
+        spikeG.fillStyle(0xef4444, 0.9);
+        for (let i = 0; i < 4; i++) {
+            const sx = i * 8;
+            spikeG.beginPath();
+            spikeG.moveTo(sx + 4, 2);
+            spikeG.lineTo(sx + 8, 24);
+            spikeG.lineTo(sx, 24);
+            spikeG.closePath();
+            spikeG.fillPath();
+        }
+        spikeG.fillStyle(0xfca5a5, 0.9);
+        for (let i = 0; i < 4; i++) {
+            const sx = i * 8;
+            spikeG.fillRect(sx + 3, 4, 1, 14);
+        }
+        spikeG.generateTexture('crystal_spike_hazard', 32, 24);
+
+        // 15. Hanging Stalactite (24x56)
+        const stalactiteG = this.make.graphics({ x: 0, y: 0, add: false });
+        stalactiteG.fillStyle(0x2e1065, 0.95);
+        stalactiteG.beginPath();
+        stalactiteG.moveTo(0, 0);
+        stalactiteG.lineTo(24, 0);
+        stalactiteG.lineTo(14, 46);
+        stalactiteG.lineTo(12, 56);
+        stalactiteG.lineTo(10, 46);
+        stalactiteG.closePath();
+        stalactiteG.fillPath();
+        stalactiteG.fillStyle(0xc084fc, 0.7);
+        stalactiteG.fillRect(11, 2, 2, 45);
+        stalactiteG.fillStyle(0xffffff, 0.9);
+        stalactiteG.fillCircle(12, 54, 2);
+        stalactiteG.generateTexture('crystal_stalactite', 24, 56);
+
+        // 16. Floating Crystal Dust Particle (8x8)
+        const moteG = this.make.graphics({ x: 0, y: 0, add: false });
+        moteG.fillStyle(0xc084fc, 0.4);
+        moteG.fillCircle(4, 4, 4);
+        moteG.fillStyle(0xffffff, 0.9);
+        moteG.fillCircle(4, 4, 2);
+        moteG.generateTexture('fx_crystal_dust', 8, 8);
     }
 }
