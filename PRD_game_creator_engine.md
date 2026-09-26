@@ -112,6 +112,20 @@ Digunakan ketika game diekspor untuk dimainkan oleh pemain umum, teman, atau ora
   * **Opsi B (Desktop .EXE)**: Wrapper Electron/NW.js untuk Windows PC.
   * **Opsi C (Shareable Web Link)**: Integrasi deploy 1-klik ke hosting statis gratis.
 
+### 4.6 Feature 6: Top Engine Menu Bar & In-Game Scripting Workspace (Blender Style)
+* **Status**: 🚀 *In Active Development*
+* **Deskripsi**: Bilah menu atas (*Top Menu Bar*) dan panel editor kode terintegrasi (*In-Game Scripting Workspace*) langsung di dalam browser tanpa ketergantungan software eksternal (VS Code):
+  1. **Top Menu Bar (Header Slim 36px)**:
+     * Menu `File ▾`: Buka Project Hub, Simpan Progres, Ekspor Game.
+     * Menu `World ▾`: Buka Sandbox, Pasang Tile, Pasang NPC, Ubah Tema Langit.
+     * Tombol Pintas: `[📜 Scripting]`, `[🎛️ Inspect]`, `[+/create]`, `[▶ Run/Apply]`.
+  2. **In-Game Scripting Workspace (Panel Koding Terintegrasi)**:
+     * Panel editor kode monospaced dengan nomor baris (dark slate theme ala Blender 5.2 Scripting Workspace).
+     * Tab Editor: `cerita.js (Data Config)` dan `Scene3.js (Active Script)`.
+     * Tombol **`[📋 Sisipkan Template /create]`** untuk memasukkan cuplikan kode langsung ke baris kursor.
+     * Tombol **`[▶ Terapkan / Run Script]`** untuk menerapkan perubahan kode secara live.
+     * Dapat diminimalkan atau disembunyikan kapan saja agar murid bisa menguji gameplay.
+
 ---
 
 ## 🔒 5. Kebutuhan Non-Fungsional (Non-Functional Requirements)

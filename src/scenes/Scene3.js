@@ -8,6 +8,7 @@ import { AudioManager } from '../utils/AudioManager.js';
 import { CameraZoomManager } from '../utils/CameraZoomManager.js';
 import { CommandConsole } from '../utils/CommandConsole.js';
 import { DialogBox } from '../ui/DialogBox.js';
+import { EngineMenuBar } from '../ui/EngineMenuBar.js';
 
 // ===============================================================
 // SCENE 3: TEMPLATE KOSONG (HANYA LANTAI / TILES)
@@ -30,6 +31,10 @@ export class Scene3 extends Phaser.Scene {
 
     create() {
         CommandConsole.show();
+
+        // Inisialisasi Top Engine Menu Bar (Blender / Unity Style)
+        this.engineMenuBar = new EngineMenuBar(this);
+        this.engineMenuBar.show(this);
 
         // 1. Warna Latar Bersih
         this.cameras.main.setBackgroundColor('#0b1329');
@@ -272,6 +277,7 @@ export class Scene3 extends Phaser.Scene {
         const distPortal = Phaser.Math.Distance.Between(this.player.x, this.player.y, 90, 396);
         if (distPortal < 80) {
             this.showFloatingToast('Kembali ke Project Hub...', 0x38bdf8);
+            if (this.engineMenuBar) this.engineMenuBar.hide();
             this.cameras.main.fadeOut(250, 0, 0, 0);
             this.cameras.main.once('camerafadeoutcomplete', () => {
                 this.scene.start('TitleScene');

@@ -4,6 +4,7 @@ import { SaveManager } from '../utils/SaveManager.js';
 import { FONT_TITLE, FONT_BODY } from '../utils/helpers.js';
 import { SettingsModal } from '../ui/SettingsModal.js';
 import { ProjectHubModal } from '../ui/ProjectHubModal.js';
+import { EngineMenuBar } from '../ui/EngineMenuBar.js';
 import { CommandConsole } from '../utils/CommandConsole.js';
 
 // ===============================================================
@@ -16,8 +17,9 @@ export class TitleScene extends Phaser.Scene {
     }
 
     create() {
-        // Sembunyikan chat console saat berada di Menu Utama
+        // Sembunyikan chat console & engine menu bar saat berada di Menu Utama
         CommandConsole.hide();
+        if (EngineMenuBar.instance) EngineMenuBar.instance.hide();
 
         const W = this.scale.width || 800;
         const H = this.scale.height || 450;
