@@ -5,330 +5,638 @@ export class ProjectHubModal {
         this.scene = scene;
         this.options = options;
         this._isOpen = false;
+        this.currentTab = 'projects'; // 'projects' | 'templates' | 'tutorials' | 'learn'
+        this.searchQuery = '';
         this.createDOM();
     }
 
     createDOM() {
-        const oldEl = document.getElementById('gt-project-hub-overlay');
+        const oldEl = document.getElementById('gt-unity-hub-overlay');
         if (oldEl) oldEl.remove();
 
         this.overlay = document.createElement('div');
-        this.overlay.id = 'gt-project-hub-overlay';
-        this.overlay.className = 'gt-hub-overlay hidden';
+        this.overlay.id = 'gt-unity-hub-overlay';
+        this.overlay.className = 'gt-uhub-overlay hidden';
 
         this.overlay.innerHTML = `
             <style>
-                @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Outfit:wght@500;600;700;800&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
 
-                .gt-hub-overlay {
+                .gt-uhub-overlay {
                     position: fixed;
                     inset: 0;
                     z-index: 99998;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    background: rgba(4, 8, 19, 0.82);
-                    backdrop-filter: blur(10px);
-                    -webkit-backdrop-filter: blur(10px);
+                    background: rgba(0, 0, 0, 0.88);
+                    backdrop-filter: blur(14px);
+                    -webkit-backdrop-filter: blur(14px);
                     opacity: 1;
                     visibility: visible;
-                    transition: opacity 0.22s ease, visibility 0.22s ease;
-                    font-family: 'Outfit', 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
-                    padding: 16px;
+                    transition: opacity 0.2s ease, visibility 0.2s ease;
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    padding: 24px;
                     box-sizing: border-box;
                     user-select: none;
                     -webkit-user-select: none;
                 }
 
-                .gt-hub-overlay.hidden {
+                .gt-uhub-overlay.hidden {
                     opacity: 0;
                     visibility: hidden;
                     pointer-events: none;
                 }
 
-                .gt-hub-card {
+                /* Unity Hub Window Container */
+                .gt-uhub-window {
                     position: relative;
-                    width: min(760px, 95vw);
-                    max-height: min(600px, 92vh);
-                    background: linear-gradient(145deg, rgba(15, 23, 42, 0.98) 0%, rgba(9, 14, 26, 0.99) 100%);
-                    border: 1.5px solid rgba(56, 189, 248, 0.35);
-                    border-radius: 20px;
-                    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.75), 0 0 35px rgba(56, 189, 248, 0.15);
+                    width: min(1080px, 96vw);
+                    height: min(680px, 92vh);
+                    background: #181818;
+                    border: 1px solid #333333;
+                    border-radius: 12px;
+                    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.05);
                     display: flex;
                     flex-direction: column;
                     overflow: hidden;
-                    animation: gtHubPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                    animation: uhubEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
                 }
 
-                @keyframes gtHubPop {
-                    0% { transform: scale(0.94); opacity: 0; }
+                @keyframes uhubEnter {
+                    0% { transform: scale(0.96); opacity: 0; }
                     100% { transform: scale(1); opacity: 1; }
                 }
 
-                .gt-hub-header {
-                    padding: 20px 24px 16px;
+                /* Title Bar (Mac/Windows style) */
+                .gt-uhub-topbar {
+                    height: 44px;
+                    background: #1e1e1e;
+                    border-bottom: 1px solid #2d2d2d;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
-                    background: rgba(30, 41, 59, 0.4);
+                    padding: 0 16px;
+                    flex-shrink: 0;
                 }
 
-                .gt-hub-title-group {
+                .gt-uhub-topbar-left {
                     display: flex;
                     align-items: center;
                     gap: 12px;
                 }
 
-                .gt-hub-icon-badge {
-                    width: 44px;
-                    height: 44px;
-                    border-radius: 12px;
-                    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+                .gt-uhub-logo {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-size: 14px;
+                    font-weight: 700;
+                    color: #ffffff;
+                    letter-spacing: 0.3px;
+                }
+
+                .gt-uhub-logo-icon {
+                    width: 20px;
+                    height: 20px;
+                    background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+                    border-radius: 5px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 22px;
-                    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+                    font-size: 11px;
+                    color: #fff;
+                    font-weight: 900;
                 }
 
-                .gt-hub-title {
-                    font-size: 20px;
+                .gt-uhub-logo-badge {
+                    font-size: 10px;
+                    font-weight: 700;
+                    padding: 2px 6px;
+                    background: rgba(56, 189, 248, 0.15);
+                    color: #38bdf8;
+                    border: 1px solid rgba(56, 189, 248, 0.3);
+                    border-radius: 4px;
+                }
+
+                .gt-uhub-topbar-right {
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                }
+
+                .gt-uhub-user-badge {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 4px 10px;
+                    background: #282828;
+                    border-radius: 20px;
+                    border: 1px solid #383838;
+                }
+
+                .gt-uhub-avatar {
+                    width: 22px;
+                    height: 22px;
+                    border-radius: 50%;
+                    background: #0284c7;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 10px;
                     font-weight: 800;
-                    color: #f8fafc;
-                    letter-spacing: 0.5px;
-                    margin: 0;
+                    color: #fff;
                 }
 
-                .gt-hub-subtitle {
-                    font-size: 13px;
-                    color: #94a3b8;
-                    margin: 2px 0 0 0;
+                .gt-uhub-username {
+                    font-size: 12px;
+                    color: #e0e0e0;
+                    font-weight: 500;
                 }
 
-                .gt-hub-close-btn {
-                    width: 36px;
-                    height: 36px;
-                    border-radius: 10px;
-                    background: rgba(255, 255, 255, 0.06);
-                    border: 1px solid rgba(255, 255, 255, 0.12);
-                    color: #94a3b8;
-                    font-size: 16px;
-                    font-weight: bold;
+                .gt-uhub-close-btn {
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 6px;
+                    background: transparent;
+                    border: none;
+                    color: #9e9e9e;
+                    font-size: 15px;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    transition: all 0.18s ease;
+                    transition: all 0.15s ease;
                 }
 
-                .gt-hub-close-btn:hover {
-                    background: rgba(239, 68, 68, 0.25);
-                    border-color: #ef4444;
-                    color: #fee2e2;
-                    transform: scale(1.05);
+                .gt-uhub-close-btn:hover {
+                    background: #e11d48;
+                    color: #ffffff;
                 }
 
-                .gt-hub-body {
-                    padding: 20px 24px;
-                    overflow-y: auto;
+                /* Notice Banner (Like Unity legal notice) */
+                .gt-uhub-banner {
+                    background: #252525;
+                    border-bottom: 1px solid #303030;
+                    padding: 7px 16px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    font-size: 11.5px;
+                    color: #b0b0b0;
+                }
+
+                .gt-uhub-banner-link {
+                    color: #38bdf8;
+                    text-decoration: none;
+                    font-weight: 600;
+                    cursor: pointer;
+                }
+
+                .gt-uhub-banner-link:hover {
+                    text-decoration: underline;
+                }
+
+                /* Main Body (Sidebar + Content) */
+                .gt-uhub-main {
+                    flex: 1;
+                    display: flex;
+                    min-height: 0;
+                }
+
+                /* Sidebar */
+                .gt-uhub-sidebar {
+                    width: 210px;
+                    background: #1c1c1c;
+                    border-right: 1px solid #2b2b2b;
+                    padding: 16px 10px;
                     display: flex;
                     flex-direction: column;
-                    gap: 14px;
+                    gap: 4px;
+                    flex-shrink: 0;
                 }
 
-                .gt-hub-project-item {
+                .gt-uhub-nav-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    padding: 9px 14px;
+                    border-radius: 6px;
+                    color: #a3a3a3;
+                    font-size: 13px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.15s ease;
+                    border: 1px solid transparent;
+                }
+
+                .gt-uhub-nav-item:hover {
+                    background: #262626;
+                    color: #e5e5e5;
+                }
+
+                .gt-uhub-nav-item.active {
+                    background: #2b2b2b;
+                    color: #ffffff;
+                    font-weight: 600;
+                }
+
+                .gt-uhub-nav-icon {
+                    font-size: 15px;
+                    width: 18px;
+                    text-align: center;
+                }
+
+                .gt-uhub-sidebar-divider {
+                    height: 1px;
+                    background: #2b2b2b;
+                    margin: 12px 6px;
+                }
+
+                .gt-uhub-sidebar-footer {
+                    margin-top: auto;
+                    padding: 12px 10px;
+                    background: #222222;
+                    border-radius: 8px;
+                    border: 1px solid #2e2e2e;
+                    font-size: 11px;
+                    color: #94a3b8;
+                    line-height: 1.4;
+                }
+
+                /* Content Area */
+                .gt-uhub-content {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    min-width: 0;
+                    background: #141414;
+                }
+
+                .gt-uhub-content-header {
+                    padding: 20px 28px 16px;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
                     gap: 16px;
-                    padding: 16px 18px;
-                    background: rgba(30, 41, 59, 0.5);
-                    border: 1px solid rgba(148, 163, 184, 0.18);
-                    border-radius: 14px;
+                    border-bottom: 1px solid #242424;
+                }
+
+                .gt-uhub-content-title {
+                    font-size: 22px;
+                    font-weight: 700;
+                    color: #ffffff;
+                    margin: 0;
+                }
+
+                .gt-uhub-header-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                }
+
+                .gt-uhub-search-box {
+                    position: relative;
+                    width: 220px;
+                }
+
+                .gt-uhub-search-input {
+                    width: 100%;
+                    height: 34px;
+                    background: #222222;
+                    border: 1px solid #333333;
+                    border-radius: 6px;
+                    padding: 0 10px 0 32px;
+                    font-size: 12.5px;
+                    color: #ffffff;
+                    outline: none;
+                    box-sizing: border-box;
+                    transition: border-color 0.15s;
+                }
+
+                .gt-uhub-search-input:focus {
+                    border-color: #0284c7;
+                }
+
+                .gt-uhub-search-icon {
+                    position: absolute;
+                    left: 10px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    font-size: 13px;
+                    color: #737373;
+                }
+
+                .gt-uhub-btn-primary {
+                    height: 34px;
+                    padding: 0 18px;
+                    background: #0284c7;
+                    border: none;
+                    border-radius: 6px;
+                    color: #ffffff;
+                    font-size: 13px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    transition: all 0.15s ease;
+                }
+
+                .gt-uhub-btn-primary:hover {
+                    background: #0ea5e9;
+                    box-shadow: 0 0 12px rgba(14, 165, 233, 0.4);
+                }
+
+                /* Table List View (Like Unity Hub Projects) */
+                .gt-uhub-table-container {
+                    flex: 1;
+                    overflow-y: auto;
+                    padding: 0 28px;
+                }
+
+                .gt-uhub-table-header {
+                    display: grid;
+                    grid-template-columns: 2.2fr 1.2fr 1.2fr 1.4fr;
+                    padding: 12px 14px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    color: #737373;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    border-bottom: 1px solid #222222;
+                }
+
+                .gt-uhub-row {
+                    display: grid;
+                    grid-template-columns: 2.2fr 1.2fr 1.2fr 1.4fr;
+                    align-items: center;
+                    padding: 14px;
+                    border-bottom: 1px solid #202020;
+                    border-radius: 6px;
+                    transition: background 0.15s ease;
+                }
+
+                .gt-uhub-row:hover {
+                    background: #1e1e1e;
+                }
+
+                .gt-uhub-col-name {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 3px;
+                }
+
+                .gt-uhub-project-name {
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: #f5f5f5;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                .gt-uhub-project-path {
+                    font-size: 11px;
+                    color: #666666;
+                    font-family: 'JetBrains Mono', monospace;
+                }
+
+                .gt-uhub-badge-platform {
+                    font-size: 11.5px;
+                    color: #a3a3a3;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                }
+
+                .gt-uhub-badge-tag {
+                    display: inline-block;
+                    padding: 2px 8px;
+                    border-radius: 4px;
+                    font-size: 11px;
+                    font-weight: 600;
+                }
+
+                .gt-tag-sandbox {
+                    background: rgba(2, 132, 199, 0.18);
+                    color: #38bdf8;
+                    border: 1px solid rgba(2, 132, 199, 0.35);
+                }
+
+                .gt-tag-tutorial {
+                    background: rgba(16, 185, 129, 0.15);
+                    color: #34d399;
+                    border: 1px solid rgba(16, 185, 129, 0.3);
+                }
+
+                .gt-tag-sample {
+                    background: rgba(168, 85, 247, 0.15);
+                    color: #c084fc;
+                    border: 1px solid rgba(168, 85, 247, 0.3);
+                }
+
+                .gt-uhub-col-action {
+                    display: flex;
+                    align-items: center;
+                    justify-content: flex-end;
+                    gap: 8px;
+                }
+
+                .gt-uhub-btn-open {
+                    padding: 6px 16px;
+                    background: #252525;
+                    border: 1px solid #383838;
+                    border-radius: 5px;
+                    color: #ffffff;
+                    font-size: 12px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    transition: all 0.15s ease;
+                }
+
+                .gt-uhub-btn-open:hover {
+                    background: #0284c7;
+                    border-color: #0284c7;
+                    color: #ffffff;
+                    box-shadow: 0 0 10px rgba(2, 132, 199, 0.4);
+                }
+
+                /* Templates Grid View */
+                .gt-uhub-templates-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                    gap: 16px;
+                    padding: 16px 28px;
+                }
+
+                .gt-uhub-template-card {
+                    background: #1c1c1c;
+                    border: 1px solid #2b2b2b;
+                    border-radius: 8px;
+                    padding: 18px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 10px;
                     transition: all 0.2s ease;
                 }
 
-                .gt-hub-project-item:hover {
-                    background: rgba(30, 41, 59, 0.85);
-                    border-color: rgba(56, 189, 248, 0.5);
+                .gt-uhub-template-card:hover {
+                    border-color: #0284c7;
+                    background: #222222;
                     transform: translateY(-2px);
-                    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
                 }
 
-                .gt-hub-project-item.primary-project {
-                    background: linear-gradient(135deg, rgba(14, 116, 144, 0.25) 0%, rgba(15, 23, 42, 0.7) 100%);
-                    border-color: rgba(56, 189, 248, 0.45);
-                }
-
-                .gt-hub-info-col {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 4px;
-                }
-
-                .gt-hub-item-title-row {
+                .gt-uhub-card-header {
                     display: flex;
                     align-items: center;
                     gap: 10px;
                 }
 
-                .gt-hub-item-title {
-                    font-size: 16px;
-                    font-weight: 700;
-                    color: #f1f5f9;
-                }
-
-                .gt-hub-badge {
-                    font-size: 11px;
-                    font-weight: 800;
-                    padding: 2px 8px;
-                    border-radius: 6px;
-                    letter-spacing: 0.3px;
-                    text-transform: uppercase;
-                }
-
-                .gt-badge-sandbox {
-                    background: rgba(56, 189, 248, 0.2);
-                    color: #38bdf8;
-                    border: 1px solid rgba(56, 189, 248, 0.4);
-                }
-
-                .gt-badge-sample {
-                    background: rgba(148, 163, 184, 0.15);
-                    color: #cbd5e1;
-                    border: 1px solid rgba(148, 163, 184, 0.3);
-                }
-
-                .gt-hub-item-desc {
-                    font-size: 13px;
-                    color: #94a3b8;
-                    line-height: 1.4;
-                }
-
-                .gt-hub-play-btn {
-                    padding: 10px 20px;
-                    border-radius: 10px;
-                    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-                    border: none;
-                    color: #ffffff;
-                    font-size: 13px;
-                    font-weight: 700;
-                    cursor: pointer;
+                .gt-uhub-card-icon {
+                    width: 38px;
+                    height: 38px;
+                    border-radius: 8px;
+                    background: #262626;
                     display: flex;
                     align-items: center;
-                    gap: 8px;
-                    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
-                    transition: all 0.18s ease;
-                    white-space: nowrap;
+                    justify-content: center;
+                    font-size: 20px;
                 }
 
-                .gt-hub-play-btn:hover {
-                    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-                    transform: scale(1.04);
-                    box-shadow: 0 6px 16px rgba(14, 165, 233, 0.45);
+                .gt-uhub-card-title {
+                    font-size: 14.5px;
+                    font-weight: 600;
+                    color: #ffffff;
                 }
 
-                .gt-hub-play-btn.btn-secondary {
-                    background: rgba(51, 65, 85, 0.8);
-                    box-shadow: none;
-                    border: 1px solid rgba(148, 163, 184, 0.3);
+                .gt-uhub-card-desc {
+                    font-size: 12px;
+                    color: #8c8c8c;
+                    line-height: 1.45;
+                    flex: 1;
                 }
 
-                .gt-hub-play-btn.btn-secondary:hover {
-                    background: rgba(71, 85, 105, 0.95);
-                    border-color: #94a3b8;
-                }
-
-                .gt-hub-tip-box {
-                    margin-top: 6px;
-                    padding: 14px 16px;
-                    background: rgba(245, 158, 11, 0.1);
-                    border: 1px dashed rgba(245, 158, 11, 0.4);
-                    border-radius: 12px;
+                /* New Project Creation Wizard Modal (Nested) */
+                .gt-uhub-wizard-overlay {
+                    position: absolute;
+                    inset: 0;
+                    background: rgba(0, 0, 0, 0.75);
+                    backdrop-filter: blur(6px);
                     display: flex;
-                    align-items: flex-start;
-                    gap: 12px;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 100;
+                    padding: 20px;
+                }
+
+                .gt-uhub-wizard-card {
+                    width: min(520px, 90%);
+                    background: #202020;
+                    border: 1px solid #383838;
+                    border-radius: 10px;
+                    padding: 24px;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+                    display: flex;
+                    flex-direction: column;
+                    gap: 16px;
+                }
+
+                .gt-uhub-wizard-title {
+                    font-size: 17px;
+                    font-weight: 700;
+                    color: #ffffff;
+                    margin: 0;
+                }
+
+                .gt-uhub-wizard-desc {
                     font-size: 13px;
-                    color: #fef3c7;
+                    color: #a3a3a3;
                     line-height: 1.45;
                 }
 
-                .gt-hub-tip-icon {
-                    font-size: 18px;
-                    flex-shrink: 0;
+                .gt-uhub-wizard-actions {
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 10px;
+                    margin-top: 8px;
+                }
+
+                .gt-uhub-btn-cancel {
+                    padding: 8px 16px;
+                    background: transparent;
+                    border: 1px solid #444444;
+                    color: #cccccc;
+                    border-radius: 6px;
+                    font-size: 13px;
+                    cursor: pointer;
+                }
+
+                .gt-uhub-btn-cancel:hover {
+                    background: #2e2e2e;
                 }
             </style>
 
-            <div class="gt-hub-card">
-                <div class="gt-hub-header">
-                    <div class="gt-hub-title-group">
-                        <div class="gt-hub-icon-badge">📁</div>
-                        <div>
-                            <h2 class="gt-hub-title">MY PROJECTS / WORLDS</h2>
-                            <p class="gt-hub-subtitle">Pusat Dunia & Ruang Kreasi Game Cilik</p>
+            <div class="gt-uhub-window">
+                <!-- Topbar Window -->
+                <div class="gt-uhub-topbar">
+                    <div class="gt-uhub-topbar-left">
+                        <div class="gt-uhub-logo">
+                            <div class="gt-uhub-logo-icon">▲</div>
+                            <span>Game Creator Hub</span>
+                            <span class="gt-uhub-logo-badge">Phaser 4 Engine</span>
                         </div>
                     </div>
-                    <button class="gt-hub-close-btn" id="gt-hub-btn-close">✕</button>
+                    <div class="gt-uhub-topbar-right">
+                        <div class="gt-uhub-user-badge">
+                            <div class="gt-uhub-avatar">AC</div>
+                            <span class="gt-uhub-username">Murid Developer</span>
+                        </div>
+                        <button class="gt-uhub-close-btn" id="gt-uhub-close-btn" title="Tutup Hub (ESC)">✕</button>
+                    </div>
                 </div>
 
-                <div class="gt-hub-body">
-                    <!-- Project 1: Sandbox World (Scene 3) -->
-                    <div class="gt-hub-project-item primary-project">
-                        <div class="gt-hub-info-col">
-                            <div class="gt-hub-item-title-row">
-                                <span class="gt-hub-item-title">🌟 Sandbox World (Scene 3)</span>
-                                <span class="gt-hub-badge gt-badge-sandbox">KARYA SENDIRI</span>
-                            </div>
-                            <div class="gt-hub-item-desc">
-                                Kanvas kosong berlantai yang siap kamu dekorasi! Gunakan perintah <b>/create</b> untuk menambah NPC, dialog, lantai, dan rintangan.
-                            </div>
+                <!-- Unity-style Notice Banner -->
+                <div class="gt-uhub-banner">
+                    <span>💡 <b>Edu-Engine Mode Aktif</b>: Bangun dunia game 2D dengan cepat lewat perintah <code>/create</code> dan template modular.</span>
+                    <span class="gt-uhub-banner-link" id="gt-uhub-banner-guide">Panduan Koding →</span>
+                </div>
+
+                <!-- Main Layout (Sidebar + Content) -->
+                <div class="gt-uhub-main">
+                    <!-- Left Sidebar -->
+                    <div class="gt-uhub-sidebar">
+                        <div class="gt-uhub-nav-item active" data-tab="projects">
+                            <span class="gt-uhub-nav-icon">📁</span>
+                            <span>Projects</span>
                         </div>
-                        <button class="gt-hub-play-btn" id="gt-hub-open-sandbox">
-                            ▶ Buka Dunia
-                        </button>
+                        <div class="gt-uhub-nav-item" data-tab="templates">
+                            <span class="gt-uhub-nav-icon">🗂️</span>
+                            <span>Templates</span>
+                        </div>
+                        <div class="gt-uhub-nav-item" data-tab="tutorials">
+                            <span class="gt-uhub-nav-icon">📖</span>
+                            <span>Tutorials</span>
+                        </div>
+                        <div class="gt-uhub-nav-item" data-tab="learn">
+                            <span class="gt-uhub-nav-icon">⚡</span>
+                            <span>Console Commands</span>
+                        </div>
+
+                        <div class="gt-uhub-sidebar-divider"></div>
+
+                        <div class="gt-uhub-sidebar-footer">
+                            <b>Tips Developer:</b><br/>
+                            Tekan tombol <b>+/create</b> di dalam game untuk memanggil mantra kode secara langsung.
+                        </div>
                     </div>
 
-                    <!-- Project 2: Tutorial Sample (Scene 1) -->
-                    <div class="gt-hub-project-item">
-                        <div class="gt-hub-info-col">
-                            <div class="gt-hub-item-title-row">
-                                <span class="gt-hub-item-title">🏔️ Level 1: Lembah Bersalju</span>
-                                <span class="gt-hub-badge gt-badge-sample">TUTORIAL SAMPLE</span>
-                            </div>
-                            <div class="gt-hub-item-desc">
-                                Contoh dasar: lompat platform, ambil koin emas, bicara dengan penjaga, dan gerbang portal.
-                            </div>
-                        </div>
-                        <button class="gt-hub-play-btn btn-secondary" id="gt-hub-open-scene1">
-                            ▶ Mainkan
-                        </button>
-                    </div>
-
-                    <!-- Project 3: Showcase Sample (Scene 2) -->
-                    <div class="gt-hub-project-item">
-                        <div class="gt-hub-info-col">
-                            <div class="gt-hub-item-title-row">
-                                <span class="gt-hub-item-title">🌃 Level 2: Teluk Hong Kong</span>
-                                <span class="gt-hub-badge gt-badge-sample">SHOWCASE LEVEL</span>
-                            </div>
-                            <div class="gt-hub-item-desc">
-                                Contoh mahakarya: latar parallax gedung megah, rintik hujan dinamis, ombak laut, dan kapal feri.
-                            </div>
-                        </div>
-                        <button class="gt-hub-play-btn btn-secondary" id="gt-hub-open-scene2">
-                            ▶ Mainkan
-                        </button>
-                    </div>
-
-                    <!-- Pro-Tip Box -->
-                    <div class="gt-hub-tip-box">
-                        <span class="gt-hub-tip-icon">💡</span>
-                        <div>
-                            <b>Cara Cepat Membangun Duniamu:</b> Saat berada di dalam Sandbox World, buka Chat Bar lalu ketik 
-                            <span style="color:#fde047; font-weight:700;">/create</span> atau klik tombol shortcut 
-                            <span style="color:#fde047; font-weight:700;">+/create</span> untuk mendapatkan kumpulan kode template siap tempel!
-                        </div>
+                    <!-- Right Content Area -->
+                    <div class="gt-uhub-content" id="gt-uhub-content-container">
+                        <!-- Konten akan dirender secara dinamis oleh JavaScript -->
                     </div>
                 </div>
             </div>
@@ -336,35 +644,390 @@ export class ProjectHubModal {
 
         document.body.appendChild(this.overlay);
 
-        // Bind events
-        this.overlay.querySelector('#gt-hub-btn-close').addEventListener('click', () => this.hide());
+        // Bind Window Close Event
+        this.overlay.querySelector('#gt-uhub-close-btn').addEventListener('click', () => this.hide());
         this.overlay.addEventListener('click', (e) => {
             if (e.target === this.overlay) this.hide();
         });
 
-        this.overlay.querySelector('#gt-hub-open-sandbox').addEventListener('click', () => {
-            this.hide();
-            AudioManager.playClick();
-            if (this.scene && this.scene.scene) {
-                this.scene.scene.start('Scene3', { isNewGame: true });
-            }
+        // Bind Sidebar Tab Navigation
+        this.overlay.querySelectorAll('.gt-uhub-nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                this.overlay.querySelectorAll('.gt-uhub-nav-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                this.currentTab = item.getAttribute('data-tab');
+                this.renderContent();
+            });
         });
 
-        this.overlay.querySelector('#gt-hub-open-scene1').addEventListener('click', () => {
-            this.hide();
-            AudioManager.playClick();
-            if (this.scene && this.scene.scene) {
-                this.scene.scene.start('GameScene', { isNewGame: true });
-            }
+        // Banner Guide click
+        this.overlay.querySelector('#gt-uhub-banner-guide').addEventListener('click', () => {
+            this.currentTab = 'learn';
+            this.overlay.querySelectorAll('.gt-uhub-nav-item').forEach(i => {
+                i.classList.toggle('active', i.getAttribute('data-tab') === 'learn');
+            });
+            this.renderContent();
         });
 
-        this.overlay.querySelector('#gt-hub-open-scene2').addEventListener('click', () => {
-            this.hide();
-            AudioManager.playClick();
-            if (this.scene && this.scene.scene) {
-                this.scene.scene.start('Scene2', { isNewGame: true });
-            }
+        // Render initial tab content
+        this.renderContent();
+    }
+
+    renderContent() {
+        const container = this.overlay.querySelector('#gt-uhub-content-container');
+        if (!container) return;
+
+        if (this.currentTab === 'projects') {
+            this.renderProjectsTab(container);
+        } else if (this.currentTab === 'templates') {
+            this.renderTemplatesTab(container);
+        } else if (this.currentTab === 'tutorials') {
+            this.renderTutorialsTab(container);
+        } else if (this.currentTab === 'learn') {
+            this.renderLearnTab(container);
+        }
+    }
+
+    renderProjectsTab(container) {
+        container.innerHTML = `
+            <div class="gt-uhub-content-header">
+                <h1 class="gt-uhub-content-title">Projects</h1>
+                <div class="gt-uhub-header-actions">
+                    <div class="gt-uhub-search-box">
+                        <span class="gt-uhub-search-icon">🔍</span>
+                        <input type="text" class="gt-uhub-search-input" id="gt-uhub-search" placeholder="Search projects..." value="${this.searchQuery}" />
+                    </div>
+                    <button class="gt-uhub-btn-primary" id="gt-uhub-btn-new-project">
+                        <span>+</span> New World
+                    </button>
+                </div>
+            </div>
+
+            <div class="gt-uhub-table-container">
+                <div class="gt-uhub-table-header">
+                    <div>Name</div>
+                    <div>Type</div>
+                    <div>Modified</div>
+                    <div style="text-align: right;">Action</div>
+                </div>
+
+                <!-- Row 1: Sandbox World (Scene 3) -->
+                <div class="gt-uhub-row" data-name="sandbox world scene 3">
+                    <div class="gt-uhub-col-name">
+                        <span class="gt-uhub-project-name">
+                            <span>🌟</span> Sandbox World (Scene 3)
+                        </span>
+                        <span class="gt-uhub-project-path">src/scenes/Scene3.js</span>
+                    </div>
+                    <div>
+                        <span class="gt-uhub-badge-tag gt-tag-sandbox">Creative Canvas</span>
+                    </div>
+                    <div class="gt-uhub-badge-platform">
+                        <span>● Siap Diedit</span>
+                    </div>
+                    <div class="gt-uhub-col-action">
+                        <button class="gt-uhub-btn-open" id="btn-open-scene3">
+                            <span>▶</span> Open World
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Row 2: Crystal Cave (Arsip / Scene 3 Alternatif) -->
+                <div class="gt-uhub-row" data-name="gua kristal purba crystal cave">
+                    <div class="gt-uhub-col-name">
+                        <span class="gt-uhub-project-name">
+                            <span>💎</span> Gua Kristal Purba (Crystal Cave)
+                        </span>
+                        <span class="gt-uhub-project-path">src/scenes/CrystalCaveScene.js</span>
+                    </div>
+                    <div>
+                        <span class="gt-uhub-badge-tag gt-tag-sample">Dungeon Canvas</span>
+                    </div>
+                    <div class="gt-uhub-badge-platform">
+                        <span>Tersedia</span>
+                    </div>
+                    <div class="gt-uhub-col-action">
+                        <button class="gt-uhub-btn-open" id="btn-open-crystal">
+                            <span>▶</span> Open World
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Row 3: Tutorial Lembah Salju -->
+                <div class="gt-uhub-row" data-name="lembah salju level 1">
+                    <div class="gt-uhub-col-name">
+                        <span class="gt-uhub-project-name">
+                            <span>🏔️</span> Level 1: Lembah Bersalju
+                        </span>
+                        <span class="gt-uhub-project-path">src/scenes/GameScene.js</span>
+                    </div>
+                    <div>
+                        <span class="gt-uhub-badge-tag gt-tag-tutorial">Tutorial Sample</span>
+                    </div>
+                    <div class="gt-uhub-badge-platform">
+                        <span>Bawaan</span>
+                    </div>
+                    <div class="gt-uhub-col-action">
+                        <button class="gt-uhub-btn-open" id="btn-open-gamescene">
+                            <span>▶</span> Play Sample
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Row 4: Showcase Hong Kong -->
+                <div class="gt-uhub-row" data-name="teluk hong kong level 2">
+                    <div class="gt-uhub-col-name">
+                        <span class="gt-uhub-project-name">
+                            <span>🌃</span> Level 2: Teluk Hong Kong
+                        </span>
+                        <span class="gt-uhub-project-path">src/scenes/HongKongScene.js</span>
+                    </div>
+                    <div>
+                        <span class="gt-uhub-badge-tag gt-tag-sample">Showcase Level</span>
+                    </div>
+                    <div class="gt-uhub-badge-platform">
+                        <span>Bawaan</span>
+                    </div>
+                    <div class="gt-uhub-col-action">
+                        <button class="gt-uhub-btn-open" id="btn-open-scene2">
+                            <span>▶</span> Play Sample
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Search filter
+        const searchInput = container.querySelector('#gt-uhub-search');
+        searchInput.addEventListener('input', (e) => {
+            this.searchQuery = e.target.value.toLowerCase();
+            container.querySelectorAll('.gt-uhub-row').forEach(row => {
+                const name = row.getAttribute('data-name');
+                row.style.display = name.includes(this.searchQuery) ? 'grid' : 'none';
+            });
         });
+
+        // Launch buttons
+        container.querySelector('#btn-open-scene3').addEventListener('click', () => {
+            this.launchScene('Scene3');
+        });
+        container.querySelector('#btn-open-crystal').addEventListener('click', () => {
+            this.launchScene('Scene3');
+        });
+        container.querySelector('#btn-open-gamescene').addEventListener('click', () => {
+            this.launchScene('GameScene');
+        });
+        container.querySelector('#btn-open-scene2').addEventListener('click', () => {
+            this.launchScene('Scene2');
+        });
+
+        // New Project Wizard
+        container.querySelector('#gt-uhub-btn-new-project').addEventListener('click', () => {
+            this.showNewProjectWizard();
+        });
+    }
+
+    renderTemplatesTab(container) {
+        container.innerHTML = `
+            <div class="gt-uhub-content-header">
+                <h1 class="gt-uhub-content-title">Starter Templates</h1>
+                <p style="font-size: 13px; color: #888; margin: 0;">Pilih template awal untuk dijadikan pondasi pembuatan game baru.</p>
+            </div>
+
+            <div class="gt-uhub-templates-grid">
+                <div class="gt-uhub-template-card">
+                    <div class="gt-uhub-card-header">
+                        <div class="gt-uhub-card-icon">🧱</div>
+                        <div>
+                            <div class="gt-uhub-card-title">Blank Platformer</div>
+                            <span class="gt-uhub-badge-tag gt-tag-sandbox">Scene 3 Sandbox</span>
+                        </div>
+                    </div>
+                    <div class="gt-uhub-card-desc">
+                        Kanvas berlantai kosong yang bersih. Siap ditambah platform melayang, NPC, dialog, dan koin dengan perintah <b>/create</b>.
+                    </div>
+                    <button class="gt-uhub-btn-open" style="width: 100%; justify-content: center; margin-top: auto;" id="btn-tmpl-sandbox">
+                        Gunakan Template Ini →
+                    </button>
+                </div>
+
+                <div class="gt-uhub-template-card">
+                    <div class="gt-uhub-card-header">
+                        <div class="gt-uhub-card-icon">🌃</div>
+                        <div>
+                            <div class="gt-uhub-card-title">Parallax & Weather</div>
+                            <span class="gt-uhub-badge-tag gt-tag-sample">Advanced</span>
+                        </div>
+                    </div>
+                    <div class="gt-uhub-card-desc">
+                        Template level dengan 3 lapis latar parallax (langit, gedung, ombak laut) dan simulasi butir hujan menukik miring.
+                    </div>
+                    <button class="gt-uhub-btn-open" style="width: 100%; justify-content: center; margin-top: auto;" id="btn-tmpl-hk">
+                        Buka & Pelajari Kode →
+                    </button>
+                </div>
+
+                <div class="gt-uhub-template-card">
+                    <div class="gt-uhub-card-header">
+                        <div class="gt-uhub-card-icon">🗺️</div>
+                        <div>
+                            <div class="gt-uhub-card-title">Data-Driven RPG</div>
+                            <span class="gt-uhub-badge-tag gt-tag-tutorial">cerita.js</span>
+                        </div>
+                    </div>
+                    <div class="gt-uhub-card-desc">
+                        Membangun level tanpa koding file baru! Cukup isi daftar platform, koin, rintangan, dan portal di file <b>cerita.js</b>.
+                    </div>
+                    <button class="gt-uhub-btn-open" style="width: 100%; justify-content: center; margin-top: auto;" id="btn-tmpl-snow">
+                        Mainkan Contoh →
+                    </button>
+                </div>
+            </div>
+        `;
+
+        container.querySelector('#btn-tmpl-sandbox').addEventListener('click', () => this.launchScene('Scene3'));
+        container.querySelector('#btn-tmpl-hk').addEventListener('click', () => this.launchScene('Scene2'));
+        container.querySelector('#btn-tmpl-snow').addEventListener('click', () => this.launchScene('GameScene'));
+    }
+
+    renderTutorialsTab(container) {
+        container.innerHTML = `
+            <div class="gt-uhub-content-header">
+                <h1 class="gt-uhub-content-title">Tutorial Levels</h1>
+                <p style="font-size: 13px; color: #888; margin: 0;">Mainkan petualangan tutorial resmi untuk memahami mekanika game.</p>
+            </div>
+
+            <div class="gt-uhub-table-container">
+                <div class="gt-uhub-table-header">
+                    <div>Tutorial</div>
+                    <div>Topik Pelajaran</div>
+                    <div>Status</div>
+                    <div style="text-align: right;">Action</div>
+                </div>
+
+                <div class="gt-uhub-row">
+                    <div class="gt-uhub-col-name">
+                        <span class="gt-uhub-project-name">🏔️ Level 1: Lembah Bersalju</span>
+                        <span class="gt-uhub-project-path">Tutorial Dasar</span>
+                    </div>
+                    <div>
+                        <span style="font-size: 12px; color: #cbd5e1;">Gerak Karakter, Lompat, Koin Emas, Portal</span>
+                    </div>
+                    <div>
+                        <span class="gt-uhub-badge-tag gt-tag-tutorial">Level Pemula</span>
+                    </div>
+                    <div class="gt-uhub-col-action">
+                        <button class="gt-uhub-btn-open" id="btn-tut-1">▶ Mulai Level 1</button>
+                    </div>
+                </div>
+
+                <div class="gt-uhub-row">
+                    <div class="gt-uhub-col-name">
+                        <span class="gt-uhub-project-name">🌃 Level 2: Teluk Hong Kong</span>
+                        <span class="gt-uhub-project-path">Tutorial Mahakarya</span>
+                    </div>
+                    <div>
+                        <span style="font-size: 12px; color: #cbd5e1;">Parallax 3-Layer, Cuaca Hujan, Kapal Feri</span>
+                    </div>
+                    <div>
+                        <span class="gt-uhub-badge-tag gt-tag-sample">Level Lanjut</span>
+                    </div>
+                    <div class="gt-uhub-col-action">
+                        <button class="gt-uhub-btn-open" id="btn-tut-2">▶ Mulai Level 2</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        container.querySelector('#btn-tut-1').addEventListener('click', () => this.launchScene('GameScene'));
+        container.querySelector('#btn-tut-2').addEventListener('click', () => this.launchScene('Scene2'));
+    }
+
+    renderLearnTab(container) {
+        container.innerHTML = `
+            <div class="gt-uhub-content-header">
+                <h1 class="gt-uhub-content-title">In-Game Console Commands</h1>
+                <p style="font-size: 13px; color: #888; margin: 0;">Daftar perintah mantra ajaib yang bisa diketik di Chat Bar saat bermain.</p>
+            </div>
+
+            <div class="gt-uhub-table-container">
+                <div class="gt-uhub-table-header">
+                    <div>Perintah</div>
+                    <div>Deskripsi</div>
+                    <div>Fungsi Edukasi</div>
+                </div>
+
+                <div class="gt-uhub-row">
+                    <div><code style="color: #38bdf8; font-weight: bold;">/create [elemen]</code></div>
+                    <div>Mengambil kumpulan template kode siap pakai (tile, npc, dialogue, quest, dll).</div>
+                    <div><span class="gt-uhub-badge-tag gt-tag-sandbox">World Builder</span></div>
+                </div>
+
+                <div class="gt-uhub-row">
+                    <div><code style="color: #f59e0b; font-weight: bold;">/inspect</code></div>
+                    <div>Membuka slider live kecepatan, gravitasi, dan melacak baris kode secara real-time.</div>
+                    <div><span class="gt-uhub-badge-tag gt-tag-sample">Live Inspector</span></div>
+                </div>
+
+                <div class="gt-uhub-row">
+                    <div><code style="color: #34d399; font-weight: bold;">/tp &lt;scene&gt;</code></div>
+                    <div>Teleportasi instan antar scene (Scene1, Scene2, Scene3, Title).</div>
+                    <div><span class="gt-uhub-badge-tag gt-tag-tutorial">Navigation</span></div>
+                </div>
+
+                <div class="gt-uhub-row">
+                    <div><code style="color: #cbd5e1; font-weight: bold;">/speed &lt;angka&gt;</code></div>
+                    <div>Mengubah kecepatan lari karakter utama secara langsung.</div>
+                    <div><span class="gt-uhub-badge-tag" style="background:#262626; color:#aaa;">Variable</span></div>
+                </div>
+
+                <div class="gt-uhub-row">
+                    <div><code style="color: #cbd5e1; font-weight: bold;">/jump &lt;angka&gt;</code></div>
+                    <div>Mengubah daya lompat karakter utama secara langsung.</div>
+                    <div><span class="gt-uhub-badge-tag" style="background:#262626; color:#aaa;">Variable</span></div>
+                </div>
+            </div>
+        `;
+    }
+
+    showNewProjectWizard() {
+        const wizard = document.createElement('div');
+        wizard.className = 'gt-uhub-wizard-overlay';
+        wizard.innerHTML = `
+            <div class="gt-uhub-wizard-card">
+                <h3 class="gt-uhub-wizard-title">➕ Buat Dunia / Scene Baru</h3>
+                <div class="gt-uhub-wizard-desc">
+                    Kamu bisa langsung membangun dunia baru di <b>Sandbox World (Scene 3)</b> menggunakan perintah <b>/create</b>, atau membuat file Scene terpisah.
+                    <br/><br/>
+                    <b>Pilihan Terbaik untuk Murid:</b>
+                    <ol style="margin: 8px 0 0 16px; padding: 0;">
+                        <li>Buka <b>Sandbox World (Scene 3)</b></li>
+                        <li>Ketik <b>/create tile</b> untuk buat lantai</li>
+                        <li>Ketik <b>/create npc</b> untuk tambah karakter</li>
+                    </ol>
+                </div>
+                <div class="gt-uhub-wizard-actions">
+                    <button class="gt-uhub-btn-cancel" id="btn-wizard-cancel">Tutup</button>
+                    <button class="gt-uhub-btn-primary" id="btn-wizard-go-sandbox">Buka Sandbox Sekarang ➔</button>
+                </div>
+            </div>
+        `;
+
+        this.overlay.querySelector('.gt-uhub-window').appendChild(wizard);
+
+        wizard.querySelector('#btn-wizard-cancel').addEventListener('click', () => wizard.remove());
+        wizard.querySelector('#btn-wizard-go-sandbox').addEventListener('click', () => {
+            wizard.remove();
+            this.launchScene('Scene3');
+        });
+    }
+
+    launchScene(sceneKey) {
+        this.hide();
+        AudioManager.playClick();
+        if (this.scene && this.scene.scene) {
+            this.scene.scene.start(sceneKey, { isNewGame: true });
+        }
     }
 
     show() {
@@ -372,6 +1035,7 @@ export class ProjectHubModal {
         this.overlay.classList.remove('hidden');
         this._isOpen = true;
         AudioManager.playClick();
+        this.renderContent();
     }
 
     hide() {
