@@ -1,4 +1,5 @@
 import { AudioManager } from '../utils/AudioManager.js';
+import { ExportGameModal } from './ExportGameModal.js';
 
 export class ProjectHubModal {
     constructor(scene, options = {}) {
@@ -697,6 +698,9 @@ export class ProjectHubModal {
                         <span class="gt-uhub-search-icon">🔍</span>
                         <input type="text" class="gt-uhub-search-input" id="gt-uhub-search" placeholder="Search projects..." value="${this.searchQuery}" />
                     </div>
+                    <button class="gt-uhub-btn-primary" id="gt-uhub-btn-export-hub" style="background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8;">
+                        <span>📦</span> Ekspor Game (.ZIP)
+                    </button>
                     <button class="gt-uhub-btn-primary" id="gt-uhub-btn-new-project">
                         <span>+</span> New World
                     </button>
@@ -747,6 +751,11 @@ export class ProjectHubModal {
         // Launch buttons
         container.querySelector('#btn-open-scene3').addEventListener('click', () => {
             this.launchScene('Scene3');
+        });
+
+        // Export Game Modal button
+        container.querySelector('#gt-uhub-btn-export-hub').addEventListener('click', () => {
+            new ExportGameModal(this.scene).show(this.scene);
         });
 
         // New Project Wizard

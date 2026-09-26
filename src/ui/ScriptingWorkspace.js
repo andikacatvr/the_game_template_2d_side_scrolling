@@ -456,6 +456,13 @@ export const CONFIG_SKELETON = {
         AudioManager.playClick();
     }
 
+    appendCodeSnippet(snippet) {
+        if (!this.textarea) return;
+        this.textarea.value += `\n\n${snippet}`;
+        this.updateGutter();
+        this.showToast('Kode objek ditambahkan ke editor!');
+    }
+
     toggle(scene = null) {
         if (this.isOpen) {
             this.hide();

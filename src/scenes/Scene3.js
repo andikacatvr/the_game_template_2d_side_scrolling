@@ -9,6 +9,7 @@ import { CameraZoomManager } from '../utils/CameraZoomManager.js';
 import { CommandConsole } from '../utils/CommandConsole.js';
 import { DialogBox } from '../ui/DialogBox.js';
 import { EngineMenuBar } from '../ui/EngineMenuBar.js';
+import { ScriptingWorkspace } from '../ui/ScriptingWorkspace.js';
 
 // ===============================================================
 // SCENE 3: TEMPLATE KOSONG (HANYA LANTAI / TILES)
@@ -23,10 +24,19 @@ export class Scene3 extends Phaser.Scene {
         this.isGameOver = false;
         this.hp = data.hp !== undefined ? data.hp : (CONFIG_SKELETON.player.hpMaksimal || 3);
         this.maxHp = data.maxHp || (CONFIG_SKELETON.player.hpMaksimal || 3);
+        this.score = 0;
         this.inventory = Array.isArray(data.inventory) ? [...data.inventory] : [...(CONFIG_SKELETON.inventoryAwal || [])];
         this.collectedItemIds = Array.isArray(data.collectedItemIds) ? [...data.collectedItemIds] : [];
         this.touchState = { left: false, right: false, jump: false };
         this.isInvincible = false;
+
+        // Visual Click-to-Place state
+        this.placementMode = null;
+        this.placementGhost = null;
+        this.placementBanner = null;
+        this.placedObjects = [];
+        this.customNpcs = [];
+        this.customPortals = [];
     }
 
     create() {
@@ -53,10 +63,17 @@ export class Scene3 extends Phaser.Scene {
         // 5. Karakter Player
         this.createPlayer();
 
+        // Physics Groups untuk Koin & Rintangan
+        this.coins = this.physics.add.group({ allowGravity: false, immovable: true });
+        this.physics.add.overlap(this.player, this.coins, (player, coin) => this.collectCoin(coin));
+
+        this.hazards = this.physics.add.group({ allowGravity: false, immovable: true });
+        this.physics.add.overlap(this.player, this.hazards, (player, hazard) => this.takeDamage(1));
+
         // Kamera otomatis mengikuti karakter
         this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
 
-        // 6. UI HUD (HP & Menu Pengaturan)
+        // 6. UI HUD (HP, Score & Menu Pengaturan)
         this.createHUD();
 
         // 7. Kontrol Sentuh Mobile (jika di perangkat touch)
@@ -74,7 +91,17 @@ export class Scene3 extends Phaser.Scene {
         });
 
         this.input.keyboard.on('keydown-E', () => this.handleInteract());
-        this.input.keyboard.on('keydown-ESC', () => this.toggleSettingsModal());
+        this.input.keyboard.on('keydown-ESC', () => {
+            if (this.placementMode) {
+                this.exitPlacementMode();
+            } else {
+                this.toggleSettingsModal();
+            }
+        });
+
+        // Click-to-Place Pointer Event Listeners
+        this.input.on('pointermove', (pointer) => this.updatePlacementGhost(pointer));
+        this.input.on('pointerdown', (pointer) => this.handlePlacementClick(pointer));
 
         // Zoom Kamera
         this.zoomManager = new CameraZoomManager(this, {
@@ -207,6 +234,14 @@ export class Scene3 extends Phaser.Scene {
         });
         this.healthContainer.add([hpBg, hpLabel, ...this.hpHeartTexts, this.hpNumericText]);
 
+        // Score Badge
+        this.scoreContainer = this.add.container(barWidth + 24, 13).setDepth(25).setScrollFactor(0);
+        const scoreBg = this.add.rectangle(40, 13, 80, 26, 0x0f172a, 0.85);
+        this.scoreText = this.add.text(40, 13, '🪙 0', {
+            fontSize: '11px', fontStyle: 'bold', fill: '#fde047', fontFamily: FONT_BODY
+        }).setOrigin(0.5);
+        this.scoreContainer.add([scoreBg, this.scoreText]);
+
         // Tombol Settings di kanan
         const hudRight = this.scale.width;
         this.menuBtnContainer = this.add.container(hudRight - 24, 26).setDepth(25).setScrollFactor(0);
@@ -264,6 +299,182 @@ export class Scene3 extends Phaser.Scene {
         this.mobileControlsContainer.add([leftBg, leftIcon, rightBg, rightIcon, jumpBg, jumpIcon, interactBg, interactIcon]);
     }
 
+    // ===============================================================
+    // VISUAL CLICK-TO-PLACE OBJECT SPAWNER
+    // ===============================================================
+    enterPlacementMode(type) {
+        this.exitPlacementMode(false);
+        this.placementMode = type;
+
+        // Banner petunjuk di layar atas (di bawah Top Engine Menu Bar)
+        this.placementBanner = this.add.container(400, 56).setDepth(99999).setScrollFactor(0);
+        const bannerBg = this.add.rectangle(0, 0, 520, 26, 0x0284c7, 0.95)
+            .setStrokeStyle(1.5, 0x38bdf8);
+        const bannerTxt = this.add.text(0, 0, `🔨 MODE PASANG: [${type.toUpperCase()}] | Klik layar untuk pasang | Tekan [ESC] batal`, {
+            fontSize: '11px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
+        }).setOrigin(0.5);
+        this.placementBanner.add([bannerBg, bannerTxt]);
+
+        // Buat ghost preview
+        let ghostTexture = 'tile_plat_mid';
+        if (type === 'tile') ghostTexture = 'tile_plat_mid';
+        else if (type === 'npc') ghostTexture = 'skeleton_npc';
+        else if (type === 'coin') ghostTexture = 'skeleton_item';
+        else if (type === 'obstacle') ghostTexture = 'skeleton_hazard';
+        else if (type === 'portal') ghostTexture = 'skeleton_portal';
+
+        this.placementGhost = this.add.sprite(-100, -100, ghostTexture)
+            .setDepth(99998)
+            .setAlpha(0.65)
+            .setTint(0x38bdf8);
+
+        if (this.game && this.game.canvas) {
+            this.game.canvas.style.cursor = 'crosshair';
+        }
+        AudioManager.playClick();
+        this.showFloatingToast(`Mode Pasang: ${type.toUpperCase()}. Klik kanvas untuk menempatkan!`, 0x0284c7);
+    }
+
+    exitPlacementMode(showToast = true) {
+        if (this.placementGhost) {
+            this.placementGhost.destroy();
+            this.placementGhost = null;
+        }
+        if (this.placementBanner) {
+            this.placementBanner.destroy();
+            this.placementBanner = null;
+        }
+        this.placementMode = null;
+        if (this.game && this.game.canvas) {
+            this.game.canvas.style.cursor = 'default';
+        }
+        if (showToast) {
+            this.showFloatingToast('Mode penempatan dibatalkan', 0x64748b);
+        }
+    }
+
+    updatePlacementGhost(pointer) {
+        if (!this.placementMode || !this.placementGhost) return;
+        const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+        
+        let snapX, snapY;
+        if (this.placementMode === 'tile' || this.placementMode === 'obstacle') {
+            snapX = Math.floor(worldPoint.x / 32) * 32 + 16;
+            snapY = Math.floor(worldPoint.y / 24) * 24 + 12;
+        } else {
+            snapX = Math.round(worldPoint.x / 16) * 16;
+            snapY = Math.round(worldPoint.y / 16) * 16;
+        }
+
+        this.placementGhost.setPosition(snapX, snapY);
+    }
+
+    handlePlacementClick(pointer) {
+        if (!this.placementMode) return;
+        // Abaikan jika pointer diklik di bilah atas (y < 36)
+        if (pointer.y < 36) return;
+
+        const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+        let snapX, snapY;
+        if (this.placementMode === 'tile' || this.placementMode === 'obstacle') {
+            snapX = Math.floor(worldPoint.x / 32) * 32 + 16;
+            snapY = Math.floor(worldPoint.y / 24) * 24 + 12;
+        } else {
+            snapX = Math.round(worldPoint.x / 16) * 16;
+            snapY = Math.round(worldPoint.y / 16) * 16;
+        }
+
+        const type = this.placementMode;
+
+        if (type === 'tile') {
+            const plat = this.platforms.create(snapX, snapY, 'tile_plat_mid').refreshBody();
+            plat.setDepth(10);
+            this.tweens.add({ targets: plat, scaleX: { from: 0.1, to: 1 }, scaleY: { from: 0.1, to: 1 }, duration: 250, ease: 'Back.out' });
+            this.placedObjects.push({ type: 'tile', x: snapX, y: snapY });
+            ScriptingWorkspace.instance?.appendCodeSnippet(`// [Platform] di (${snapX}, ${snapY})\nthis.platforms.create(${snapX}, ${snapY}, 'tile_plat_mid').refreshBody();`);
+        } else if (type === 'npc') {
+            const npc = this.physics.add.sprite(snapX, snapY, 'skeleton_npc').setDepth(10).setImmovable(true);
+            this.physics.add.collider(npc, this.platforms);
+            const tag = this.add.text(snapX, snapY - 30, '🧙 NPC Petualang', {
+                fontSize: '10px', fontStyle: 'bold', fill: '#fde047', backgroundColor: '#0f172a', padding: { x: 5, y: 2 }, fontFamily: FONT_BODY
+            }).setOrigin(0.5).setDepth(15);
+            this.tweens.add({ targets: [npc, tag], y: '-=4', duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+            this.customNpcs.push({
+                sprite: npc,
+                nameTag: tag,
+                x: snapX,
+                y: snapY,
+                dialog: [
+                    "Halo! Selamat datang di dunia buatanmu sendiri!",
+                    "Gunakan tombol [E] untuk berinteraksi dengan orang lain.",
+                    "Terus bangun peta ini dan bagikan gamemu ke teman-teman!"
+                ]
+            });
+            this.placedObjects.push({ type: 'npc', x: snapX, y: snapY, name: 'NPC Petualang' });
+            ScriptingWorkspace.instance?.appendCodeSnippet(`// [NPC] di (${snapX}, ${snapY})\nconst npc = this.physics.add.sprite(${snapX}, ${snapY}, 'skeleton_npc');\nthis.physics.add.collider(npc, this.platforms);`);
+        } else if (type === 'coin') {
+            const coin = this.coins.create(snapX, snapY, 'skeleton_item').setDepth(10);
+            this.tweens.add({ targets: coin, y: snapY - 6, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+            this.placedObjects.push({ type: 'coin', x: snapX, y: snapY });
+            ScriptingWorkspace.instance?.appendCodeSnippet(`// [Koin] di (${snapX}, ${snapY})\nconst coin = this.coins.create(${snapX}, ${snapY}, 'skeleton_item');`);
+        } else if (type === 'obstacle') {
+            const spike = this.hazards.create(snapX, snapY, 'skeleton_hazard').setDepth(10);
+            this.placedObjects.push({ type: 'obstacle', x: snapX, y: snapY });
+            ScriptingWorkspace.instance?.appendCodeSnippet(`// [Duri] di (${snapX}, ${snapY})\nconst duri = this.hazards.create(${snapX}, ${snapY}, 'skeleton_hazard');`);
+        } else if (type === 'portal') {
+            const portal = this.add.sprite(snapX, snapY, 'skeleton_portal').setDepth(10);
+            const pLabel = this.add.text(snapX, snapY - 38, '🌀 Gerbang Rahasia', {
+                fontSize: '10px', fontStyle: 'bold', fill: '#38bdf8', backgroundColor: '#0f172a', padding: { x: 5, y: 2 }, fontFamily: FONT_BODY
+            }).setOrigin(0.5).setDepth(15);
+            this.tweens.add({ targets: portal, scaleX: 1.08, scaleY: 1.08, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+            this.customPortals.push({ sprite: portal, label: pLabel, x: snapX, y: snapY });
+            this.placedObjects.push({ type: 'portal', x: snapX, y: snapY });
+            ScriptingWorkspace.instance?.appendCodeSnippet(`// [Portal] di (${snapX}, ${snapY})\nconst portal = this.add.sprite(${snapX}, ${snapY}, 'skeleton_portal');`);
+        }
+
+        AudioManager.playSuccess();
+        this.showFloatingToast(`✓ ${type.toUpperCase()} dipasang di (${snapX}, ${snapY})!`, 0x10b981);
+    }
+
+    collectCoin(coin) {
+        if (!coin || !coin.active) return;
+        const x = coin.x;
+        const y = coin.y;
+        coin.destroy();
+
+        AudioManager.playCoin();
+        this.score += 10;
+        this.updateHUDScore();
+
+        // Floating score effect
+        const plusTxt = this.add.text(x, y - 10, '+10 Koin', {
+            fontSize: '11px', fontStyle: 'bold', fill: '#fde047', fontFamily: FONT_BODY
+        }).setOrigin(0.5).setDepth(20);
+        this.tweens.add({
+            targets: plusTxt,
+            y: y - 35,
+            alpha: 0,
+            duration: 800,
+            onComplete: () => plusTxt.destroy()
+        });
+    }
+
+    updateHUDHP() {
+        if (!this.hpHeartTexts || !this.hpNumericText) return;
+        for (let i = 0; i < this.maxHp; i++) {
+            if (this.hpHeartTexts[i]) {
+                this.hpHeartTexts[i].setFill(i < this.hp ? '#f43f5e' : '#475569');
+            }
+        }
+        this.hpNumericText.setText(`${this.hp}/${this.maxHp}`);
+    }
+
+    updateHUDScore() {
+        if (this.scoreText) {
+            this.scoreText.setText(`🪙 ${this.score}`);
+        }
+    }
+
     handleInteract() {
         if (!this.player) return;
 
@@ -285,10 +496,30 @@ export class Scene3 extends Phaser.Scene {
             return;
         }
 
-        // ===============================================================
-        // 💬 TEMPEL KODE /create dialogue DI BAWAH INI:
-        // ===============================================================
+        // Cek interaksi dengan custom NPC buatan murid
+        for (const npc of this.customNpcs) {
+            const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, npc.x, npc.y);
+            if (dist < 75) {
+                AudioManager.playClick();
+                this.dialogBox.show({
+                    name: 'NPC Petualang',
+                    lines: npc.dialog
+                });
+                return;
+            }
+        }
 
+        // Cek interaksi dengan custom portal
+        for (const p of this.customPortals) {
+            const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, p.x, p.y);
+            if (dist < 75) {
+                AudioManager.playSuccess();
+                this.showFloatingToast('🌀 Masuk ke Portal Rahasia!', 0x38bdf8);
+                this.cameras.main.flash(400, 2, 132, 199);
+                this.player.setPosition(180, 380);
+                return;
+            }
+        }
     }
 
     takeDamage(amount = 1) {
@@ -333,7 +564,7 @@ export class Scene3 extends Phaser.Scene {
     update() {
         if (!this.player || !this.player.body) return;
 
-        // Prompt Portal saat pemain mendekat
+        // Prompt Portal Hub saat pemain mendekat
         const distPortal = Phaser.Math.Distance.Between(this.player.x, this.player.y, 90, 396);
         if (this.portalPrompt) {
             this.portalPrompt.setVisible(distPortal < 80);

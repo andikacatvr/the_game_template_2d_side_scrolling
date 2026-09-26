@@ -9,6 +9,7 @@
 // ===============================================================
 
 import { ScriptingWorkspace } from './ScriptingWorkspace.js';
+import { ExportGameModal } from './ExportGameModal.js';
 import { CodeInspector } from '../utils/CodeInspector.js';
 import { CommandConsole } from '../utils/CommandConsole.js';
 import { AudioManager } from '../utils/AudioManager.js';
@@ -295,12 +296,13 @@ export class EngineMenuBar {
                     <div class="gt-mb-menu-dropdown-content" id="gt-mb-dd-add">
                         <div class="gt-mb-menu-item" data-create="tile">🧱 Platform / Lantai</div>
                         <div class="gt-mb-menu-item" data-create="npc">🧙 Karakter NPC</div>
+                        <div class="gt-mb-menu-item" data-create="coin">🪙 Koin Harta Karun</div>
+                        <div class="gt-mb-menu-item" data-create="obstacle">⚠️ Duri & Rintangan</div>
+                        <div class="gt-mb-menu-item" data-create="portal">🌀 Portal Hub Aman</div>
+                        <div class="gt-mb-divider"></div>
                         <div class="gt-mb-menu-item" data-create="dialogue">💬 Dialog Percakapan</div>
                         <div class="gt-mb-menu-item" data-create="quest">📋 Misi & Quest</div>
-                        <div class="gt-mb-menu-item" data-create="obstacle">⚠️ Duri & Rintangan</div>
                         <div class="gt-mb-menu-item" data-create="parallax">🌄 Parallax Background</div>
-                        <div class="gt-mb-divider"></div>
-                        <div class="gt-mb-menu-item" data-create="portal">🌀 Portal Hub Aman</div>
                     </div>
                 </div>
 
@@ -380,17 +382,21 @@ export class EngineMenuBar {
         });
 
         this.bar.querySelector('#mi-export').addEventListener('click', () => {
-            AudioManager.playSuccess();
-            alert('📦 FITUR EKSPOR GAME:\nGame kamu siap dikemas! Jalankan perintah "npm run build" untuk menghasilkan bundel siap main di folder dist/.');
+            new ExportGameModal(this.scene).show(this.scene);
         });
 
         // Dropdown actions: Add Object
         this.bar.querySelectorAll('#gt-mb-dd-add .gt-mb-menu-item').forEach(item => {
             item.addEventListener('click', () => {
                 const target = item.getAttribute('data-create');
-                CommandConsole.show();
-                if (CommandConsole.instance) {
-                    CommandConsole.instance.runCommand(`/create ${target}`);
+                // Jika tipe visual didukung spawner langsung di kanvas:
+                if (['tile', 'npc', 'coin', 'obstacle', 'portal'].includes(target) && this.scene && typeof this.scene.enterPlacementMode === 'function') {
+                    this.scene.enterPlacementMode(target);
+                } else {
+                    CommandConsole.show();
+                    if (CommandConsole.instance) {
+                        CommandConsole.instance.runCommand(`/create ${target}`);
+                    }
                 }
             });
         });
