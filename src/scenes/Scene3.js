@@ -10,6 +10,7 @@ import { CommandConsole } from '../utils/CommandConsole.js';
 import { DialogBox } from '../ui/DialogBox.js';
 import { EngineMenuBar } from '../ui/EngineMenuBar.js';
 import { ScriptingWorkspace } from '../ui/ScriptingWorkspace.js';
+import { HTMLGameHUD } from '../ui/HTMLGameHUD.js';
 
 // ===============================================================
 // SCENE 3: TEMPLATE KOSONG (HANYA LANTAI / TILES)
@@ -215,44 +216,46 @@ export class Scene3 extends Phaser.Scene {
     }
 
     // ===============================================================
-    // UI HUD
+    // UI HUD (HTML DOM OVERLAY)
     // ===============================================================
     createHUD() {
-        // HP Bar
-        this.healthContainer = this.add.container(16, 13).setDepth(25).setScrollFactor(0);
-        const barWidth = Math.max(120, 34 + this.maxHp * 20 + 38);
-        const hpBg = this.add.rectangle(barWidth / 2, 13, barWidth, 26, 0x0f172a, 0.85);
-        const hpLabel = this.add.text(8, 4, 'HP', { fontSize: '11px', fontStyle: 'bold', fill: '#f43f5e', fontFamily: FONT_TITLE });
-
-        this.hpHeartTexts = [];
-        for (let i = 0; i < this.maxHp; i++) {
-            const heart = this.add.text(30 + i * 18, 4, '■', { fontSize: '13px', fill: '#f43f5e' });
-            this.hpHeartTexts.push(heart);
-        }
-        this.hpNumericText = this.add.text(32 + this.maxHp * 18 + 4, 5, `${this.hp}/${this.maxHp}`, {
-            fontSize: '11px', fontStyle: 'bold', fill: '#fda4af', fontFamily: FONT_BODY
+        this.htmlHUD = new HTMLGameHUD(this);
+        this.settingsModal = new SettingsModal(this, {
+            onRestart: () => {
+                SaveManager.clear();
+                this.scene.restart();
+            },
+            onMainMenu: () => {
+                this.scene.start('TitleScene');
+            }
         });
-        this.healthContainer.add([hpBg, hpLabel, ...this.hpHeartTexts, this.hpNumericText]);
+        this.inventoryModal = new InventoryModal(this);
+    }
 
-        // Score Badge
-        this.scoreContainer = this.add.container(barWidth + 24, 13).setDepth(25).setScrollFactor(0);
-        const scoreBg = this.add.rectangle(40, 13, 80, 26, 0x0f172a, 0.85);
-        this.scoreText = this.add.text(40, 13, '🪙 0', {
-            fontSize: '11px', fontStyle: 'bold', fill: '#fde047', fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-        this.scoreContainer.add([scoreBg, this.scoreText]);
+    updateHPDisplay() {
+        if (this.htmlHUD) {
+            this.htmlHUD.updateHP(this.hp, this.maxHp);
+        }
+    }
 
-        // Tombol Settings di kanan
-        const hudRight = this.scale.width;
-        this.menuBtnContainer = this.add.container(hudRight - 24, 26).setDepth(25).setScrollFactor(0);
-        const menuBtnBg = this.add.rectangle(0, 0, 36, 36, 0x0f172a, 0.9)
-            .setStrokeStyle(2, 0x64748b)
-            .setInteractive({ useHandCursor: true });
-        const menuIcon = this.add.text(0, 0, '⚙', { fontSize: '16px', fill: '#ffffff' }).setOrigin(0.5);
-        this.menuBtnContainer.add([menuBtnBg, menuIcon]);
-        menuBtnBg.on('pointerdown', () => this.toggleSettingsModal());
+    updateInventoryBadge() {
+        if (this.htmlHUD) {
+            this.htmlHUD.updateInventoryBadge(this.inventory.length);
+        }
+    }
 
-        this.settingsModal = new SettingsModal(this);
+    toggleQuestModal() {
+        this.showFloatingToast('Belum ada misi khusus di Sandbox ini.', 0x38bdf8);
+    }
+
+    toggleInventoryModal() {
+        if (this.inventoryModal) {
+            if (this.inventoryModal.isOpen && this.inventoryModal.isOpen()) {
+                this.inventoryModal.hide();
+            } else {
+                this.inventoryModal.show();
+            }
+        }
     }
 
     toggleSettingsModal() {
@@ -460,13 +463,9 @@ export class Scene3 extends Phaser.Scene {
     }
 
     updateHUDHP() {
-        if (!this.hpHeartTexts || !this.hpNumericText) return;
-        for (let i = 0; i < this.maxHp; i++) {
-            if (this.hpHeartTexts[i]) {
-                this.hpHeartTexts[i].setFill(i < this.hp ? '#f43f5e' : '#475569');
-            }
+        if (this.htmlHUD) {
+            this.htmlHUD.updateHP(this.hp, this.maxHp);
         }
-        this.hpNumericText.setText(`${this.hp}/${this.maxHp}`);
     }
 
     updateHUDScore() {

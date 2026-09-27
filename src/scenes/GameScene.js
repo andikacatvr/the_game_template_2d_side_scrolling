@@ -10,6 +10,7 @@ import { AudioManager } from '../utils/AudioManager.js';
 import { CameraZoomManager } from '../utils/CameraZoomManager.js';
 import { CodeInspector } from '../utils/CodeInspector.js';
 import { CommandConsole } from '../utils/CommandConsole.js';
+import { HTMLGameHUD } from '../ui/HTMLGameHUD.js';
 
 // ===============================================================
 // 3. GAME SCENE: SKELETON WITH FULL HUD & RESOLUTION MANAGER
@@ -473,138 +474,8 @@ export class GameScene extends Phaser.Scene {
     // TOP NAVBAR HUD (100% IDENTIK DENGAN CURSE OF THE GOBLIN)
     // ===============================================================
     createGoblinStyleHUD() {
-        // A. HP DISPLAY (Top Left: Adaptif terhadap jumlah maxHp)
-        this.healthContainer = this.add.container(16, 13).setDepth(25).setScrollFactor(0);
-
-        const isCompact = this.maxHp > 4;
-        const barWidth = isCompact ? 112 : Math.max(120, 34 + this.maxHp * 20 + 38);
-        const hpBg = this.add.rectangle(barWidth / 2, 13, barWidth, 26, 0x0f172a, 0.85)
-            .setInteractive({ useHandCursor: true });
-
-        const hpLabel = this.add.text(8, 4, 'HP', {
-            fontSize: '11px',
-            fontStyle: 'bold',
-            fill: '#f43f5e',
-            fontFamily: FONT_TITLE
-        });
-
-        this.hpHeartTexts = [];
-        if (!isCompact) {
-            for (let i = 0; i < this.maxHp; i++) {
-                const heart = this.add.text(30 + i * 18, 4, '■', { fontSize: '13px', fill: '#f43f5e' });
-                this.hpHeartTexts.push(heart);
-            }
-            this.hpNumericText = this.add.text(32 + this.maxHp * 18 + 4, 5, `${this.hp}/${this.maxHp}`, {
-                fontSize: '11px', fontStyle: 'bold', fill: '#fda4af', fontFamily: FONT_BODY
-            });
-            this.healthContainer.add([hpBg, hpLabel, ...this.hpHeartTexts, this.hpNumericText]);
-        } else {
-            const singleHeart = this.add.text(28, 4, '■', { fontSize: '13px', fill: '#f43f5e' });
-            this.hpNumericText = this.add.text(50, 5, `${this.hp}/${this.maxHp}`, {
-                fontSize: '12px', fontStyle: 'bold', fill: '#fda4af', fontFamily: FONT_BODY
-            });
-            this.healthContainer.add([hpBg, hpLabel, singleHeart, this.hpNumericText]);
-        }
-        this.updateHPDisplay();
-
-        // B. QUEST BUTTON (Top Left samping HP: posisi dinamis agar tidak pernah bertabrakan)
-        const questX = 16 + barWidth + 44;
-        this.questBtnContainer = this.add.container(questX, 26).setDepth(25).setScrollFactor(0);
-
-        const questBtnBg = this.add.rectangle(0, 0, 72, 34, 0x0f172a, 0.9)
-            .setStrokeStyle(2, 0x38bdf8)
-            .setInteractive({ useHandCursor: true });
-
-        const questBtnText = this.add.text(0, 0, 'Quest', {
-            fontSize: '13px', fontStyle: 'bold', fill: '#f8fafc', fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-
-        this.questBtnContainer.add([questBtnBg, questBtnText]);
-
-        questBtnBg.on('pointerdown', () => this.toggleQuestModal());
-        questBtnBg.on('pointerover', () => {
-            questBtnBg.setFillStyle(0x1e293b, 1);
-            questBtnBg.setStrokeStyle(2, 0x60a5fa);
-            this.tweens.add({ targets: this.questBtnContainer, scaleX: 1.05, scaleY: 1.05, duration: 100 });
-        });
-        questBtnBg.on('pointerout', () => {
-            questBtnBg.setFillStyle(0x0f172a, 0.9);
-            questBtnBg.setStrokeStyle(2, 0x38bdf8);
-            this.tweens.add({ targets: this.questBtnContainer, scaleX: 1, scaleY: 1, duration: 100 });
-        });
-
-        // C. INVENTORY BUTTON (Top Right: Minimalist White Vector Bag Icon, dinamis terhadap lebar layar)
-        const hudRight = this.scale.width;
-        this.bagBtnContainer = this.add.container(hudRight - 68, 26).setDepth(25).setScrollFactor(0);
-
-        const bagBtnBg = this.add.rectangle(0, 0, 36, 36, 0x0f172a, 0.9)
-            .setStrokeStyle(2, 0x64748b)
-            .setInteractive({ useHandCursor: true });
-
-        // Gambar Ikon Tas Vector
-        const bagGraphics = this.add.graphics();
-        const drawBagIcon = (color = 0xf8fafc) => {
-            bagGraphics.clear();
-            bagGraphics.lineStyle(2, color, 1);
-            bagGraphics.beginPath();
-            bagGraphics.arc(0, -6.5, 3.5, Math.PI, 0, false);
-            bagGraphics.strokePath();
-            bagGraphics.strokeRoundedRect(-8.5, -5.5, 17, 16, 2.5);
-            bagGraphics.beginPath();
-            bagGraphics.moveTo(-8.5, 0);
-            bagGraphics.lineTo(8.5, 0);
-            bagGraphics.strokePath();
-            bagGraphics.fillStyle(color, 1);
-            bagGraphics.fillRect(-2, -2, 4, 4);
-        };
-        drawBagIcon(0xf8fafc);
-
-        // Badge jumlah item di tas
-        this.bagBadgeBg = this.add.circle(13, -12, 7, 0x10b981, 1);
-        this.bagBadgeText = this.add.text(13, -12, `${this.inventory.length}`, {
-            fontSize: '9px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-
-        this.bagBtnContainer.add([bagBtnBg, bagGraphics, this.bagBadgeBg, this.bagBadgeText]);
-
-        bagBtnBg.on('pointerdown', () => this.toggleInventoryModal());
-        bagBtnBg.on('pointerover', () => {
-            bagBtnBg.setFillStyle(0x1e293b, 1);
-            bagBtnBg.setStrokeStyle(2, 0xf59e0b);
-            drawBagIcon(0xfde047);
-            this.tweens.add({ targets: this.bagBtnContainer, scaleX: 1.08, scaleY: 1.08, duration: 100 });
-        });
-        bagBtnBg.on('pointerout', () => {
-            bagBtnBg.setFillStyle(0x0f172a, 0.9);
-            bagBtnBg.setStrokeStyle(2, 0x64748b);
-            drawBagIcon(0xf8fafc);
-            this.tweens.add({ targets: this.bagBtnContainer, scaleX: 1, scaleY: 1, duration: 100 });
-        });
-
-        // D. MENU / SETTINGS BUTTON (Top Right: Hamburger Icon, menempel pas di ujung kanan layar)
-        this.menuBtnContainer = this.add.container(hudRight - 24, 26).setDepth(25).setScrollFactor(0);
-
-        const menuBtnBg = this.add.rectangle(0, 0, 36, 36, 0x0f172a, 0.9)
-            .setStrokeStyle(2, 0x64748b)
-            .setInteractive({ useHandCursor: true });
-
-        const line1 = this.add.rectangle(0, -6, 18, 2.5, 0xf8fafc, 1);
-        const line2 = this.add.rectangle(0, 0, 18, 2.5, 0xf8fafc, 1);
-        const line3 = this.add.rectangle(0, 6, 18, 2.5, 0xf8fafc, 1);
-
-        this.menuBtnContainer.add([menuBtnBg, line1, line2, line3]);
-
-        menuBtnBg.on('pointerdown', () => this.toggleSettingsModal());
-        menuBtnBg.on('pointerover', () => {
-            menuBtnBg.setFillStyle(0x1e293b, 1);
-            menuBtnBg.setStrokeStyle(2, 0x38bdf8);
-            this.tweens.add({ targets: this.menuBtnContainer, scaleX: 1.08, scaleY: 1.08, duration: 100 });
-        });
-        menuBtnBg.on('pointerout', () => {
-            menuBtnBg.setFillStyle(0x0f172a, 0.9);
-            menuBtnBg.setStrokeStyle(2, 0x64748b);
-            this.tweens.add({ targets: this.menuBtnContainer, scaleX: 1, scaleY: 1, duration: 100 });
-        });
+        // HTML Native HUD Overlay (Tombol Quest, Tas, Menu, dan HP Bar Ultra-Tajam)
+        this.htmlHUD = new HTMLGameHUD(this);
 
         // Buat Popup Modals (Quest, Inventory, & Settings/Resolution)
         this.createQuestModalUI();
@@ -633,31 +504,14 @@ export class GameScene extends Phaser.Scene {
     }
 
     updateHPDisplay() {
-        if (this.hpHeartTexts) {
-            for (let i = 0; i < this.maxHp; i++) {
-                if (this.hpHeartTexts[i]) {
-                    this.hpHeartTexts[i].setText('■');
-                    if (i < this.hp) {
-                        this.hpHeartTexts[i].setColor('#f43f5e').setAlpha(1);
-                    } else {
-                        this.hpHeartTexts[i].setColor('#334155').setAlpha(0.4);
-                    }
-                }
-            }
-        }
-        if (this.hpNumericText) {
-            this.hpNumericText.setText(`${this.hp}/${this.maxHp}`);
-            if (this.hp <= 1) {
-                this.hpNumericText.setFill('#ef4444');
-            } else {
-                this.hpNumericText.setFill('#fda4af');
-            }
+        if (this.htmlHUD) {
+            this.htmlHUD.updateHP(this.hp, this.maxHp);
         }
     }
 
     updateInventoryBadge() {
-        if (this.bagBadgeText) {
-            this.bagBadgeText.setText(`${this.inventory.length}`);
+        if (this.htmlHUD) {
+            this.htmlHUD.updateInventoryBadge(this.inventory.length);
         }
     }
 
