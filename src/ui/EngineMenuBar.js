@@ -270,11 +270,6 @@ export class EngineMenuBar {
             </style>
 
             <div class="gt-mb-left">
-                <div class="gt-mb-logo">
-                    <span class="gt-mb-logo-icon">▲</span>
-                    <span>EDU ENGINE</span>
-                </div>
-
                 <!-- Dropdown 1: File -->
                 <div class="gt-mb-dropdown">
                     <button class="gt-mb-btn-menu" id="gt-mb-btn-file">
@@ -335,7 +330,7 @@ export class EngineMenuBar {
         // Pull tab when collapsed
         this.pullTab = document.createElement('div');
         this.pullTab.className = 'gt-mb-pull-tab';
-        this.pullTab.innerHTML = '▲ EDU ENGINE MENU';
+        this.pullTab.innerHTML = '▲ MENU';
         document.body.appendChild(this.pullTab);
 
         this.bindEvents();
