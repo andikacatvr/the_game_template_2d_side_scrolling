@@ -11,6 +11,7 @@ import { DialogBox } from '../ui/DialogBox.js';
 import { EngineMenuBar } from '../ui/EngineMenuBar.js';
 import { ScriptingWorkspace } from '../ui/ScriptingWorkspace.js';
 import { HTMLGameHUD } from '../ui/HTMLGameHUD.js';
+import { HTMLInteractPrompt } from '../ui/HTMLInteractPrompt.js';
 
 // ===============================================================
 // SCENE 3: TEMPLATE KOSONG (HANYA LANTAI / TILES)
@@ -116,6 +117,7 @@ export class Scene3 extends Phaser.Scene {
 
         // 9. Sistem Kotak Dialog (untuk template /create dialogue & npc)
         this.dialogBox = new DialogBox(this);
+        this.interactPrompt = new HTMLInteractPrompt(this);
 
         // ===============================================================
         // 🎨 KANVAS KREASI MURID (TEMPEL KODE /create KAMU DI BAWAH INI)
@@ -567,6 +569,26 @@ export class Scene3 extends Phaser.Scene {
         const distPortal = Phaser.Math.Distance.Between(this.player.x, this.player.y, 90, 396);
         if (this.portalPrompt) {
             this.portalPrompt.setVisible(distPortal < 80);
+        }
+
+        // Prompt Interaksi NPC Custom Buatan Murid (HTML Boxless text)
+        let nearestNpc = null;
+        let minDist = 75;
+        for (const npc of this.customNpcs) {
+            const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, npc.x, npc.y);
+            if (d < minDist) {
+                minDist = d;
+                nearestNpc = npc;
+            }
+        }
+        if (nearestNpc && (!this.dialogBox || !this.dialogBox.isOpen())) {
+            if (this.interactPrompt) {
+                this.interactPrompt.show(nearestNpc.x, nearestNpc.y - 36, 'Bicara', () => this.handleInteract());
+            }
+        } else {
+            if (this.interactPrompt) {
+                this.interactPrompt.hide();
+            }
         }
 
         // Pergerakan Karakter

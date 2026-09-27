@@ -11,6 +11,7 @@ import { CameraZoomManager } from '../utils/CameraZoomManager.js';
 import { CodeInspector } from '../utils/CodeInspector.js';
 import { CommandConsole } from '../utils/CommandConsole.js';
 import { HTMLGameHUD } from '../ui/HTMLGameHUD.js';
+import { HTMLInteractPrompt } from '../ui/HTMLInteractPrompt.js';
 
 // ===============================================================
 // 3. GAME SCENE: SKELETON WITH FULL HUD & RESOLUTION MANAGER
@@ -95,6 +96,9 @@ export class GameScene extends Phaser.Scene {
 
         // Buat Dialog Box RPG
         this.dialogBox = new DialogBox(this);
+
+        // Prompt Interaksi NPC HTML (Boxless & Tajam)
+        this.interactPrompt = new HTMLInteractPrompt(this);
 
         // Setup Batas Dunia Fisika & Kamera (Diperlebar ke 1280 agar mencakup layar penuh tanpa batas void)
         const worldWidth = 1280;
@@ -282,12 +286,8 @@ export class GameScene extends Phaser.Scene {
             ease: 'Sine.easeInOut'
         });
 
-        // Floating Prompt di atas NPC
-        this.npcPrompt = this.add.container(npcX, npcY - 36).setDepth(25).setVisible(false);
-        const npcPill = this.add.rectangle(0, 0, 80, 20, 0x1e1035, 0.95).setStrokeStyle(1.5, 0xc084fc);
-        const npcTxt = this.add.text(0, 0, '[E] Talk', { fontSize: '10px', fontStyle: 'bold', fill: '#e9d5ff', fontFamily: FONT_BODY }).setOrigin(0.5);
-        this.npcPrompt.add([npcPill, npcTxt]);
-        npcPill.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.handleInteract());
+        // Floating Prompt di atas NPC diatur oleh HTMLInteractPrompt (tanpa kotak kaku)
+        this.npcPrompt = null;
 
         // 6. Portal Gerbang
         const portalConfig = map.portal || {};
@@ -1096,10 +1096,19 @@ export class GameScene extends Phaser.Scene {
 
         if (!this.player || !this.player.body) return;
 
-        // Update floating prompts
-        if (this.npc && this.npcPrompt) {
+        // Update floating prompts (HTML Boxless text)
+        if (this.npc) {
             const distNpc = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.npc.x, this.npc.y);
-            this.npcPrompt.setVisible(distNpc < 75 && (!this.dialogBox || !this.dialogBox.isOpen()));
+            const isNear = distNpc < 75 && (!this.dialogBox || !this.dialogBox.isOpen());
+            if (isNear) {
+                if (this.interactPrompt) {
+                    this.interactPrompt.show(this.npc.x, this.npc.y - 36, 'Talk', () => this.handleInteract());
+                }
+            } else {
+                if (this.interactPrompt) {
+                    this.interactPrompt.hide();
+                }
+            }
         }
 
         if (this.portalPrompt) {

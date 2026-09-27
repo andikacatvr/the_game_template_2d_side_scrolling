@@ -11,6 +11,7 @@ import { CameraZoomManager } from '../utils/CameraZoomManager.js';
 import { CodeInspector } from '../utils/CodeInspector.js';
 import { CommandConsole } from '../utils/CommandConsole.js';
 import { HTMLGameHUD } from '../ui/HTMLGameHUD.js';
+import { HTMLInteractPrompt } from '../ui/HTMLInteractPrompt.js';
 
 // ===============================================================
 // SCENE 2: VICTORIA HARBOUR, HONG KONG (PARALLAX + WEATHER)
@@ -85,6 +86,9 @@ export class HongKongScene extends Phaser.Scene {
 
         // 7. Buat Dialog Box RPG
         this.dialogBox = new DialogBox(this);
+
+        // Prompt Interaksi NPC HTML (Boxless & Tajam)
+        this.interactPrompt = new HTMLInteractPrompt(this);
 
         // Setup Batas Dunia Fisika & Kamera (Lebar 2000px agar mencakup dermaga penuh sampai feri ekspedisi)
         const worldWidth = 2000;
@@ -278,11 +282,8 @@ export class HongKongScene extends Phaser.Scene {
             ease: 'Sine.easeInOut'
         });
 
-        this.npcPrompt = this.add.container(npcX, npcY - 38).setDepth(25).setVisible(false);
-        const npcPill = this.add.rectangle(0, 0, 95, 20, 0x0f172a, 0.95).setStrokeStyle(1.5, 0x38bdf8);
-        const npcTxt = this.add.text(0, 0, '[E] Kapten Chen', { fontSize: '10px', fontStyle: 'bold', fill: '#e0f2fe', fontFamily: FONT_BODY }).setOrigin(0.5);
-        this.npcPrompt.add([npcPill, npcTxt]);
-        npcPill.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.handleInteract());
+        // Floating Prompt di atas NPC diatur oleh HTMLInteractPrompt (tanpa kotak kaku)
+        this.npcPrompt = null;
 
         // -------------------------------------------------------------
         // PORTAL 1 (KIRI, x=90): Kembali ke Scene 1 (Padang Salju)
@@ -1013,10 +1014,19 @@ export class HongKongScene extends Phaser.Scene {
 
         if (!this.player || !this.player.body) return;
 
-        // Update Prompt NPC
-        if (this.npc && this.npcPrompt) {
+        // Update Prompt NPC (HTML Boxless Text)
+        if (this.npc) {
             const distNpc = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.npc.x, this.npc.y);
-            this.npcPrompt.setVisible(distNpc < 80 && (!this.dialogBox || !this.dialogBox.isOpen()));
+            const isNear = distNpc < 80 && (!this.dialogBox || !this.dialogBox.isOpen());
+            if (isNear) {
+                if (this.interactPrompt) {
+                    this.interactPrompt.show(this.npc.x, this.npc.y - 38, 'Kapten Chen', () => this.handleInteract());
+                }
+            } else {
+                if (this.interactPrompt) {
+                    this.interactPrompt.hide();
+                }
+            }
         }
 
         if (this.isGameOver || this.isQuestOpen || this.isInvOpen || this.isSettingsOpen || (this.dialogBox && this.dialogBox.isOpen())) {
