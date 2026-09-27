@@ -175,28 +175,6 @@ export class ProjectHubModal {
                     color: #ffffff;
                 }
 
-                /* Notice Banner (Like Unity legal notice) */
-                .gt-uhub-banner {
-                    background: #252525;
-                    border-bottom: 1px solid #303030;
-                    padding: 7px 16px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    font-size: 11.5px;
-                    color: #b0b0b0;
-                }
-
-                .gt-uhub-banner-link {
-                    color: #38bdf8;
-                    text-decoration: none;
-                    font-weight: 600;
-                    cursor: pointer;
-                }
-
-                .gt-uhub-banner-link:hover {
-                    text-decoration: underline;
-                }
 
                 /* Main Body (Sidebar + Content) */
                 .gt-uhub-main {
@@ -600,11 +578,6 @@ export class ProjectHubModal {
                     </div>
                 </div>
 
-                <!-- Unity-style Notice Banner -->
-                <div class="gt-uhub-banner">
-                    <span>💡 <b>Edu-Engine Mode Aktif</b>: Bangun dunia game 2D dengan cepat lewat perintah <code>/create</code> dan template modular.</span>
-                    <span class="gt-uhub-banner-link" id="gt-uhub-banner-guide">Panduan Koding →</span>
-                </div>
 
                 <!-- Main Layout (Sidebar + Content) -->
                 <div class="gt-uhub-main">
@@ -661,14 +634,6 @@ export class ProjectHubModal {
             });
         });
 
-        // Banner Guide click
-        this.overlay.querySelector('#gt-uhub-banner-guide').addEventListener('click', () => {
-            this.currentTab = 'learn';
-            this.overlay.querySelectorAll('.gt-uhub-nav-item').forEach(i => {
-                i.classList.toggle('active', i.getAttribute('data-tab') === 'learn');
-            });
-            this.renderContent();
-        });
 
         // Render initial tab content
         this.renderContent();
