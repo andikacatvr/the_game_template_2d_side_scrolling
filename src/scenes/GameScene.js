@@ -13,6 +13,8 @@ import { CommandConsole } from '../utils/CommandConsole.js';
 import { HTMLGameHUD } from '../ui/HTMLGameHUD.js';
 import { HTMLInteractPrompt } from '../ui/HTMLInteractPrompt.js';
 import { QuestModal } from '../ui/QuestModal.js';
+import { NPCDialogEditorModal } from '../ui/NPCDialogEditorModal.js';
+import { EngineMenuBar } from '../ui/EngineMenuBar.js';
 
 // ===============================================================
 // 3. GAME SCENE: SKELETON WITH FULL HUD & RESOLUTION MANAGER
@@ -100,6 +102,13 @@ export class GameScene extends Phaser.Scene {
 
         // Prompt Interaksi NPC HTML (Boxless & Tajam)
         this.interactPrompt = new HTMLInteractPrompt(this);
+
+        // Editor Dialog NPC (Wrench Growtopia Style)
+        this.npcDialogEditor = new NPCDialogEditorModal(this);
+
+        // Top Engine Menu Bar
+        this.engineMenuBar = new EngineMenuBar(this);
+        this.engineMenuBar.show(this);
 
         // Setup Batas Dunia Fisika & Kamera (Diperlebar ke 1280 agar mencakup layar penuh tanpa batas void)
         const worldWidth = 1280;
@@ -278,6 +287,10 @@ export class GameScene extends Phaser.Scene {
         const npcX = npcConfig.posisiX || 200;
         const npcY = npcConfig.posisiY || 396;
         this.npc = this.physics.add.staticSprite(npcX, npcY, 'skeleton_npc');
+        this.npcData = {
+            name: npcConfig.nama || 'Penjaga Gerbang',
+            dialog: Array.isArray(npcConfig.dialog) ? [...npcConfig.dialog] : ['Halo petualang! Selamat datang di Lembah Bersalju.']
+        };
         this.tweens.add({
             targets: this.npc,
             y: npcY - 4,
@@ -285,6 +298,15 @@ export class GameScene extends Phaser.Scene {
             repeat: -1,
             duration: 1400,
             ease: 'Sine.easeInOut'
+        });
+
+        // Klik NPC langsung buka editor jika dalam Edit Mode
+        this.npc.setInteractive({ useHandCursor: true }).on('pointerdown', () => {
+            if (this.isEditMode) {
+                this.openNPCDialogEditor();
+            } else {
+                this.handleInteract();
+            }
         });
 
         // Floating Prompt di atas NPC diatur oleh HTMLInteractPrompt (tanpa kotak kaku)
@@ -782,6 +804,30 @@ export class GameScene extends Phaser.Scene {
         }
     }
 
+    openNPCDialogEditor(npcRef = null) {
+        if (!this.npcDialogEditor) {
+            this.npcDialogEditor = new NPCDialogEditorModal(this);
+        }
+        const target = npcRef || this.npcData;
+        this.npcDialogEditor.open(target, (saved) => {
+            this.npcData = saved;
+            if (this.currentMap && this.currentMap.npc) {
+                this.currentMap.npc.nama = saved.name;
+                this.currentMap.npc.dialog = saved.dialog;
+            }
+        });
+    }
+
+    setEditMode(active) {
+        this.isEditMode = active;
+        if (this.game && this.game.canvas) {
+            this.game.canvas.style.cursor = active ? 'cell' : 'default';
+        }
+        if (this.showFloatingToast) {
+            this.showFloatingToast(active ? '🔧 Mode Edit (Wrench) AKTIF! Dekati atau klik NPC untuk edit dialog.' : 'Mode Edit NONAKTIF.', active ? 0xf59e0b : 0x64748b);
+        }
+    }
+
     createInventoryModalUI() {
         const cx = this.scale ? this.scale.width / 2 : 400;
         const cy = this.scale ? this.scale.height / 2 : 225;
@@ -1011,16 +1057,22 @@ export class GameScene extends Phaser.Scene {
             const distNpc = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.npc.x, this.npc.y);
             if (distNpc < 75) {
                 AudioManager.playClick();
+                // Jika sedang dalam Mode Edit (Wrench), langsung buka editor dialog
+                if (this.isEditMode) {
+                    this.openNPCDialogEditor();
+                    return;
+                }
+
                 CodeInspector.record('npc');
-                const npcCfg = (this.currentMap && this.currentMap.npc) || CONFIG_SKELETON.npc || {};
-                CodeInspector.triggerEvent('npc', { name: npcCfg.nama || 'Penjaga Gerbang' });
+                const speakerName = (this.npcData && this.npcData.name) || 'Penjaga Gerbang';
+                const dialogLines = (this.npcData && this.npcData.dialog) || ['Halo petualang! Selamat datang di Lembah Bersalju.'];
+                CodeInspector.triggerEvent('npc', { name: speakerName });
                 this.dialogBox.start(
-                    npcCfg.nama || 'Penjaga Gerbang',
-                    npcCfg.dialog || [],
+                    speakerName,
+                    dialogLines,
                     () => {
                         this.showFloatingToast('Dialog Selesai!', 0xc084fc);
-                    },
-                    npcCfg.portrait || 'npc_portrait'
+                    }
                 );
                 return;
             }

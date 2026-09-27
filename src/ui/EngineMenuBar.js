@@ -10,6 +10,7 @@
 
 import { ScriptingWorkspace } from './ScriptingWorkspace.js';
 import { ExportGameModal } from './ExportGameModal.js';
+import { NPCDialogEditorModal } from './NPCDialogEditorModal.js';
 import { CodeInspector } from '../utils/CodeInspector.js';
 import { CommandConsole } from '../utils/CommandConsole.js';
 import { AudioManager } from '../utils/AudioManager.js';
@@ -204,6 +205,26 @@ export class EngineMenuBar {
                     color: #ffffff;
                 }
 
+                /* Wrench Edit Button (Growtopia Style) */
+                .gt-mb-btn-edit {
+                    background: rgba(245, 158, 11, 0.15);
+                    border-color: rgba(245, 158, 11, 0.35);
+                    color: #fbbf24;
+                }
+
+                .gt-mb-btn-edit:hover {
+                    background: #d97706;
+                    color: #ffffff;
+                }
+
+                .gt-mb-btn-edit.active {
+                    background: #f59e0b !important;
+                    color: #0f172a !important;
+                    font-weight: 800 !important;
+                    border-color: #fbbf24 !important;
+                    box-shadow: 0 0 14px rgba(245, 158, 11, 0.6) !important;
+                }
+
                 /* Right Status & Controls */
                 .gt-mb-right {
                     display: flex;
@@ -301,6 +322,11 @@ export class EngineMenuBar {
                     </div>
                 </div>
 
+                <!-- Quick Button: Edit / Wrench (Growtopia Style) -->
+                <button class="gt-mb-tool-btn gt-mb-btn-edit" id="gt-mb-btn-edit" title="Mode Edit Wrench: Klik NPC untuk mengedit percakapan &amp; nama">
+                    <span>🔧</span> Edit
+                </button>
+
                 <!-- Quick Button: Scripting (Blender Style) -->
                 <button class="gt-mb-tool-btn gt-mb-btn-scripting" id="gt-mb-btn-scripting" title="Buka Editor Koding di Browser">
                     <span>📜</span> Scripting
@@ -384,6 +410,34 @@ export class EngineMenuBar {
         this.bar.querySelectorAll('#gt-mb-dd-add .gt-mb-menu-item').forEach(item => {
             item.addEventListener('click', () => {
                 const target = item.getAttribute('data-create');
+                addDd.classList.remove('show');
+
+                // 1. Dialog Percakapan -> Langsung buka GUI Editor Dialog NPC (Wrench)
+                if (target === 'dialogue') {
+                    this.openNPCDialogEditor();
+                    return;
+                }
+
+                // 2. Misi & Quest -> Langsung buka HTML Active Quest Modal
+                if (target === 'quest') {
+                    if (this.scene && typeof this.scene.toggleQuestModal === 'function') {
+                        this.scene.toggleQuestModal(true);
+                    } else if (this.scene && this.scene.questModal) {
+                        this.scene.questModal.show();
+                    }
+                    return;
+                }
+
+                // 3. Parallax Background -> Ganti tema background live
+                if (target === 'parallax') {
+                    if (this.scene && typeof this.scene.cycleParallaxBackground === 'function') {
+                        this.scene.cycleParallaxBackground();
+                    } else if (this.scene && this.scene.showFloatingToast) {
+                        this.scene.showFloatingToast('🌄 Parallax Background aktif pada scene ini!', 0x38bdf8);
+                    }
+                    return;
+                }
+
                 // Jika tipe visual didukung spawner langsung di kanvas:
                 if (['tile', 'npc', 'coin', 'obstacle', 'portal'].includes(target) && this.scene && typeof this.scene.enterPlacementMode === 'function') {
                     this.scene.enterPlacementMode(target);
@@ -395,6 +449,14 @@ export class EngineMenuBar {
                 }
             });
         });
+
+        // Quick Button: Edit / Wrench
+        const editBtn = this.bar.querySelector('#gt-mb-btn-edit');
+        if (editBtn) {
+            editBtn.addEventListener('click', () => {
+                this.toggleEditMode();
+            });
+        }
 
         // Quick Buttons
         this.bar.querySelector('#gt-mb-btn-scripting').addEventListener('click', () => {
@@ -425,8 +487,36 @@ export class EngineMenuBar {
         });
     }
 
+    toggleEditMode(forceState) {
+        this.isEditMode = (forceState !== undefined) ? forceState : !this.isEditMode;
+        const editBtn = this.bar.querySelector('#gt-mb-btn-edit');
+        if (editBtn) {
+            editBtn.classList.toggle('active', this.isEditMode);
+        }
+
+        if (this.scene) {
+            this.scene.isEditMode = this.isEditMode;
+            if (typeof this.scene.setEditMode === 'function') {
+                this.scene.setEditMode(this.isEditMode);
+            } else if (this.scene.showFloatingToast) {
+                this.scene.showFloatingToast(this.isEditMode ? '🔧 Mode Edit (Wrench) AKTIF! Dekati atau klik NPC untuk edit dialog.' : 'Mode Edit NONAKTIF.', this.isEditMode ? 0xf59e0b : 0x64748b);
+            }
+        }
+    }
+
+    openNPCDialogEditor(npcRef = null) {
+        if (!this.npcDialogEditor) {
+            this.npcDialogEditor = new NPCDialogEditorModal(this.scene);
+        }
+        this.npcDialogEditor.scene = this.scene;
+        this.npcDialogEditor.open(npcRef || (this.scene && this.scene.npcData));
+    }
+
     show(scene = null) {
-        if (scene) this.scene = scene;
+        if (scene) {
+            this.scene = scene;
+            if (this.npcDialogEditor) this.npcDialogEditor.scene = scene;
+        }
         this.bar.style.display = 'flex';
     }
 
@@ -435,6 +525,9 @@ export class EngineMenuBar {
         this.pullTab.classList.remove('show');
         if (this.scriptingWorkspace) {
             this.scriptingWorkspace.hide();
+        }
+        if (this.npcDialogEditor) {
+            this.npcDialogEditor.close();
         }
     }
 }

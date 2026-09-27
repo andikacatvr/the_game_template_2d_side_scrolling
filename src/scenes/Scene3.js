@@ -13,6 +13,7 @@ import { ScriptingWorkspace } from '../ui/ScriptingWorkspace.js';
 import { HTMLGameHUD } from '../ui/HTMLGameHUD.js';
 import { HTMLInteractPrompt } from '../ui/HTMLInteractPrompt.js';
 import { QuestModal } from '../ui/QuestModal.js';
+import { NPCDialogEditorModal } from '../ui/NPCDialogEditorModal.js';
 
 // ===============================================================
 // SCENE 3: TEMPLATE KOSONG (HANYA LANTAI / TILES)
@@ -116,9 +117,10 @@ export class Scene3 extends Phaser.Scene {
         const rightEdge = this.scale.width;
         this.zoomBtnContainer = this.zoomManager.createHUDButton(rightEdge - 116, 26, 44, 36);
 
-        // 9. Sistem Kotak Dialog (untuk template /create dialogue & npc)
+        // 9. Sistem Kotak Dialog & Editor NPC Wrench
         this.dialogBox = new DialogBox(this);
         this.interactPrompt = new HTMLInteractPrompt(this);
+        this.npcDialogEditor = new NPCDialogEditorModal(this);
 
         // ===============================================================
         // 🎨 KANVAS KREASI MURID (TEMPEL KODE /create KAMU DI BAWAH INI)
@@ -412,17 +414,30 @@ export class Scene3 extends Phaser.Scene {
                 fontSize: '10px', fontStyle: 'bold', fill: '#fde047', backgroundColor: '#0f172a', padding: { x: 5, y: 2 }, fontFamily: FONT_BODY
             }).setOrigin(0.5).setDepth(15);
             this.tweens.add({ targets: [npc, tag], y: '-=4', duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-            this.customNpcs.push({
+            
+            const npcObj = {
                 sprite: npc,
                 nameTag: tag,
                 x: snapX,
                 y: snapY,
+                name: 'NPC Petualang',
                 dialog: [
                     "Halo! Selamat datang di dunia buatanmu sendiri!",
                     "Gunakan tombol [E] untuk berinteraksi dengan orang lain.",
                     "Terus bangun peta ini dan bagikan gamemu ke teman-teman!"
                 ]
+            };
+
+            // Klik NPC langsung buka editor jika dalam Edit Mode (Growtopia Wrench)
+            npc.setInteractive({ useHandCursor: true }).on('pointerdown', () => {
+                if (this.isEditMode) {
+                    this.openNPCDialogEditor(npcObj);
+                } else {
+                    this.handleInteract();
+                }
             });
+
+            this.customNpcs.push(npcObj);
             this.placedObjects.push({ type: 'npc', x: snapX, y: snapY, name: 'NPC Petualang' });
             ScriptingWorkspace.instance?.appendCodeSnippet(`// [NPC] di (${snapX}, ${snapY})\nconst npc = this.physics.add.sprite(${snapX}, ${snapY}, 'skeleton_npc');\nthis.physics.add.collider(npc, this.platforms);`);
         } else if (type === 'coin') {
@@ -484,6 +499,30 @@ export class Scene3 extends Phaser.Scene {
         }
     }
 
+    openNPCDialogEditor(npcObj = null) {
+        if (!this.npcDialogEditor) {
+            this.npcDialogEditor = new NPCDialogEditorModal(this);
+        }
+        const target = npcObj || (this.customNpcs.length > 0 ? this.customNpcs[this.customNpcs.length - 1] : { name: 'NPC Petualang', dialog: ['Halo petualang!'] });
+        this.npcDialogEditor.open(target, (saved) => {
+            target.name = saved.name;
+            target.dialog = saved.dialog;
+            if (target.nameTag) {
+                target.nameTag.setText(`🧙 ${saved.name}`);
+            }
+        });
+    }
+
+    setEditMode(active) {
+        this.isEditMode = active;
+        if (this.game && this.game.canvas) {
+            this.game.canvas.style.cursor = active ? 'cell' : 'default';
+        }
+        if (this.showFloatingToast) {
+            this.showFloatingToast(active ? '🔧 Mode Edit (Wrench) AKTIF! Dekati atau klik NPC untuk edit dialog.' : 'Mode Edit NONAKTIF.', active ? 0xf59e0b : 0x64748b);
+        }
+    }
+
     handleInteract() {
         if (!this.player) return;
 
@@ -509,11 +548,20 @@ export class Scene3 extends Phaser.Scene {
         for (const npc of this.customNpcs) {
             const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, npc.x, npc.y);
             if (dist < 75) {
+                // Jika sedang dalam Mode Edit (Wrench), langsung buka editor dialog
+                if (this.isEditMode) {
+                    this.openNPCDialogEditor(npc);
+                    return;
+                }
+
                 AudioManager.playClick();
-                this.dialogBox.show({
-                    name: 'NPC Petualang',
-                    lines: npc.dialog
-                });
+                this.dialogBox.start(
+                    npc.name || 'NPC Petualang',
+                    npc.dialog || ["Halo! Selamat datang di dunia buatanmu sendiri!"],
+                    () => {
+                        this.showFloatingToast('Dialog Selesai!', 0x38bdf8);
+                    }
+                );
                 return;
             }
         }

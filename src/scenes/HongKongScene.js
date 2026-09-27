@@ -13,6 +13,8 @@ import { CommandConsole } from '../utils/CommandConsole.js';
 import { HTMLGameHUD } from '../ui/HTMLGameHUD.js';
 import { HTMLInteractPrompt } from '../ui/HTMLInteractPrompt.js';
 import { QuestModal } from '../ui/QuestModal.js';
+import { NPCDialogEditorModal } from '../ui/NPCDialogEditorModal.js';
+import { EngineMenuBar } from '../ui/EngineMenuBar.js';
 
 // ===============================================================
 // SCENE 2: VICTORIA HARBOUR, HONG KONG (PARALLAX + WEATHER)
@@ -90,6 +92,13 @@ export class HongKongScene extends Phaser.Scene {
 
         // Prompt Interaksi NPC HTML (Boxless & Tajam)
         this.interactPrompt = new HTMLInteractPrompt(this);
+
+        // Editor Dialog NPC (Wrench Growtopia Style)
+        this.npcDialogEditor = new NPCDialogEditorModal(this);
+
+        // Top Engine Menu Bar
+        this.engineMenuBar = new EngineMenuBar(this);
+        this.engineMenuBar.show(this);
 
         // Setup Batas Dunia Fisika & Kamera (Lebar 2000px agar mencakup dermaga penuh sampai feri ekspedisi)
         const worldWidth = 2000;
@@ -274,6 +283,16 @@ export class HongKongScene extends Phaser.Scene {
         const npcX = 300;
         const npcY = 398;
         this.npc = this.physics.add.staticSprite(npcX, npcY, 'skeleton_npc').setDepth(10);
+        this.npcData = {
+            name: 'Kapten Chen (Penjaga Dermaga)',
+            dialog: [
+                "Selamat datang di Victoria Harbour, pengelana!",
+                "Malam ini badai sedang turun, lihatlah gedung-gedung pencakar langit yang megah di seberang teluk.",
+                "Kapal Star Ferry sedang berlayar mengarungi ombak pelabuhan.",
+                "Konon ada Mutiara Teluk Victoria yang tersembunyi di atas platform bebatuan di sebelah kanan!",
+                "Jika kamu berhasil membawanya, naiklah ke Feri Ekspedisi di ujung dermaga untuk menuntaskan perjalananmu."
+            ]
+        };
         this.tweens.add({
             targets: this.npc,
             y: npcY - 3,
@@ -281,6 +300,15 @@ export class HongKongScene extends Phaser.Scene {
             repeat: -1,
             duration: 1300,
             ease: 'Sine.easeInOut'
+        });
+
+        // Klik NPC langsung buka editor jika dalam Edit Mode (Growtopia Wrench)
+        this.npc.setInteractive({ useHandCursor: true }).on('pointerdown', () => {
+            if (this.isEditMode) {
+                this.openNPCDialogEditor();
+            } else {
+                this.handleInteract();
+            }
         });
 
         // Floating Prompt di atas NPC diatur oleh HTMLInteractPrompt (tanpa kotak kaku)
@@ -887,6 +915,26 @@ export class HongKongScene extends Phaser.Scene {
         });
     }
 
+    openNPCDialogEditor(npcRef = null) {
+        if (!this.npcDialogEditor) {
+            this.npcDialogEditor = new NPCDialogEditorModal(this);
+        }
+        const target = npcRef || this.npcData;
+        this.npcDialogEditor.open(target, (saved) => {
+            this.npcData = saved;
+        });
+    }
+
+    setEditMode(active) {
+        this.isEditMode = active;
+        if (this.game && this.game.canvas) {
+            this.game.canvas.style.cursor = active ? 'cell' : 'default';
+        }
+        if (this.showFloatingToast) {
+            this.showFloatingToast(active ? '🔧 Mode Edit (Wrench) AKTIF! Dekati atau klik NPC untuk edit dialog.' : 'Mode Edit NONAKTIF.', active ? 0xf59e0b : 0x64748b);
+        }
+    }
+
     autoSave(showToast = true) {
         if (!this.player || !this.player.body || this.isGameOver) return;
         const data = {
@@ -918,17 +966,25 @@ export class HongKongScene extends Phaser.Scene {
             const distNpc = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.npc.x, this.npc.y);
             if (distNpc < 80) {
                 AudioManager.playClick();
+                // Jika sedang dalam Mode Edit (Wrench), langsung buka editor dialog
+                if (this.isEditMode) {
+                    this.openNPCDialogEditor();
+                    return;
+                }
+
                 CodeInspector.record('npc');
-                CodeInspector.triggerEvent('npc', { name: 'Kapten Chen' });
+                const speakerName = (this.npcData && this.npcData.name) || 'Kapten Chen (Penjaga Dermaga)';
+                const dialogLines = (this.npcData && this.npcData.dialog) || [
+                    "Selamat datang di Victoria Harbour, pengelana!",
+                    "Malam ini badai sedang turun, lihatlah gedung-gedung pencakar langit yang megah di seberang teluk.",
+                    "Kapal Star Ferry sedang berlayar mengarungi ombak pelabuhan.",
+                    "Konon ada Mutiara Teluk Victoria yang tersembunyi di atas platform bebatuan di sebelah kanan!",
+                    "Jika kamu berhasil membawanya, naiklah ke Feri Ekspedisi di ujung dermaga untuk menuntaskan perjalananmu."
+                ];
+                CodeInspector.triggerEvent('npc', { name: speakerName });
                 this.dialogBox.start(
-                    'Kapten Chen (Penjaga Dermaga)',
-                    [
-                        "Selamat datang di Victoria Harbour, pengelana!",
-                        "Malam ini badai sedang turun, lihatlah gedung-gedung pencakar langit yang megah di seberang teluk.",
-                        "Kapal Star Ferry sedang berlayar mengarungi ombak pelabuhan.",
-                        "Konon ada Mutiara Teluk Victoria yang tersembunyi di atas platform bebatuan di sebelah kanan!",
-                        "Jika kamu berhasil membawanya, naiklah ke Feri Ekspedisi di ujung dermaga untuk menuntaskan perjalananmu."
-                    ],
+                    speakerName,
+                    dialogLines,
                     () => {
                         this.showFloatingToast('Dialog Kapten Chen Selesai!', 0x38bdf8);
                     },

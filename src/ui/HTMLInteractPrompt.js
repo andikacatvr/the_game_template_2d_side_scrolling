@@ -129,6 +129,19 @@ export class HTMLInteractPrompt {
                     color: #f3e8ff;
                     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 14px rgba(192, 132, 252, 0.8);
                 }
+
+                /* Wrench Edit Mode Styles (Growtopia Style) */
+                .gt-prompt-kbd.wrench {
+                    background: #f59e0b !important;
+                    border-color: #fbbf24 !important;
+                    color: #0f172a !important;
+                    box-shadow: 0 0 12px rgba(245, 158, 11, 0.7) !important;
+                }
+
+                .gt-prompt-label.wrench {
+                    color: #fbbf24 !important;
+                    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 14px rgba(245, 158, 11, 0.8) !important;
+                }
             </style>
 
             <kbd class="gt-prompt-kbd" id="gt-prompt-key">E</kbd>
@@ -154,13 +167,34 @@ export class HTMLInteractPrompt {
     show(worldX, worldY, label = 'Talk', onInteract = null, key = 'E') {
         this.targetX = worldX;
         this.targetY = worldY;
-        this.onInteract = onInteract;
 
-        if (this.labelElem && this.labelElem.textContent !== label) {
-            this.labelElem.textContent = label;
+        const isEdit = !!(this.scene && this.scene.isEditMode);
+        const activeKey = isEdit ? '🔧' : key;
+        const activeLabel = isEdit ? 'Edit Dialog' : label;
+
+        if (this.keyElem) {
+            this.keyElem.classList.toggle('wrench', isEdit);
+            if (this.keyElem.textContent !== activeKey) {
+                this.keyElem.textContent = activeKey;
+            }
         }
-        if (this.keyElem && this.keyElem.textContent !== key) {
-            this.keyElem.textContent = key;
+        if (this.labelElem) {
+            this.labelElem.classList.toggle('wrench', isEdit);
+            if (this.labelElem.textContent !== activeLabel) {
+                this.labelElem.textContent = activeLabel;
+            }
+        }
+
+        if (isEdit) {
+            this.onInteract = () => {
+                if (typeof this.scene.openNPCDialogEditor === 'function') {
+                    this.scene.openNPCDialogEditor();
+                } else if (this.scene.engineMenuBar && typeof this.scene.engineMenuBar.openNPCDialogEditor === 'function') {
+                    this.scene.engineMenuBar.openNPCDialogEditor();
+                }
+            };
+        } else {
+            this.onInteract = onInteract;
         }
 
         if (!this.isVisible) {
