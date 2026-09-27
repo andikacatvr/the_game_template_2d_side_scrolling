@@ -12,6 +12,7 @@ import { EngineMenuBar } from '../ui/EngineMenuBar.js';
 import { ScriptingWorkspace } from '../ui/ScriptingWorkspace.js';
 import { HTMLGameHUD } from '../ui/HTMLGameHUD.js';
 import { HTMLInteractPrompt } from '../ui/HTMLInteractPrompt.js';
+import { QuestModal } from '../ui/QuestModal.js';
 
 // ===============================================================
 // SCENE 3: TEMPLATE KOSONG (HANYA LANTAI / TILES)
@@ -232,6 +233,7 @@ export class Scene3 extends Phaser.Scene {
             }
         });
         this.inventoryModal = new InventoryModal(this);
+        this.questModal = new QuestModal(this);
     }
 
     updateHPDisplay() {
@@ -247,7 +249,13 @@ export class Scene3 extends Phaser.Scene {
     }
 
     toggleQuestModal() {
-        this.showFloatingToast('Belum ada misi khusus di Sandbox ini.', 0x38bdf8);
+        if (this.questModal) {
+            this.questModal.toggle({
+                header: 'ACTIVE QUEST - SANDBOX',
+                judul: 'Misi Sandbox: Bangun Duniamu',
+                deskripsi: 'Gunakan chat bar dan command /create untuk menempatkan tiles, npc, coins, duri, atau portal baru.'
+            });
+        }
     }
 
     toggleInventoryModal() {

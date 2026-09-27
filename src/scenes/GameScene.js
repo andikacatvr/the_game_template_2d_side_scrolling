@@ -12,6 +12,7 @@ import { CodeInspector } from '../utils/CodeInspector.js';
 import { CommandConsole } from '../utils/CommandConsole.js';
 import { HTMLGameHUD } from '../ui/HTMLGameHUD.js';
 import { HTMLInteractPrompt } from '../ui/HTMLInteractPrompt.js';
+import { QuestModal } from '../ui/QuestModal.js';
 
 // ===============================================================
 // 3. GAME SCENE: SKELETON WITH FULL HUD & RESOLUTION MANAGER
@@ -756,47 +757,29 @@ export class GameScene extends Phaser.Scene {
     }
 
     createQuestModalUI() {
-        const cx = this.scale ? this.scale.width / 2 : 400;
-        const cy = this.scale ? this.scale.height / 2 : 225;
-        this.questModal = this.add.container(cx, cy).setDepth(40).setVisible(false).setScrollFactor(0);
-        const overlay = this.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.65).setInteractive();
-        const box = this.add.rectangle(0, 0, 460, 270, 0x0b1a32, 0.98).setStrokeStyle(2, 0x38bdf8);
-
-        const header = this.add.text(0, -100, 'ACTIVE QUEST', {
-            fontSize: '16px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-
-        this.questTitleText = this.add.text(-200, -50, '', {
-            fontSize: '14px', fontStyle: 'bold', fill: '#f8fafc', fontFamily: FONT_BODY
-        });
-
-        this.questDescText = this.add.text(-200, -15, '', {
-            fontSize: '12px', fill: '#cbd5e1', wordWrap: { width: 400 }, lineSpacing: 4, fontFamily: FONT_BODY
-        });
-
-        const closeBtn = this.add.rectangle(0, 95, 120, 32, 0x1e293b, 1)
-            .setStrokeStyle(1.5, 0x64748b)
-            .setInteractive({ useHandCursor: true });
-        const closeText = this.add.text(0, 95, 'Close [Q]', {
-            fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-
-        closeBtn.on('pointerdown', () => this.toggleQuestModal(false));
-        overlay.on('pointerdown', () => this.toggleQuestModal(false));
-
-        this.questModal.add([overlay, box, header, this.questTitleText, this.questDescText, closeBtn, closeText]);
+        this.questModal = new QuestModal(this);
     }
 
     toggleQuestModal(forceState) {
-        this.isQuestOpen = (forceState !== undefined) ? forceState : !this.isQuestOpen;
-        if (this.isQuestOpen) {
-            this.toggleInventoryModal(false);
-            this.toggleSettingsModal(false);
-            this.questTitleText.setText(this.quest.judul);
-            this.questDescText.setText(this.quest.deskripsi);
-            this.updateModalsCenter();
+        if (this.questModal) {
+            const nextState = (forceState !== undefined) ? forceState : !this.questModal.isOpen();
+            if (nextState) {
+                if (this.inventoryModal && this.inventoryModal.isOpen && this.inventoryModal.isOpen()) {
+                    this.inventoryModal.hide();
+                }
+                if (this.settingsModal && this.settingsModal.isOpen && this.settingsModal.isOpen()) {
+                    this.settingsModal.hide();
+                }
+                this.questModal.show({
+                    header: 'ACTIVE QUEST',
+                    judul: this.quest.judul,
+                    deskripsi: this.quest.deskripsi
+                });
+            } else {
+                this.questModal.hide();
+            }
+            this.isQuestOpen = this.questModal.isOpen();
         }
-        this.questModal.setVisible(this.isQuestOpen);
     }
 
     createInventoryModalUI() {
