@@ -569,10 +569,6 @@ export class ProjectHubModal {
                         </div>
                     </div>
                     <div class="gt-uhub-topbar-right">
-                        <div class="gt-uhub-user-badge">
-                            <div class="gt-uhub-avatar">AC</div>
-                            <span class="gt-uhub-username">Murid Developer</span>
-                        </div>
                         <button class="gt-uhub-close-btn" id="gt-uhub-close-btn" title="Tutup Hub (ESC)">✕</button>
                     </div>
                 </div>
