@@ -797,13 +797,13 @@ export class ProjectHubModal {
                 <div class="gt-uhub-row">
                     <div class="gt-uhub-col-name">
                         <span class="gt-uhub-project-name">🏔️ Level 1: Lembah Bersalju</span>
-                        <span class="gt-uhub-project-path">Tutorial Dasar</span>
+                        <span class="gt-uhub-project-path">Tutorial &amp; Command Engine</span>
                     </div>
                     <div>
-                        <span style="font-size: 12px; color: #cbd5e1;">Gerak Karakter, Lompat, Koin Emas, Portal</span>
+                        <span style="font-size: 12px; color: #cbd5e1;">Kontrol Dasar, Command Console (/speed, /god), Wrench Edit NPC</span>
                     </div>
                     <div>
-                        <span class="gt-uhub-badge-tag gt-tag-tutorial">Level Pemula</span>
+                        <span class="gt-uhub-badge-tag gt-tag-tutorial">Tutorial Interaktif</span>
                     </div>
                     <div class="gt-uhub-col-action">
                         <button class="gt-uhub-btn-open" id="btn-tut-1">▶ Mulai Level 1</button>

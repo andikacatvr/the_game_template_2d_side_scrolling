@@ -223,6 +223,14 @@ export class GameScene extends Phaser.Scene {
         const tileCount = Math.ceil((worldW + 192) / 32);
         this.buildTiledGround(-96, 434, tileCount);
 
+        // Label Petunjuk Kontrol Dasar di Area Spawn
+        this.add.text(140, 394, '⌨️ [A] [D] Lari  •  [W] [Spasi] Lompat  •  [E] Tips', {
+            fontSize: '9.5px',
+            fontStyle: 'bold',
+            fill: '#64748b',
+            fontFamily: FONT_BODY
+        }).setOrigin(0.5).setDepth(4);
+
         // 2. Platform Melayang dari data map
         if (Array.isArray(map.platform) && map.platform.length > 0) {
             map.platform.forEach(p => {
@@ -339,8 +347,173 @@ export class GameScene extends Phaser.Scene {
         this.portalPrompt = this.add.container(portalX, portalY - 51).setDepth(25).setVisible(false);
         const pPill = this.add.rectangle(0, 0, 130, 22, 0x0f172a, 0.95).setStrokeStyle(1.5, 0x38bdf8);
         const pTxt = this.add.text(0, 0, '[E] Masuk Scene 2', { fontSize: '10px', fontStyle: 'bold', fill: '#e0f2fe', fontFamily: FONT_BODY }).setOrigin(0.5);
-        this.portalPrompt.add([pPill, pTxt]);
         pPill.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.handleInteract());
+
+        // 7. Papan Petunjuk Tutorial & Eksplorasi Command Developer
+        this.createTutorialSignposts();
+    }
+
+    createTutorialSignposts() {
+        this.tutorialSigns = [
+            {
+                id: 'sign_controls',
+                x: 110,
+                y: 416,
+                icon: '🕹️',
+                badgeText: 'KONTROL DASAR',
+                badgeColor: 0x38bdf8,
+                title: '🎮 Tutorial 1: Kontrol Gerak Karakter',
+                dialog: [
+                    "Selamat datang di Arena Tutorial Game Engine 2D!",
+                    "Gunakan tombol [A] & [D] (atau tombol Panah Kiri & Kanan) untuk berjalan ke kiri dan kanan.",
+                    "Tekan tombol [W] atau [Spasi] untuk melompat ke atas platform rintangan.",
+                    "Untuk pengguna Tablet atau HP, gunakan tombol D-Pad sentuh di pojok layar."
+                ]
+            },
+            {
+                id: 'sign_command_speed_jump',
+                x: 330,
+                y: 416,
+                icon: '⚡',
+                badgeText: 'COMMAND CONSOLE',
+                badgeColor: 0xf59e0b,
+                sampleCommand: '/speed 350',
+                title: '⚡ Tutorial 2: Command Kecepatan & Lompat',
+                dialog: [
+                    "Tahukah kamu? Kamu bisa memodifikasi kemampuan fisik karaktermu secara live dari dalam game!",
+                    "Lihat kotak hitam 'Command Console' di bagian bawah layarmu.",
+                    "Ketik '/speed 350' lalu tekan Enter untuk lari secepat kilat!",
+                    "Ketik '/jump 540' untuk melompat super tinggi melintasi tebing di atas.",
+                    "Ketik '/help' di console untuk melihat daftar seluruh command developer yang seru."
+                ]
+            },
+            {
+                id: 'sign_god_mode',
+                x: 520,
+                y: 416,
+                icon: '🛡️',
+                badgeText: 'GOD MODE / DURI',
+                badgeColor: 0xef4444,
+                sampleCommand: '/god',
+                title: '🛡️ Tutorial 3: Jebakan Duri & God Mode',
+                dialog: [
+                    "Awas! Di depan ada jebakan duri merah yang dapat mengurangi darah karakter.",
+                    "Sebagai developer game, kamu bisa mengaktifkan mode kebal dengan mengetik '/god' di console!",
+                    "Setelah God Mode aktif, kamu tidak akan terkena damage saat menyentuh duri bahaya.",
+                    "Jika darahmu berkurang, kamu juga bisa mengetik '/hp 3' untuk memulihkan seluruh nyawa seketika."
+                ]
+            },
+            {
+                id: 'sign_create_spawner',
+                x: 670,
+                y: 246,
+                icon: '✨',
+                badgeText: 'SPAWNER /create',
+                badgeColor: 0x10b981,
+                sampleCommand: '/create coin',
+                title: '✨ Tutorial 4: Command /create & Spawner',
+                dialog: [
+                    "Keren! Kamu berhasil melompat dan mengambil Koin Emas di platform ini.",
+                    "Ingin menambahkan koin, platform, atau musuh baru di dunia ini?",
+                    "Klik menu '+ /create' di bar menu atas atau ketik '/create' di console!",
+                    "Kamu bisa memilih koin, duri, platform, atau NPC baru untuk langsung dipasang di kanvas."
+                ]
+            },
+            {
+                id: 'sign_wrench_edit',
+                x: 980,
+                y: 306,
+                icon: '🔧',
+                badgeText: 'WRENCH EDIT NPC',
+                badgeColor: 0xf59e0b,
+                title: '🔧 Tutorial 5: Mode Edit Wrench (Growtopia)',
+                dialog: [
+                    "Ingin mengubah percakapan atau nama karakter NPC sesukamu?",
+                    "Klik tombol '🔧 Edit' di bar menu atas sampai tombol menyala warna kuning/amber.",
+                    "Lalu dekati atau klik karakter NPC di layar untuk membuka Editor Dialog!",
+                    "Kamu bisa mengetik kalimat dialog baru dan mengetesnya langsung dengan tombol 'Tes Dialog'."
+                ]
+            },
+            {
+                id: 'sign_teleport_portal',
+                x: 1090,
+                y: 416,
+                icon: '🌀',
+                badgeText: 'TELEPORT & PORTAL',
+                badgeColor: 0xa855f7,
+                sampleCommand: '/tp 1180 380',
+                title: '🌀 Tutorial 6: Command /tp & Gerbang Portal',
+                dialog: [
+                    "Hebat! Kamu telah mempelajari seluruh fitur dasar game engine ini.",
+                    "Untuk berpindah posisi secara kilat, ketik '/tp 1180 380' di console.",
+                    "Atau ketik '/tp Scene2' untuk langsung melompat ke Level 2 (Teluk Hong Kong).",
+                    "Sekarang, langkahkan kakimu masuk ke Gerbang Portal di depan untuk melanjutkan petualangan!"
+                ]
+            }
+        ];
+
+        this.tutorialSignObjects = [];
+
+        this.tutorialSigns.forEach(sign => {
+            const container = this.add.container(sign.x, sign.y).setDepth(11);
+
+            // Tiang penopang metalik
+            const post = this.add.rectangle(0, -8, 4, 16, 0x475569);
+
+            // Kotak papan hologram retro futuristik
+            const boardW = 112;
+            const boardH = 22;
+            const board = this.add.rectangle(0, -22, boardW, boardH, 0x0f172a, 0.94)
+                .setStrokeStyle(1.5, sign.badgeColor);
+
+            // Icon emoji
+            const iconTxt = this.add.text(-40, -22, sign.icon, {
+                fontSize: '11px'
+            }).setOrigin(0.5);
+
+            // Label teks badge
+            const labelTxt = this.add.text(8, -22, sign.badgeText, {
+                fontSize: '8px',
+                fontStyle: 'bold',
+                fill: '#f8fafc',
+                fontFamily: FONT_BODY
+            }).setOrigin(0.5);
+
+            container.add([post, board, iconTxt, labelTxt]);
+
+            // Interaktif klik langsung di papan
+            board.setInteractive({ useHandCursor: true }).on('pointerdown', () => {
+                this.readTutorialSign(sign);
+            });
+
+            // Animasi floating halus
+            this.tweens.add({
+                targets: container,
+                y: sign.y - 3,
+                duration: 1300 + Math.random() * 400,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+
+            this.tutorialSignObjects.push({ data: sign, container });
+        });
+    }
+
+    readTutorialSign(sign) {
+        if (!sign) return;
+        AudioManager.playClick();
+        this.dialogBox.start(
+            sign.title,
+            sign.dialog,
+            () => {
+                this.showFloatingToast(`Selesai membaca: ${sign.badgeText}`, sign.badgeColor || 0x38bdf8);
+            }
+        );
+
+        if (sign.sampleCommand && CommandConsole.instance) {
+            CommandConsole.instance.logInfo(`[TUTORIAL] Coba command: <span class="gt-c-yellow">${sign.sampleCommand}</span>`);
+        }
     }
 
     buildTiledGround(startX, y, tileCount = 25) {
@@ -1078,6 +1251,17 @@ export class GameScene extends Phaser.Scene {
             }
         }
 
+        // 2b. Cek apakah pemain dekat dengan salah satu Papan Petunjuk Tutorial
+        if (this.tutorialSigns) {
+            for (const sign of this.tutorialSigns) {
+                const distSign = Phaser.Math.Distance.Between(this.player.x, this.player.y, sign.x, sign.y);
+                if (distSign < 70) {
+                    this.readTutorialSign(sign);
+                    return;
+                }
+            }
+        }
+
         // 3. Cek apakah pemain dekat dengan Portal Gerbang
         const pX = this.portalX !== undefined ? this.portalX : 1180;
         const pY = this.portalY !== undefined ? this.portalY : 396;
@@ -1132,17 +1316,50 @@ export class GameScene extends Phaser.Scene {
         if (!this.player || !this.player.body) return;
 
         // Update floating prompts (HTML Boxless text)
+        let activePromptTarget = null;
+
+        // 1. Cek NPC
         if (this.npc) {
             const distNpc = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.npc.x, this.npc.y);
             const isNear = distNpc < 75 && (!this.dialogBox || !this.dialogBox.isOpen());
             if (isNear) {
-                if (this.interactPrompt) {
-                    this.interactPrompt.show(this.npc.x, this.npc.y - 36, 'Talk', () => this.handleInteract());
+                activePromptTarget = {
+                    x: this.npc.x,
+                    y: this.npc.y - 36,
+                    label: this.isEditMode ? 'Edit Dialog' : 'Pemandu Engine',
+                    onInteract: () => this.handleInteract()
+                };
+            }
+        }
+
+        // 2. Jika tidak dekat NPC, cek apakah dekat salah satu Papan Petunjuk Tutorial
+        if (!activePromptTarget && this.tutorialSigns && (!this.dialogBox || !this.dialogBox.isOpen())) {
+            let nearestSign = null;
+            let minDist = 70;
+            for (const sign of this.tutorialSigns) {
+                const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, sign.x, sign.y);
+                if (dist < minDist) {
+                    minDist = dist;
+                    nearestSign = sign;
                 }
-            } else {
-                if (this.interactPrompt) {
-                    this.interactPrompt.hide();
-                }
+            }
+            if (nearestSign) {
+                activePromptTarget = {
+                    x: nearestSign.x,
+                    y: nearestSign.y - 42,
+                    label: nearestSign.badgeText || 'Tips',
+                    onInteract: () => this.readTutorialSign(nearestSign)
+                };
+            }
+        }
+
+        if (activePromptTarget) {
+            if (this.interactPrompt) {
+                this.interactPrompt.show(activePromptTarget.x, activePromptTarget.y, activePromptTarget.label, activePromptTarget.onInteract);
+            }
+        } else {
+            if (this.interactPrompt) {
+                this.interactPrompt.hide();
             }
         }
 

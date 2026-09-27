@@ -27,8 +27,8 @@ export const CONFIG_SKELETON = {
 
     // 3. Setelan Awal Quest / Misi
     questAwal: {
-        judul: "Misi Pertama: Menjelajahi Dunia",
-        deskripsi: "Lompati platform, ambil koin berharga, dan temukan gerbang portal untuk lanjut ke level berikutnya!",
+        judul: "Tutorial: Kuasai Kontrol & Command Game",
+        deskripsi: "Bicara dengan Pemandu Engine, pelajari tanda tutorial di jalan, uji coba command di console (/speed, /jump, /god), ambil Koin Emas, dan capai Portal!",
         selesai: false
     },
 
@@ -79,14 +79,17 @@ export const DAFTAR_MAP = [
 
         // Karakter NPC yang bisa diajak ngobrol
         npc: {
-            nama: "Penjaga Gerbang",
+            nama: "Pemandu Engine (Tutorial Master)",
             posisiX: 200,
             posisiY: 396,
             portrait: "npc_portrait",
             dialog: [
-                "Halo petualang! Selamat datang di Lembah Bersalju.",
-                "Lompatlah ke platform di atas dan ambil Koin Emas!",
-                "Setelah mendapatkan koin, masuki Portal Gerbang di ujung kanan untuk lanjut ke Level 2!"
+                "Halo calon kreator game! Selamat datang di Arena Tutorial Game Engine 2D!",
+                "Di sini kamu bisa bermain sekaligus mencoba fitur developer: mengontrol karakter, mengedit dialog, dan mengetik command rahasia.",
+                "Lihat tanda-tanda hologram bertuliskan [KONTROL], [COMMAND], dan [WRENCH] di sepanjang jalan?",
+                "Dekati dan tekan [E] pada setiap tanda untuk mempelajari fitur engine secara lengkap.",
+                "Cobalah juga menekan tombol '🔧 Edit' di menu atas, lalu klik saya untuk mengubah nama atau dialog saya sesukamu!",
+                "Ketik '/help' di bilah Console bawah untuk melihat daftar command developer. Selamat mencoba!"
             ]
         },
 
