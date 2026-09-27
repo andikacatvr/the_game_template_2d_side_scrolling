@@ -565,8 +565,7 @@ export class ProjectHubModal {
                     <div class="gt-uhub-topbar-left">
                         <div class="gt-uhub-logo">
                             <div class="gt-uhub-logo-icon">▲</div>
-                            <span>Game Creator Hub</span>
-                            <span class="gt-uhub-logo-badge">Phaser 4 Engine</span>
+                            <span>Projects</span>
                         </div>
                     </div>
                     <div class="gt-uhub-topbar-right">
