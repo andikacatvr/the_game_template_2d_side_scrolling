@@ -232,19 +232,6 @@ export class EngineMenuBar {
                     gap: 10px;
                 }
 
-                .gt-mb-badge-status {
-                    font-size: 10.5px;
-                    font-weight: 600;
-                    padding: 2px 8px;
-                    background: #242424;
-                    color: #34d399;
-                    border-radius: 4px;
-                    border: 1px solid #333333;
-                    display: flex;
-                    align-items: center;
-                    gap: 5px;
-                }
-
                 .gt-mb-btn-toggle-bar {
                     width: 24px;
                     height: 24px;
@@ -344,9 +331,6 @@ export class EngineMenuBar {
             </div>
 
             <div class="gt-mb-right">
-                <div class="gt-mb-badge-status">
-                    <span>●</span> Mode: Sandbox (Scene 3)
-                </div>
                 <button class="gt-mb-btn-toggle-bar" id="gt-mb-btn-toggle" title="Sembunyikan Menu Bar">▲</button>
             </div>
         `;
