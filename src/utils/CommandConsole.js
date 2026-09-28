@@ -58,7 +58,7 @@ export class CommandConsole {
         }
     }
 
-    static show(openPanel = true, focusInput = false) {
+    static show(openPanel = false, focusInput = false) {
         if (CommandConsole.instance) {
             CommandConsole.instance.setVisible(true, openPanel, focusInput);
         }
@@ -642,7 +642,7 @@ export class CommandConsole {
                         <button class="gt-btn-tool" id="gt-btn-quick-help">/help</button>
                         <button class="gt-btn-tool" id="gt-btn-clear">Clear</button>
                         <button class="gt-btn-tool" id="gt-btn-minimize" title="Minimize / Perkecil chat box">−</button>
-                        <button class="gt-btn-tool" id="gt-btn-toggle" title="Tutup Chat Bar">X</button>
+                        <button class="gt-btn-tool" id="gt-btn-toggle" title="Tutup Command Console">X</button>
                     </div>
                 </div>
 
@@ -660,15 +660,15 @@ export class CommandConsole {
 
         document.body.appendChild(this.container);
 
-        // Tombol Floating Chat Bar terpisah di body (hanya tampil saat panel ditutup [X])
+        // Tombol Floating Command Console terpisah di body (default tampil saat panel ditutup)
         this.floatingBtn = document.createElement('button');
         this.floatingBtn.id = 'gt-floating-btn';
         this.floatingBtn.className = 'gt-floating-btn';
-        this.floatingBtn.style.display = 'none'; // Sembunyi default karena panel sudah terbuka
-        this.floatingBtn.title = 'Buka Chat Bar (Tekan Enter atau /)';
+        this.floatingBtn.style.display = 'none'; // Sembunyi default saat di menu utama
+        this.floatingBtn.title = 'Buka Command Console (Tekan Enter atau /)';
         this.floatingBtn.innerHTML = `
             <span>&gt;_</span>
-            <span class="gt-btn-text">Chat Bar</span>
+            <span class="gt-btn-text">Command</span>
         `;
         document.body.appendChild(this.floatingBtn);
 
@@ -1371,6 +1371,11 @@ export class CommandConsole {
             default:
                 this.logInfo(`Perintah tidak dikenal: <span class="gt-c-red">/${this.escapeHTML(cmd)}</span>. Ketik <span class="gt-c-yellow">/help</span> untuk bantuan.`);
                 break;
+        }
+
+        const activeScene = this.getActiveScene();
+        if (activeScene && typeof activeScene.onCommandExecuted === 'function') {
+            activeScene.onCommandExecuted(cmd, args);
         }
     }
 

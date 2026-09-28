@@ -31,8 +31,8 @@ export class HTMLGameHUD {
         this.dom.id = 'gt-html-game-hud';
         this.dom.className = 'gt-hud-root';
 
-        const isEngineBarActive = !!document.getElementById('gt-engine-menubar') || !!this.scene.engineMenuBar;
-        const topOffset = isEngineBarActive ? '44px' : '14px';
+        const isEngineBarOpen = (this.scene.engineMenuBar && !this.scene.engineMenuBar.isCollapsed);
+        const topOffset = isEngineBarOpen ? '44px' : '14px';
 
         this.dom.innerHTML = `
             <style>
@@ -41,8 +41,8 @@ export class HTMLGameHUD {
                 .gt-hud-root {
                     position: fixed;
                     top: ${topOffset};
-                    left: 14px;
-                    right: 14px;
+                    left: 20px;
+                    right: 20px;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
@@ -57,44 +57,44 @@ export class HTMLGameHUD {
                 .gt-hud-left, .gt-hud-right {
                     display: flex;
                     align-items: center;
-                    gap: 10px;
+                    gap: 12px;
                     pointer-events: auto;
                 }
 
                 /* A. HP DISPLAY */
                 .gt-hud-hp-box {
-                    height: 34px;
-                    background: rgba(15, 23, 42, 0.92);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    border-radius: 6px;
-                    padding: 0 12px;
+                    height: 52px;
+                    background: rgba(15, 23, 42, 0.95);
+                    border: 2px solid rgba(255, 255, 255, 0.2);
+                    border-radius: 10px;
+                    padding: 0 18px;
                     display: flex;
                     align-items: center;
-                    gap: 8px;
-                    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+                    gap: 12px;
+                    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
                     backdrop-filter: blur(8px);
                     -webkit-backdrop-filter: blur(8px);
                 }
 
                 .gt-hud-hp-label {
                     color: #f43f5e;
-                    font-size: 11px;
-                    font-weight: 800;
-                    letter-spacing: 0.5px;
+                    font-size: 15px;
+                    font-weight: 900;
+                    letter-spacing: 0.8px;
                 }
 
                 .gt-hud-hp-hearts {
                     display: flex;
                     align-items: center;
-                    gap: 4px;
+                    gap: 6px;
                 }
 
                 .gt-hud-heart-block {
-                    width: 9px;
-                    height: 9px;
+                    width: 14px;
+                    height: 14px;
                     background: #f43f5e;
-                    border-radius: 2px;
-                    box-shadow: 0 0 6px rgba(244, 63, 94, 0.6);
+                    border-radius: 3px;
+                    box-shadow: 0 0 10px rgba(244, 63, 94, 0.8);
                     transition: all 0.2s ease;
                 }
 
@@ -106,24 +106,24 @@ export class HTMLGameHUD {
 
                 .gt-hud-hp-num {
                     color: #fda4af;
-                    font-size: 11.5px;
-                    font-weight: 700;
+                    font-size: 16px;
+                    font-weight: 800;
                     margin-left: 2px;
                     font-family: 'JetBrains Mono', monospace;
                 }
 
                 /* B. BASE BUTTON STYLING */
                 .gt-hud-btn {
-                    height: 34px;
-                    background: rgba(15, 23, 42, 0.92);
-                    border-radius: 6px;
+                    height: 52px;
+                    background: rgba(15, 23, 42, 0.95);
+                    border-radius: 10px;
                     color: #f8fafc;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     cursor: pointer;
                     outline: none;
-                    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+                    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
                     backdrop-filter: blur(8px);
                     -webkit-backdrop-filter: blur(8px);
                     transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
@@ -131,7 +131,7 @@ export class HTMLGameHUD {
                 }
 
                 .gt-hud-btn:hover {
-                    transform: translateY(-1px) scale(1.04);
+                    transform: translateY(-2px) scale(1.04);
                 }
 
                 .gt-hud-btn:active {
@@ -140,28 +140,28 @@ export class HTMLGameHUD {
 
                 /* QUEST BUTTON */
                 .gt-hud-btn-quest {
-                    padding: 0 16px;
-                    border: 2px solid #38bdf8;
-                    font-size: 13px;
-                    font-weight: 700;
-                    letter-spacing: 0.2px;
+                    padding: 0 24px;
+                    border: 2.5px solid #38bdf8;
+                    font-size: 16.5px;
+                    font-weight: 800;
+                    letter-spacing: 0.4px;
                 }
 
                 .gt-hud-btn-quest:hover {
                     background: #1e293b;
                     border-color: #60a5fa;
-                    box-shadow: 0 0 14px rgba(56, 189, 248, 0.45);
+                    box-shadow: 0 0 18px rgba(56, 189, 248, 0.55);
                     color: #ffffff;
                 }
 
                 /* ZOOM BUTTON */
                 .gt-hud-btn-zoom {
-                    padding: 0 10px;
-                    border: 2px solid #64748b;
-                    font-size: 11px;
+                    padding: 0 14px;
+                    border: 2.5px solid #64748b;
+                    font-size: 14px;
                     font-weight: 700;
                     color: #cbd5e1;
-                    gap: 4px;
+                    gap: 6px;
                 }
 
                 .gt-hud-btn-zoom:hover {
@@ -172,16 +172,16 @@ export class HTMLGameHUD {
 
                 /* INVENTORY / BAG BUTTON */
                 .gt-hud-btn-bag {
-                    width: 36px;
-                    height: 36px;
-                    border: 2px solid #64748b;
+                    width: 52px;
+                    height: 52px;
+                    border: 2.5px solid #64748b;
                     padding: 0;
                 }
 
                 .gt-hud-btn-bag:hover {
                     background: #1e293b;
                     border-color: #f59e0b;
-                    box-shadow: 0 0 14px rgba(245, 158, 11, 0.4);
+                    box-shadow: 0 0 18px rgba(245, 158, 11, 0.5);
                 }
 
                 .gt-hud-btn-bag:hover svg {
@@ -195,21 +195,21 @@ export class HTMLGameHUD {
 
                 .gt-hud-badge {
                     position: absolute;
-                    top: -5px;
-                    right: -5px;
-                    min-width: 16px;
-                    height: 16px;
-                    padding: 0 4px;
+                    top: -7px;
+                    right: -7px;
+                    min-width: 22px;
+                    height: 22px;
+                    padding: 0 5px;
                     background: #10b981;
                     color: #ffffff;
                     border: 2px solid #0f172a;
-                    border-radius: 10px;
-                    font-size: 9.5px;
-                    font-weight: 800;
+                    border-radius: 12px;
+                    font-size: 12px;
+                    font-weight: 900;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
                     transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
                 }
 
@@ -217,22 +217,29 @@ export class HTMLGameHUD {
                     transform: scale(1.35);
                 }
 
-                /* MENU / SETTINGS BUTTON */
+                /* MENU / SETTINGS BUTTON (HAMBURGER BAR) */
                 .gt-hud-btn-menu {
-                    width: 46px;
-                    height: 36px;
-                    border: 2px solid #64748b;
-                    font-size: 10px;
-                    font-weight: 800;
-                    letter-spacing: 0.5px;
-                    color: #94a3b8;
+                    width: 52px;
+                    height: 52px;
+                    border: 2.5px solid #64748b;
+                    padding: 0;
+                    color: #f8fafc;
                 }
 
                 .gt-hud-btn-menu:hover {
                     background: #1e293b;
                     border-color: #38bdf8;
                     color: #38bdf8;
-                    box-shadow: 0 0 14px rgba(56, 189, 248, 0.4);
+                    box-shadow: 0 0 18px rgba(56, 189, 248, 0.5);
+                }
+
+                .gt-hud-btn-menu:hover svg {
+                    stroke: #38bdf8;
+                }
+
+                .gt-hud-menu-svg {
+                    stroke: #f8fafc;
+                    transition: stroke 0.15s ease;
                 }
             </style>
 
@@ -253,7 +260,7 @@ export class HTMLGameHUD {
             <div class="gt-hud-right">
                 <!-- Inventory Bag Button -->
                 <button class="gt-hud-btn gt-hud-btn-bag" id="gt-hud-btn-bag" title="Buka Tas / Inventaris">
-                    <svg class="gt-hud-bag-svg" viewBox="0 0 24 24" width="19" height="19" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="gt-hud-bag-svg" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M9 6V4.5A2.5 2.5 0 0 1 15 4.5V6" stroke="currentColor"></path>
                         <rect x="4" y="6" width="16" height="15" rx="2.5" stroke="currentColor"></rect>
                         <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor"></line>
@@ -262,9 +269,13 @@ export class HTMLGameHUD {
                     <span class="gt-hud-badge" id="gt-hud-badge">0</span>
                 </button>
 
-                <!-- Menu Button -->
+                <!-- Menu Button (Hamburger Bar) -->
                 <button class="gt-hud-btn gt-hud-btn-menu" id="gt-hud-btn-menu" title="Menu Pengaturan (ESC)">
-                    MENU
+                    <svg class="gt-hud-menu-svg" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="4" y1="6" x2="20" y2="6"></line>
+                        <line x1="4" y1="12" x2="20" y2="12"></line>
+                        <line x1="4" y1="18" x2="20" y2="18"></line>
+                    </svg>
                 </button>
             </div>
         `;
@@ -284,16 +295,18 @@ export class HTMLGameHUD {
     }
 
     bindEvents() {
-        // Quest Button Click
-        this.btnQuest.addEventListener('click', (e) => {
-            e.stopPropagation();
-            AudioManager.playClick();
-            if (typeof this.scene.toggleQuestModal === 'function') {
-                this.scene.toggleQuestModal();
-            } else if (this.scene.questModal) {
-                this.scene.questModal.setVisible(!this.scene.questModal.visible);
-            }
-        });
+        // Quest Button Click (jika ada tombol Quest di HUD)
+        if (this.btnQuest) {
+            this.btnQuest.addEventListener('click', (e) => {
+                e.stopPropagation();
+                AudioManager.playClick();
+                if (typeof this.scene.toggleQuestModal === 'function') {
+                    this.scene.toggleQuestModal();
+                } else if (this.scene.questModal) {
+                    this.scene.questModal.setVisible(!this.scene.questModal.visible);
+                }
+            });
+        }
 
         // Inventory Bag Button Click
         this.btnBag.addEventListener('click', (e) => {

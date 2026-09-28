@@ -28,7 +28,7 @@ export const CONFIG_SKELETON = {
     // 3. Setelan Awal Quest / Misi
     questAwal: {
         judul: "Tutorial: Kuasai Kontrol & Command Game",
-        deskripsi: "Bicara dengan Pemandu Engine, pelajari tanda tutorial di jalan, uji coba command di console (/speed, /jump, /god), ambil Koin Emas, dan capai Portal!",
+        deskripsi: "Bicara dengan Pemandu Engine, coba command console (/speed, /jump, /god), ambil Koin Emas, dan capai Portal petualangan!",
         selesai: false
     },
 
@@ -84,12 +84,10 @@ export const DAFTAR_MAP = [
             posisiY: 396,
             portrait: "npc_portrait",
             dialog: [
-                "Halo calon kreator game! Selamat datang di Arena Tutorial Game Engine 2D!",
-                "Di sini kamu bisa bermain sekaligus mencoba fitur developer: mengontrol karakter, mengedit dialog, dan mengetik command rahasia.",
-                "Lihat tanda-tanda hologram bertuliskan [KONTROL], [COMMAND], dan [WRENCH] di sepanjang jalan?",
-                "Dekati dan tekan [E] pada setiap tanda untuk mempelajari fitur engine secara lengkap.",
-                "Cobalah juga menekan tombol '🔧 Edit' di menu atas, lalu klik saya untuk mengubah nama atau dialog saya sesukamu!",
-                "Ketik '/help' di bilah Console bawah untuk melihat daftar command developer. Selamat mencoba!"
+                "Halo calon kreator game! Selamat datang di Arena Eksplorasi 2D.",
+                "Game ini dirancang untuk kamu modifikasi sesuka hati secara live!",
+                "Tekan tombol [F] kapan saja di dekatku untuk melihat Tur Interaktif pengenalan seluruh tombol engine (File, Add Object, Wrench Edit, Scripting, Inspect, & Console)!",
+                "Atau coba ketik command /speed 350 atau /jump 550 di console bawah untuk melompati rintangan di depan!"
             ]
         },
 

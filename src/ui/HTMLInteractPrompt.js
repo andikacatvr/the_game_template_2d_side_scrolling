@@ -88,7 +88,29 @@ export class HTMLInteractPrompt {
                     }
                 }
 
-                /* Keycap Minimalis [E] */
+                /* Item Action Container */
+                .gt-prompt-item {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 3px 6px;
+                    border-radius: 6px;
+                    transition: all 0.15s ease;
+                }
+
+                .gt-prompt-item:hover {
+                    background: rgba(255, 255, 255, 0.12);
+                    transform: scale(1.05);
+                }
+
+                .gt-prompt-divider {
+                    width: 1px;
+                    height: 14px;
+                    background: rgba(255, 255, 255, 0.25);
+                    margin: 0 2px;
+                }
+
+                /* Keycap Minimalis */
                 .gt-prompt-kbd {
                     display: inline-flex;
                     align-items: center;
@@ -108,10 +130,16 @@ export class HTMLInteractPrompt {
                     transition: all 0.15s ease;
                 }
 
-                .gt-interact-prompt-root:hover .gt-prompt-kbd {
+                .gt-prompt-item:hover .gt-prompt-kbd {
                     border-color: #c084fc;
                     box-shadow: 0 0 10px rgba(192, 132, 252, 0.5);
                     color: #e9d5ff;
+                }
+
+                .gt-prompt-kbd.secondary {
+                    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+                    border-color: #38bdf8 !important;
+                    box-shadow: 0 0 8px rgba(56, 189, 248, 0.6) !important;
                 }
 
                 /* Teks Interaksi Tanpa Kotak */
@@ -125,9 +153,14 @@ export class HTMLInteractPrompt {
                     white-space: nowrap;
                 }
 
-                .gt-interact-prompt-root:hover .gt-prompt-label {
+                .gt-prompt-item:hover .gt-prompt-label {
                     color: #f3e8ff;
                     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 14px rgba(192, 132, 252, 0.8);
+                }
+
+                .gt-prompt-label.secondary {
+                    color: #7dd3fc !important;
+                    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 12px rgba(56, 189, 248, 0.6) !important;
                 }
 
                 /* Wrench Edit Mode Styles (Growtopia Style) */
@@ -144,16 +177,32 @@ export class HTMLInteractPrompt {
                 }
             </style>
 
-            <kbd class="gt-prompt-kbd" id="gt-prompt-key">E</kbd>
-            <span class="gt-prompt-label" id="gt-prompt-label">Talk</span>
+            <div class="gt-prompt-item" id="gt-prompt-primary-item">
+                <kbd class="gt-prompt-kbd" id="gt-prompt-key">E</kbd>
+                <span class="gt-prompt-label" id="gt-prompt-label">Talk</span>
+            </div>
+
+            <div class="gt-prompt-divider" id="gt-prompt-divider" style="display: none;"></div>
+
+            <div class="gt-prompt-item" id="gt-prompt-secondary-item" style="display: none;">
+                <kbd class="gt-prompt-kbd secondary" id="gt-prompt-sec-key">F</kbd>
+                <span class="gt-prompt-label secondary" id="gt-prompt-sec-label">🎓 Tur Engine</span>
+            </div>
         `;
 
         document.body.appendChild(this.dom);
 
         this.keyElem = this.dom.querySelector('#gt-prompt-key');
         this.labelElem = this.dom.querySelector('#gt-prompt-label');
+        this.primaryItem = this.dom.querySelector('#gt-prompt-primary-item');
+        this.dividerElem = this.dom.querySelector('#gt-prompt-divider');
+        this.secondaryItem = this.dom.querySelector('#gt-prompt-secondary-item');
+        this.secKeyElem = this.dom.querySelector('#gt-prompt-sec-key');
+        this.secLabelElem = this.dom.querySelector('#gt-prompt-sec-label');
 
-        this.dom.addEventListener('click', (e) => {
+        this.onSecondaryInteract = null;
+
+        this.primaryItem.addEventListener('click', (e) => {
             e.stopPropagation();
             AudioManager.playClick();
             if (typeof this.onInteract === 'function') {
@@ -162,9 +211,19 @@ export class HTMLInteractPrompt {
                 this.scene.handleInteract();
             }
         });
+
+        this.secondaryItem.addEventListener('click', (e) => {
+            e.stopPropagation();
+            AudioManager.playClick();
+            if (typeof this.onSecondaryInteract === 'function') {
+                this.onSecondaryInteract();
+            } else if (typeof this.scene.startEngineUITour === 'function') {
+                this.scene.startEngineUITour();
+            }
+        });
     }
 
-    show(worldX, worldY, label = 'Talk', onInteract = null, key = 'E') {
+    show(worldX, worldY, label = 'Talk', onInteract = null, key = 'E', secondary = null) {
         this.targetX = worldX;
         this.targetY = worldY;
 
@@ -195,6 +254,19 @@ export class HTMLInteractPrompt {
             };
         } else {
             this.onInteract = onInteract;
+        }
+
+        // Secondary action (e.g. [F] Tur Engine)
+        if (secondary && !isEdit) {
+            if (this.dividerElem) this.dividerElem.style.display = 'block';
+            if (this.secondaryItem) this.secondaryItem.style.display = 'inline-flex';
+            if (this.secKeyElem) this.secKeyElem.textContent = secondary.key || 'F';
+            if (this.secLabelElem) this.secLabelElem.textContent = secondary.label || '🎓 Tur Engine';
+            this.onSecondaryInteract = secondary.onInteract || null;
+        } else {
+            if (this.dividerElem) this.dividerElem.style.display = 'none';
+            if (this.secondaryItem) this.secondaryItem.style.display = 'none';
+            this.onSecondaryInteract = null;
         }
 
         if (!this.isVisible) {

@@ -15,7 +15,7 @@ import { HTMLInteractPrompt } from '../ui/HTMLInteractPrompt.js';
 import { QuestModal } from '../ui/QuestModal.js';
 import { NPCDialogEditorModal } from '../ui/NPCDialogEditorModal.js';
 import { EngineMenuBar } from '../ui/EngineMenuBar.js';
-import { HTMLTutorialGuide } from '../ui/HTMLTutorialGuide.js';
+import { EngineUITourModal } from '../ui/EngineUITourModal.js';
 
 // ===============================================================
 // 3. GAME SCENE: SKELETON WITH FULL HUD & RESOLUTION MANAGER
@@ -111,6 +111,10 @@ export class GameScene extends Phaser.Scene {
         this.engineMenuBar = new EngineMenuBar(this);
         this.engineMenuBar.show(this);
 
+        // Interactive Engine UI Tour Modal (Spotlight & Coach Marks)
+        this.engineUITour = new EngineUITourModal(this);
+        this.isTourActive = false;
+
         // Setup Batas Dunia Fisika & Kamera (Diperlebar ke 1280 agar mencakup layar penuh tanpa batas void)
         const worldWidth = 1280;
         this.physics.world.setBounds(0, 0, worldWidth, 450);
@@ -149,12 +153,14 @@ export class GameScene extends Phaser.Scene {
             w: Phaser.Input.Keyboard.KeyCodes.W,
             space: Phaser.Input.Keyboard.KeyCodes.SPACE,
             e: Phaser.Input.Keyboard.KeyCodes.E,
+            f: Phaser.Input.Keyboard.KeyCodes.F,
             q: Phaser.Input.Keyboard.KeyCodes.Q,
             i: Phaser.Input.Keyboard.KeyCodes.I,
             esc: Phaser.Input.Keyboard.KeyCodes.ESC
         });
 
         this.input.keyboard.on('keydown-E', () => this.handleInteract());
+        this.input.keyboard.on('keydown-F', () => this.handleTourKey());
         this.input.keyboard.on('keydown-Q', () => this.toggleQuestModal());
         this.input.keyboard.on('keydown-I', () => this.toggleInventoryModal());
         this.input.keyboard.on('keydown-ESC', () => this.toggleSettingsModal());
@@ -172,166 +178,48 @@ export class GameScene extends Phaser.Scene {
     }
 
     initTutorialGuide() {
-        this.tutorialSteps = [
-            {
-                id: 'step_npc',
-                targetX: 200,
-                targetY: 345,
-                title: 'Bicara dengan Pemandu Engine',
-                desc: 'Dekati karakter NPC dan tekan [E] untuk membuka dialog pengenalan',
-                targetType: 'npc'
-            },
-            {
-                id: 'sign_command_speed_jump',
-                targetX: 330,
-                targetY: 365,
-                title: 'Pelajari Command Console',
-                desc: 'Buka papan tips untuk mempelajari command /speed dan /jump',
-                targetType: 'sign'
-            },
-            {
-                id: 'sign_god_mode',
-                targetX: 520,
-                targetY: 365,
-                title: 'Pelajari God Mode / Lewati Duri',
-                desc: 'Buka papan tips untuk trik kebal /god atau lewati duri',
-                targetType: 'sign'
-            },
-            {
-                id: 'step_coin',
-                targetX: 720,
-                targetY: 175,
-                title: 'Lompat & Ambil Koin Emas',
-                desc: 'Gunakan tombol lompat [W] atau command /jump untuk meraih koin',
-                targetType: 'coin'
-            },
-            {
-                id: 'sign_wrench_edit',
-                targetX: 980,
-                targetY: 255,
-                title: 'Coba Mode Edit Wrench',
-                desc: 'Pelajari cara mengedit nama dan dialog NPC langsung dari game',
-                targetType: 'sign'
-            },
-            {
-                id: 'step_portal',
-                targetX: 1180,
-                targetY: 340,
-                title: 'Masuk ke Gerbang Portal',
-                desc: 'Langkah terakhir! Masuk ke portal untuk melanjutkan ke Level 2',
-                targetType: 'portal'
-            }
-        ];
-
+        this.tutorialSteps = [];
         this.tutorialStep = 0;
-
-        // Banner HTML interaktif di atas
-        this.tutorialBanner = new HTMLTutorialGuide(this, {
-            steps: this.tutorialSteps
-        });
-
-        // 1. Target Marker Arrow (World Bouncing Down Arrow)
-        this.targetArrow = this.add.container(200, 345).setDepth(35);
-
-        // Badge pill
-        const pill = this.add.rectangle(0, -20, 80, 18, 0x0f172a, 0.95).setStrokeStyle(1.5, 0xfbbf24);
-        const pillTxt = this.add.text(0, -20, '🎯 TUJUAN', {
-            fontSize: '9px',
-            fontStyle: 'bold',
-            fill: '#fde047',
-            fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-
-        // Panah neon kuning mengarah ke bawah
-        const arrowTxt = this.add.text(0, -2, '▼', {
-            fontSize: '20px',
-            fontStyle: 'bold',
-            fill: '#fde047',
-            stroke: '#0f172a',
-            strokeThickness: 3,
-            fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-
-        this.targetArrow.add([pill, pillTxt, arrowTxt]);
-        this.targetArrow.pillTxt = pillTxt;
-
-        this.tweens.add({
-            targets: this.targetArrow,
-            y: '-=8',
-            duration: 650,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
-        });
-
-        // 2. Player Directional Guide Pointer (Mengitari pemain mengarah ke target)
-        this.playerGuideArrow = this.add.container(0, 0).setDepth(36);
-        const pArrowGfx = this.add.text(0, 0, '➤', {
-            fontSize: '18px',
-            fontStyle: 'bold',
-            fill: '#38bdf8',
-            stroke: '#0f172a',
-            strokeThickness: 3,
-            fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-        const pDistTxt = this.add.text(0, 14, '0m', {
-            fontSize: '8.5px',
-            fontStyle: 'bold',
-            fill: '#e0f2fe',
-            backgroundColor: '#0f172a',
-            padding: { x: 4, y: 1 },
-            fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-
-        this.playerGuideArrow.add([pArrowGfx, pDistTxt]);
-        this.playerGuideArrow.pArrowGfx = pArrowGfx;
-        this.playerGuideArrow.pDistTxt = pDistTxt;
-
-        this.setTutorialStep(0, false);
     }
 
-    setTutorialStep(index, playSfx = true) {
-        if (index < 0 || index >= this.tutorialSteps.length) return;
+    setTutorialStep(index) {
         this.tutorialStep = index;
-        const step = this.tutorialSteps[this.tutorialStep];
-
-        if (this.tutorialBanner) {
-            this.tutorialBanner.updateStep(this.tutorialStep);
-        }
-
-        if (this.targetArrow) {
-            this.tweens.add({
-                targets: this.targetArrow,
-                x: step.targetX,
-                y: step.targetY,
-                duration: 350,
-                ease: 'Back.out'
-            });
-            if (this.targetArrow.pillTxt) {
-                const label = step.targetType ? step.targetType.toUpperCase() : 'TUJUAN';
-                this.targetArrow.pillTxt.setText(`🎯 ${label}`);
-            }
-        }
-
-        if (playSfx) {
-            AudioManager.playSuccess();
-            this.showFloatingToast(`✓ Langkah ${this.tutorialStep} Selesai! Ikuti tanda panah.`, 0x10b981);
-        }
     }
 
     advanceTutorialStep(completedId) {
-        const current = this.tutorialSteps[this.tutorialStep];
-        if (!current) return;
+        // Handled via Pemandu Engine tour
+    }
 
-        if (current.id === completedId || current.targetType === completedId) {
-            const next = this.tutorialStep + 1;
-            if (next < this.tutorialSteps.length) {
-                this.setTutorialStep(next, true);
-            } else {
-                AudioManager.playSuccess();
-                this.showFloatingToast('🎉 Seluruh Tutorial Selesai! Kamu adalah Master Engine!', 0x38bdf8);
+    onCommandExecuted(cmd, args) {
+        if (cmd === 'speed' || cmd === 'jump') {
+            this.createAuraPulse(this.player ? this.player.x : 300, this.player ? this.player.y : 380, 0x38bdf8);
+            this.showFloatingToast(`✓ Command /${cmd} berhasil diterapkan!`, 0x38bdf8);
+            if (this.tutorialStep === 1) {
+                this.advanceTutorialStep('step_cmd');
             }
+        } else if (cmd === 'god') {
+            this.createAuraPulse(this.player ? this.player.x : 500, this.player ? this.player.y : 380, 0xfacc15);
+            this.showFloatingToast(`✓ God Mode diubah: ${this.isGodMode ? 'AKTIF' : 'NONAKTIF'}!`, 0xfacc15);
+            if (this.tutorialStep === 2) {
+                this.advanceTutorialStep('step_god');
+            }
+        } else if (cmd === 'tp' || cmd === 'goto') {
+            this.createAuraPulse(this.player ? this.player.x : 400, this.player ? this.player.y : 380, 0xa855f7);
+            this.showFloatingToast('✓ Teleportasi berhasil!', 0xa855f7);
         }
+    }
+
+    createAuraPulse(x, y, color = 0x38bdf8) {
+        const ring = this.add.circle(x, y, 16, color, 0.6).setDepth(25);
+        this.tweens.add({
+            targets: ring,
+            scaleX: 3.5,
+            scaleY: 3.5,
+            alpha: 0,
+            duration: 600,
+            ease: 'Quad.easeOut',
+            onComplete: () => ring.destroy()
+        });
     }
 
     updateTutorialArrows() {
@@ -366,9 +254,14 @@ export class GameScene extends Phaser.Scene {
             }
         }
 
+        // Auto advance step 1 jika pemain sudah berhasil naik ke platform 1
+        if (this.tutorialStep === 1 && this.player.x > 400 && this.player.y < 350) {
+            this.advanceTutorialStep('step_cmd');
+        }
+
         // Auto advance step 2 jika pemain melompat melewati duri (x > 590)
         if (this.tutorialStep === 2 && this.player.x > 590) {
-            this.advanceTutorialStep('sign_god_mode');
+            this.advanceTutorialStep('step_god');
         }
     }
 
@@ -427,14 +320,6 @@ export class GameScene extends Phaser.Scene {
         // 1. Lantai Dasar Modular
         const tileCount = Math.ceil((worldW + 192) / 32);
         this.buildTiledGround(-96, 434, tileCount);
-
-        // Label Petunjuk Kontrol Dasar di Area Spawn
-        this.add.text(140, 394, '⌨️ [A] [D] Lari  •  [W] [Spasi] Lompat  •  [E] Tips', {
-            fontSize: '9.5px',
-            fontStyle: 'bold',
-            fill: '#64748b',
-            fontFamily: FONT_BODY
-        }).setOrigin(0.5).setDepth(4);
 
         // 2. Platform Melayang dari data map
         if (Array.isArray(map.platform) && map.platform.length > 0) {
@@ -549,187 +434,66 @@ export class GameScene extends Phaser.Scene {
             ease: 'Linear'
         });
 
-        this.portalPrompt = this.add.container(portalX, portalY - 51).setDepth(25).setVisible(false);
-        const pPill = this.add.rectangle(0, 0, 130, 22, 0x0f172a, 0.95).setStrokeStyle(1.5, 0x38bdf8);
-        const pTxt = this.add.text(0, 0, '[E] Masuk Scene 2', { fontSize: '10px', fontStyle: 'bold', fill: '#e0f2fe', fontFamily: FONT_BODY }).setOrigin(0.5);
-        pPill.setInteractive({ useHandCursor: true }).on('pointerdown', () => this.handleInteract());
-
-        // 7. Papan Petunjuk Tutorial & Eksplorasi Command Developer
-        this.createTutorialSignposts();
+        // 7. Papan Petunjuk Alami Dunia (Single Wooden Signpost RPG)
+        this.createNaturalSignpost();
     }
 
-    createTutorialSignposts() {
-        this.tutorialSigns = [
-            {
-                id: 'sign_controls',
-                x: 110,
-                y: 416,
-                icon: '🕹️',
-                badgeText: 'KONTROL DASAR',
-                badgeColor: 0x38bdf8,
-                title: '🎮 Tutorial 1: Kontrol Gerak Karakter',
-                dialog: [
-                    "Selamat datang di Arena Tutorial Game Engine 2D!",
-                    "Gunakan tombol [A] & [D] (atau tombol Panah Kiri & Kanan) untuk berjalan ke kiri dan kanan.",
-                    "Tekan tombol [W] atau [Spasi] untuk melompat ke atas platform rintangan.",
-                    "Untuk pengguna Tablet atau HP, gunakan tombol D-Pad sentuh di pojok layar."
-                ]
-            },
-            {
-                id: 'sign_command_speed_jump',
-                x: 330,
-                y: 416,
-                icon: '⚡',
-                badgeText: 'COMMAND CONSOLE',
-                badgeColor: 0xf59e0b,
-                sampleCommand: '/speed 350',
-                title: '⚡ Tutorial 2: Command Kecepatan & Lompat',
-                dialog: [
-                    "Tahukah kamu? Kamu bisa memodifikasi kemampuan fisik karaktermu secara live dari dalam game!",
-                    "Lihat kotak hitam 'Command Console' di bagian bawah layarmu.",
-                    "Ketik '/speed 350' lalu tekan Enter untuk lari secepat kilat!",
-                    "Ketik '/jump 540' untuk melompat super tinggi melintasi tebing di atas.",
-                    "Ketik '/help' di console untuk melihat daftar seluruh command developer yang seru."
-                ]
-            },
-            {
-                id: 'sign_god_mode',
-                x: 520,
-                y: 416,
-                icon: '🛡️',
-                badgeText: 'GOD MODE / DURI',
-                badgeColor: 0xef4444,
-                sampleCommand: '/god',
-                title: '🛡️ Tutorial 3: Jebakan Duri & God Mode',
-                dialog: [
-                    "Awas! Di depan ada jebakan duri merah yang dapat mengurangi darah karakter.",
-                    "Sebagai developer game, kamu bisa mengaktifkan mode kebal dengan mengetik '/god' di console!",
-                    "Setelah God Mode aktif, kamu tidak akan terkena damage saat menyentuh duri bahaya.",
-                    "Jika darahmu berkurang, kamu juga bisa mengetik '/hp 3' untuk memulihkan seluruh nyawa seketika."
-                ]
-            },
-            {
-                id: 'sign_create_spawner',
-                x: 670,
-                y: 246,
-                icon: '✨',
-                badgeText: 'SPAWNER /create',
-                badgeColor: 0x10b981,
-                sampleCommand: '/create coin',
-                title: '✨ Tutorial 4: Command /create & Spawner',
-                dialog: [
-                    "Keren! Kamu berhasil melompat dan mengambil Koin Emas di platform ini.",
-                    "Ingin menambahkan koin, platform, atau musuh baru di dunia ini?",
-                    "Klik menu '+ /create' di bar menu atas atau ketik '/create' di console!",
-                    "Kamu bisa memilih koin, duri, platform, atau NPC baru untuk langsung dipasang di kanvas."
-                ]
-            },
-            {
-                id: 'sign_wrench_edit',
-                x: 980,
-                y: 306,
-                icon: '🔧',
-                badgeText: 'WRENCH EDIT NPC',
-                badgeColor: 0xf59e0b,
-                title: '🔧 Tutorial 5: Mode Edit Wrench (Growtopia)',
-                dialog: [
-                    "Ingin mengubah percakapan atau nama karakter NPC sesukamu?",
-                    "Klik tombol '🔧 Edit' di bar menu atas sampai tombol menyala warna kuning/amber.",
-                    "Lalu dekati atau klik karakter NPC di layar untuk membuka Editor Dialog!",
-                    "Kamu bisa mengetik kalimat dialog baru dan mengetesnya langsung dengan tombol 'Tes Dialog'."
-                ]
-            },
-            {
-                id: 'sign_teleport_portal',
-                x: 1090,
-                y: 416,
-                icon: '🌀',
-                badgeText: 'TELEPORT & PORTAL',
-                badgeColor: 0xa855f7,
-                sampleCommand: '/tp 1180 380',
-                title: '🌀 Tutorial 6: Command /tp & Gerbang Portal',
-                dialog: [
-                    "Hebat! Kamu telah mempelajari seluruh fitur dasar game engine ini.",
-                    "Untuk berpindah posisi secara kilat, ketik '/tp 1180 380' di console.",
-                    "Atau ketik '/tp Scene2' untuk langsung melompat ke Level 2 (Teluk Hong Kong).",
-                    "Sekarang, langkahkan kakimu masuk ke Gerbang Portal di depan untuk melanjutkan petualangan!"
-                ]
-            }
-        ];
+    createNaturalSignpost() {
+        const signX = 280;
+        const signY = 418;
 
-        this.tutorialSignObjects = [];
+        this.naturalSignContainer = this.add.container(signX, signY).setDepth(10);
 
-        this.tutorialSigns.forEach(sign => {
-            const container = this.add.container(sign.x, sign.y).setDepth(11);
+        // Tiang kayu alami
+        const post = this.add.rectangle(0, -10, 5, 24, 0x5c2b09);
+        const postHighlight = this.add.rectangle(-1, -10, 1.5, 24, 0x78350f);
 
-            // Tiang penopang metalik
-            const post = this.add.rectangle(0, -8, 4, 16, 0x475569);
+        // Papan kayu berukir (Rustic Wooden Plaque)
+        const board = this.add.rectangle(0, -26, 88, 24, 0x78350f).setStrokeStyle(1.5, 0xb45309);
+        const plankLine = this.add.rectangle(0, -26, 82, 1, 0x451a03);
 
-            // Kotak papan hologram retro futuristik
-            const boardW = 112;
-            const boardH = 22;
-            const board = this.add.rectangle(0, -22, boardW, boardH, 0x0f172a, 0.94)
-                .setStrokeStyle(1.5, sign.badgeColor);
+        // Paku logam kecil di sudut
+        const nailL = this.add.circle(-38, -26, 1.5, 0x94a3b8);
+        const nailR = this.add.circle(38, -26, 1.5, 0x94a3b8);
 
-            // Icon emoji
-            const iconTxt = this.add.text(-40, -22, sign.icon, {
-                fontSize: '11px'
-            }).setOrigin(0.5);
+        // Teks ukiran kayu
+        const signText = this.add.text(0, -26, '🪵 Lembah Es', {
+            fontSize: '9.5px',
+            fontStyle: 'bold',
+            fill: '#fef3c7',
+            fontFamily: FONT_BODY
+        }).setOrigin(0.5);
 
-            // Label teks badge
-            const labelTxt = this.add.text(8, -22, sign.badgeText, {
-                fontSize: '8px',
-                fontStyle: 'bold',
-                fill: '#f8fafc',
-                fontFamily: FONT_BODY
-            }).setOrigin(0.5);
+        this.naturalSignContainer.add([post, postHighlight, board, plankLine, nailL, nailR, signText]);
 
-            container.add([post, board, iconTxt, labelTxt]);
-
-            // Interaktif klik langsung di papan
-            board.setInteractive({ useHandCursor: true }).on('pointerdown', () => {
-                this.readTutorialSign(sign);
-            });
-
-            // Animasi floating halus
-            this.tweens.add({
-                targets: container,
-                y: sign.y - 3,
-                duration: 1300 + Math.random() * 400,
-                yoyo: true,
-                repeat: -1,
-                ease: 'Sine.easeInOut'
-            });
-
-            this.tutorialSignObjects.push({ data: sign, container });
+        // Interaksi klik mouse langsung di papan
+        board.setInteractive({ useHandCursor: true }).on('pointerdown', () => {
+            this.readNaturalSign();
         });
+
+        this.naturalSign = {
+            x: signX,
+            y: signY,
+            container: this.naturalSignContainer
+        };
     }
 
-    readTutorialSign(sign) {
-        if (!sign) return;
+    readNaturalSign() {
+        if (this.dialogBox && this.dialogBox.isOpen()) return;
         AudioManager.playClick();
         this.dialogBox.start(
-            sign.title,
-            sign.dialog,
+            '🪵 Papan Penjelajah Lembah',
+            [
+                "Selamat datang di Lembah Bersalju!",
+                "Petunjuk Penjelajah:\n• Tekan [A] & [D] untuk bergerak, [W] atau [Spasi] untuk melompat.",
+                "• Manfaatkan Command Console di bawah untuk mengubah fisikmu, misalnya ketik '/speed 350' atau '/jump 550'.",
+                "• Waspadai duri tajam di depan! Gunakan '/god' jika kamu ingin menguji mode kebal.",
+                "• Ambil Koin Emas di atas tebing tinggi untuk menyelesaikan misi dan membuka petualangan berikutnya!"
+            ],
             () => {
-                this.showFloatingToast(`Selesai membaca: ${sign.badgeText}`, sign.badgeColor || 0x38bdf8);
+                this.showFloatingToast('Selesai membaca Papan Lembah', 0xf59e0b);
             }
         );
-
-        if (sign.sampleCommand && CommandConsole.instance) {
-            CommandConsole.instance.logInfo(`[TUTORIAL] Coba command: <span class="gt-c-yellow">${sign.sampleCommand}</span>`);
-        }
-
-        // Lanjutkan langkah tutorial sesuai papan yang dibaca
-        if (sign.id === 'sign_command_speed_jump') {
-            this.advanceTutorialStep('sign_command_speed_jump');
-        } else if (sign.id === 'sign_god_mode') {
-            this.advanceTutorialStep('sign_god_mode');
-        } else if (sign.id === 'sign_create_spawner') {
-            this.advanceTutorialStep('step_coin');
-        } else if (sign.id === 'sign_wrench_edit') {
-            this.advanceTutorialStep('sign_wrench_edit');
-        }
     }
 
     buildTiledGround(startX, y, tileCount = 25) {
@@ -1198,6 +962,7 @@ export class GameScene extends Phaser.Scene {
         if (!this.npcDialogEditor) {
             this.npcDialogEditor = new NPCDialogEditorModal(this);
         }
+        this.advanceTutorialStep('step_wrench');
         const target = npcRef || this.npcData;
         this.npcDialogEditor.open(target, (saved) => {
             this.npcData = saved;
@@ -1217,6 +982,7 @@ export class GameScene extends Phaser.Scene {
             this.showFloatingToast(active ? '🔧 Mode Edit (Wrench) AKTIF! Dekati atau klik NPC untuk edit dialog.' : 'Mode Edit NONAKTIF.', active ? 0xf59e0b : 0x64748b);
         }
         if (active) {
+            this.advanceTutorialStep('step_wrench');
             this.advanceTutorialStep('sign_wrench_edit');
         }
     }
@@ -1436,6 +1202,20 @@ export class GameScene extends Phaser.Scene {
         }
     }
 
+    handleTourKey() {
+        if (this.isGameOver || this.isSettingsOpen) return;
+        this.startEngineUITour();
+    }
+
+    startEngineUITour() {
+        if (this.dialogBox && this.dialogBox.isOpen()) {
+            this.dialogBox.close();
+        }
+        if (this.engineUITour) {
+            this.engineUITour.start(0);
+        }
+    }
+
     handleInteract() {
         if (this.isGameOver || this.isSettingsOpen || this.isQuestOpen || this.isInvOpen) return;
 
@@ -1456,30 +1236,18 @@ export class GameScene extends Phaser.Scene {
                     return;
                 }
 
-                CodeInspector.record('npc');
-                const speakerName = (this.npcData && this.npcData.name) || 'Penjaga Gerbang';
-                const dialogLines = (this.npcData && this.npcData.dialog) || ['Halo petualang! Selamat datang di Lembah Bersalju.'];
-                CodeInspector.triggerEvent('npc', { name: speakerName });
-                this.dialogBox.start(
-                    speakerName,
-                    dialogLines,
-                    () => {
-                        this.showFloatingToast('Dialog Selesai!', 0xc084fc);
-                        this.advanceTutorialStep('step_npc');
-                    }
-                );
+                // Pemandu Engine langsung menjelaskan fungsi engine dengan tur panah melayang
+                this.startEngineUITour();
                 return;
             }
         }
 
-        // 2b. Cek apakah pemain dekat dengan salah satu Papan Petunjuk Tutorial
-        if (this.tutorialSigns) {
-            for (const sign of this.tutorialSigns) {
-                const distSign = Phaser.Math.Distance.Between(this.player.x, this.player.y, sign.x, sign.y);
-                if (distSign < 70) {
-                    this.readTutorialSign(sign);
-                    return;
-                }
+        // 2b. Cek apakah pemain dekat dengan Papan Petunjuk Alami Lembah
+        if (this.naturalSign) {
+            const distSign = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.naturalSign.x, this.naturalSign.y);
+            if (distSign < 70) {
+                this.readNaturalSign();
+                return;
             }
         }
 
@@ -1550,36 +1318,52 @@ export class GameScene extends Phaser.Scene {
                 activePromptTarget = {
                     x: this.npc.x,
                     y: this.npc.y - 36,
-                    label: this.isEditMode ? 'Edit Dialog' : 'Pemandu Engine',
+                    label: this.isEditMode ? 'Edit Dialog' : 'Penjelasan Engine',
                     onInteract: () => this.handleInteract()
                 };
             }
         }
 
-        // 2. Jika tidak dekat NPC, cek apakah dekat salah satu Papan Petunjuk Tutorial
-        if (!activePromptTarget && this.tutorialSigns && (!this.dialogBox || !this.dialogBox.isOpen())) {
-            let nearestSign = null;
-            let minDist = 70;
-            for (const sign of this.tutorialSigns) {
-                const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, sign.x, sign.y);
-                if (dist < minDist) {
-                    minDist = dist;
-                    nearestSign = sign;
-                }
-            }
-            if (nearestSign) {
+        // 2. Jika tidak dekat NPC, cek apakah dekat Papan Petunjuk Alami Lembah
+        if (!activePromptTarget && this.naturalSign && (!this.dialogBox || !this.dialogBox.isOpen())) {
+            const distSign = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.naturalSign.x, this.naturalSign.y);
+            if (distSign < 70) {
                 activePromptTarget = {
-                    x: nearestSign.x,
-                    y: nearestSign.y - 42,
-                    label: nearestSign.badgeText || 'Tips',
-                    onInteract: () => this.readTutorialSign(nearestSign)
+                    x: this.naturalSign.x,
+                    y: this.naturalSign.y - 42,
+                    label: 'Baca Papan',
+                    onInteract: () => this.readNaturalSign(),
+                    secondary: null
+                };
+            }
+        }
+
+        // 3. Jika tidak dekat papan, cek apakah dekat Gerbang Portal
+        if (!activePromptTarget) {
+            const pX = this.portalX !== undefined ? this.portalX : 1180;
+            const pY = this.portalY !== undefined ? this.portalY : 396;
+            const distPortal = Phaser.Math.Distance.Between(this.player.x, this.player.y, pX, pY);
+            if (distPortal < 80) {
+                activePromptTarget = {
+                    x: pX,
+                    y: pY - 42,
+                    label: 'Masuk Scene 2',
+                    onInteract: () => this.handleInteract(),
+                    secondary: null
                 };
             }
         }
 
         if (activePromptTarget) {
             if (this.interactPrompt) {
-                this.interactPrompt.show(activePromptTarget.x, activePromptTarget.y, activePromptTarget.label, activePromptTarget.onInteract);
+                this.interactPrompt.show(
+                    activePromptTarget.x,
+                    activePromptTarget.y,
+                    activePromptTarget.label,
+                    activePromptTarget.onInteract,
+                    'E',
+                    activePromptTarget.secondary
+                );
             }
         } else {
             if (this.interactPrompt) {
@@ -1587,14 +1371,7 @@ export class GameScene extends Phaser.Scene {
             }
         }
 
-        if (this.portalPrompt) {
-            const pX = this.portalX !== undefined ? this.portalX : 1180;
-            const pY = this.portalY !== undefined ? this.portalY : 396;
-            const distPortal = Phaser.Math.Distance.Between(this.player.x, this.player.y, pX, pY);
-            this.portalPrompt.setVisible(distPortal < 80);
-        }
-
-        if (this.isGameOver || this.isQuestOpen || this.isInvOpen || this.isSettingsOpen || (this.dialogBox && this.dialogBox.isOpen())) {
+        if (this.isGameOver || this.isTourActive || this.isQuestOpen || this.isInvOpen || this.isSettingsOpen || (this.dialogBox && this.dialogBox.isOpen())) {
             this.player.setVelocityX(0);
             return;
         }

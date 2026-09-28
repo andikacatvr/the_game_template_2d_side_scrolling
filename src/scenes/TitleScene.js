@@ -6,6 +6,7 @@ import { SettingsModal } from '../ui/SettingsModal.js';
 import { ProjectHubModal } from '../ui/ProjectHubModal.js';
 import { EngineMenuBar } from '../ui/EngineMenuBar.js';
 import { CommandConsole } from '../utils/CommandConsole.js';
+import { HTMLTitleMenu } from '../ui/HTMLTitleMenu.js';
 
 // ===============================================================
 // 2. TITLE SCENE: LAYAR MENU UTAMA — REDESIGN PREMIUM + FIREFLIES
@@ -52,91 +53,14 @@ export class TitleScene extends Phaser.Scene {
 
         titleContainer.add(titleLogoImg);
 
-        // ─────────────────────────────────────────────────────────
-        // SISI KANAN: TOMBOL MENU (SEJAJAR PUCUK & DASAR DENGAN LOGO)
-        // ─────────────────────────────────────────────────────────
-        const rightCenterX = centerX + 178; // x = 578 (Margin kanan = 107px)
-        const btnW = 230; // Diperlebar agar seimbang dengan logo dan sisi kanan kokoh
-        const btnH = 34;  // Tinggi presisi agar 4 tombol tersusun seimbang dengan logo
-        const btnSpacing = 42;
-
-        // Tombol 1: Play Tutorial (Level 1 Salju -> Level 2 Hong Kong)
-        const btnTutorial = this._makeButton(rightCenterX, centerY - btnSpacing * 1.5,
-            'Play Tutorial', '#0f172a', 0xffffff, 0x0f172a, true,
-            '', () => {
-                this._transitionTo('GameScene', { isNewGame: true });
-            }, btnW, 0xf1f5f9, btnH, '14px'
-        );
-
-        // Tombol 2: My Projects (World Hub ala Unity Hub / VS Code)
-        const btnProjects = this._makeButton(rightCenterX, centerY - btnSpacing * 0.5,
-            'My Projects', '#ffffff', 0x0284c7, 0x0f172a, true,
-            '', () => {
-                this.projectHubModal.show();
-            }, btnW, 0x0ea5e9, btnH, '14px'
-        );
-
-        // Tombol 3: Settings
-        const btnSettings = this._makeButton(rightCenterX, centerY + btnSpacing * 0.5,
-            'Settings', '#ffffff', 0x0f172a, 0x0f172a, true,
-            '', () => this.settingsModal.show(), btnW, 0x1e293b, btnH, '14px'
-        );
-
-        // Tombol 4: Quit
-        const btnQuit = this._makeButton(rightCenterX, centerY + btnSpacing * 1.5,
-            'Quit', '#ffffff', 0xef4444, 0x000000, true,
-            '', () => this._confirmQuit(), btnW, 0xdc2626, btnH, '14px'
-        );
-
-        // Animasi melayang lembut bersamaan (Sinkron agar selalu sejajar)
+        // Animasi melayang lembut logo judul
         this.tweens.add({
-            targets: [titleContainer, btnTutorial, btnProjects, btnSettings, btnQuit],
+            targets: [titleContainer],
             y: '-=6',
             duration: 2500,
             yoyo: true,
             repeat: -1,
             ease: 'Sine.easeInOut'
-        });
-
-        // ─────────────────────────────────────────────────────────
-        // FOOTER
-        // ─────────────────────────────────────────────────────────
-        this.add.text(centerX, H - 12,
-            `${CONFIG_SKELETON.namaKelompok || 'Kelompok Developer'}`, {
-            fontSize: '10px', fontStyle: 'bold', fill: '#1e293b', fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-
-        this.add.text(12, H - 12, 'v1.0', {
-            fontSize: '10px', fontStyle: 'bold', fill: '#1e293b', fontFamily: FONT_BODY
-        });
-
-        // ─────────────────────────────────────────────────────────
-        // TOMBOL KECIL "ABOUT" DI SAMPING KANAN BAWAH
-        // ─────────────────────────────────────────────────────────
-        const btnAbout = this.add.container(W - 48, H - 14).setDepth(15);
-        const aboutBg = this.add.rectangle(0, 0, 60, 20, 0xffffff, 1.0)
-            .setStrokeStyle(1.5, 0x000000)
-            .setInteractive({ useHandCursor: true });
-        const aboutTxt = this.add.text(0, 0, 'About', {
-            fontSize: '10px', fontStyle: 'bold', fill: '#0f172a', fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-        btnAbout.add([aboutBg, aboutTxt]);
-
-        aboutBg.on('pointerover', () => {
-            aboutBg.setFillStyle(0xf1f5f9, 1.0);
-            aboutBg.setStrokeStyle(1.5, 0x000000);
-            this.tweens.add({ targets: btnAbout, scaleX: 1.06, scaleY: 1.06, duration: 80 });
-        });
-        aboutBg.on('pointerout', () => {
-            aboutBg.setFillStyle(0xffffff, 1.0);
-            aboutBg.setStrokeStyle(1.5, 0x000000);
-            this.tweens.add({ targets: btnAbout, scaleX: 1.0, scaleY: 1.0, duration: 80 });
-        });
-        aboutBg.on('pointerdown', () => {
-            this.cameras.main.fadeOut(200, 0, 0, 0);
-            this.cameras.main.once('camerafadeoutcomplete', () => {
-                this.scene.start('AboutScene');
-            });
         });
 
         // ─────────────────────────────────────────────────────────
@@ -147,6 +71,27 @@ export class TitleScene extends Phaser.Scene {
             onDeleteSave: () => this._toggleDeleteModal(true)
         });
         this.projectHubModal = new ProjectHubModal(this);
+
+        // ─────────────────────────────────────────────────────────
+        // HTML OVERLAY BUTTONS (CRISP ULTRA-SHARP VECTORS)
+        // ─────────────────────────────────────────────────────────
+        this.htmlTitleMenu = new HTMLTitleMenu(this, {
+            onPlayTutorial: () => {
+                this._transitionTo('GameScene', { isNewGame: true });
+            },
+            onMyProjects: () => {
+                this.projectHubModal.show();
+            },
+            onSettings: () => {
+                this.settingsModal.show();
+            },
+            onAbout: () => {
+                this.cameras.main.fadeOut(200, 0, 0, 0);
+                this.cameras.main.once('camerafadeoutcomplete', () => {
+                    this.scene.start('AboutScene');
+                });
+            }
+        });
     }
 
     // ─────────────────────────────────────────────────────────
@@ -315,6 +260,9 @@ export class TitleScene extends Phaser.Scene {
     // TRANSISI DENGAN FADE OUT
     // ─────────────────────────────────────────────────────────
     _transitionTo(sceneKey, data = {}) {
+        if (this.htmlTitleMenu) {
+            this.htmlTitleMenu.destroy();
+        }
         this.cameras.main.fadeOut(300, 0, 0, 0);
         this.cameras.main.once('camerafadeoutcomplete', () => {
             this.scene.start(sceneKey, data);
@@ -361,58 +309,5 @@ export class TitleScene extends Phaser.Scene {
         this.deleteModal.setVisible(state);
     }
 
-    // ─────────────────────────────────────────────────────────
-    // QUIT CONFIRMATION
-    // ─────────────────────────────────────────────────────────
-    _confirmQuit() {
-        // Buat modal konfirmasi quit
-        const qModal = this.add.container(400, 225).setDepth(90);
-        const ov = this.add.rectangle(0, 0, 800, 450, 0x000000, 0.85).setInteractive();
-        const box = this.add.rectangle(0, 0, 380, 190, 0x0a0f1e, 0.98).setStrokeStyle(2, 0xef4444);
-        const ico = this.add.text(0, -55, '[ KELUAR ]', { fontSize: '13px', fontStyle: 'bold', fill: '#f87171', fontFamily: FONT_BODY }).setOrigin(0.5);
-        const hdr = this.add.text(0, -24, 'Quit Game?', {
-            fontSize: '18px', fontStyle: 'bold', fill: '#f87171', fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-        const inf = this.add.text(0, 12, 'Are you sure you want to quit?', {
-            fontSize: '11px', fill: '#94a3b8', fontFamily: FONT_BODY
-        }).setOrigin(0.5);
 
-        // Tombol Cancel
-        const canBg = this.add.rectangle(-70, 58, 110, 32, 0x1e293b, 1)
-            .setStrokeStyle(1.5, 0x475569).setInteractive({ useHandCursor: true });
-        const canTxt = this.add.text(-70, 58, 'Cancel', {
-            fontSize: '12px', fontStyle: 'bold', fill: '#cbd5e1', fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-        canBg.on('pointerover', () => canBg.setFillStyle(0x334155, 1));
-        canBg.on('pointerout', () => canBg.setFillStyle(0x1e293b, 1));
-        canBg.on('pointerdown', () => { qModal.destroy(); });
-        ov.on('pointerdown', () => { qModal.destroy(); });
-
-        // Tombol Quit
-        const qBg = this.add.rectangle(70, 58, 110, 32, 0xdc2626, 1)
-            .setStrokeStyle(1.5, 0xfca5a5).setInteractive({ useHandCursor: true });
-        const qTxt = this.add.text(70, 58, 'Quit', {
-            fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-        qBg.on('pointerover', () => qBg.setFillStyle(0xb91c1c, 1));
-        qBg.on('pointerout', () => qBg.setFillStyle(0xdc2626, 1));
-        qBg.on('pointerdown', () => {
-            // Fade out lalu tutup tab
-            this.cameras.main.fadeOut(400, 0, 0, 0);
-            this.cameras.main.once('camerafadeoutcomplete', () => {
-                window.close();
-                // Jika window.close() gagal (tab bukan dibuka via script),
-                // tampilkan pesan alternatif
-                setTimeout(() => {
-                    const msg = this.add.text(400, 225,
-                        'Close this tab manually\n(Ctrl+W / Cmd+W)', {
-                        fontSize: '16px', fontStyle: 'bold', fill: '#f87171',
-                        align: 'center', fontFamily: FONT_BODY
-                    }).setOrigin(0.5).setDepth(100);
-                }, 300);
-            });
-        });
-
-        qModal.add([ov, box, ico, hdr, inf, canBg, canTxt, qBg, qTxt]);
-    }
 }

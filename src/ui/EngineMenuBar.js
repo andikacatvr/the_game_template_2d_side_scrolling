@@ -14,6 +14,7 @@ import { NPCDialogEditorModal } from './NPCDialogEditorModal.js';
 import { CodeInspector } from '../utils/CodeInspector.js';
 import { CommandConsole } from '../utils/CommandConsole.js';
 import { AudioManager } from '../utils/AudioManager.js';
+import { GridSystem } from '../utils/GridSystem.js';
 
 export class EngineMenuBar {
     static instance = null;
@@ -26,7 +27,7 @@ export class EngineMenuBar {
         EngineMenuBar.instance = this;
         this.scene = scene;
         this.scriptingWorkspace = new ScriptingWorkspace();
-        this.isCollapsed = false;
+        this.isCollapsed = true;
         this.createDOM();
     }
 
@@ -36,7 +37,7 @@ export class EngineMenuBar {
 
         this.bar = document.createElement('div');
         this.bar.id = 'gt-engine-menubar';
-        this.bar.className = 'gt-mb-bar';
+        this.bar.className = 'gt-mb-bar collapsed';
 
         this.bar.innerHTML = `
             <style>
@@ -205,6 +206,26 @@ export class EngineMenuBar {
                     color: #ffffff;
                 }
 
+                /* Grid System Button (Tiled / Growtopia / Unity Style) */
+                .gt-mb-btn-grid {
+                    background: rgba(168, 85, 247, 0.15);
+                    border-color: rgba(168, 85, 247, 0.35);
+                    color: #c084fc;
+                }
+
+                .gt-mb-btn-grid:hover {
+                    background: #9333ea;
+                    color: #ffffff;
+                }
+
+                .gt-mb-btn-grid.active {
+                    background: #a855f7 !important;
+                    color: #ffffff !important;
+                    font-weight: 800 !important;
+                    border-color: #c084fc !important;
+                    box-shadow: 0 0 14px rgba(168, 85, 247, 0.6) !important;
+                }
+
                 /* Wrench Edit Button (Growtopia Style) */
                 .gt-mb-btn-edit {
                     background: rgba(245, 158, 11, 0.15);
@@ -262,10 +283,11 @@ export class EngineMenuBar {
                     border-top: none;
                     border-bottom-left-radius: 8px;
                     border-bottom-right-radius: 8px;
-                    padding: 2px 14px;
-                    font-size: 10px;
+                    padding: 4px 18px;
+                    font-size: 11.5px;
                     color: #38bdf8;
-                    font-weight: bold;
+                    font-weight: 800;
+                    letter-spacing: 0.3px;
                     cursor: pointer;
                     z-index: 99996;
                     display: none;
@@ -288,6 +310,8 @@ export class EngineMenuBar {
                         <div class="gt-mb-menu-item" id="mi-save">💾 Simpan Progres (AutoSave)</div>
                         <div class="gt-mb-divider"></div>
                         <div class="gt-mb-menu-item" id="mi-export">📦 Ekspor Game (.ZIP)</div>
+                        <div class="gt-mb-divider"></div>
+                        <div class="gt-mb-menu-item" id="mi-tour">🎓 Mulai Tur Fitur Engine</div>
                     </div>
                 </div>
 
@@ -328,6 +352,11 @@ export class EngineMenuBar {
                 <button class="gt-mb-tool-btn gt-mb-btn-create" id="gt-mb-btn-create" title="Buka Builder Template di Console">
                     <span>+</span> /create
                 </button>
+
+                <!-- Quick Button: Grid System (Unity/Godot/Tiled Style) -->
+                <button class="gt-mb-tool-btn gt-mb-btn-grid" id="gt-mb-btn-grid" title="Toggle Grid System & Snap Koordinat (Shortcut: G)">
+                    <span>▦</span> Grid
+                </button>
             </div>
 
             <div class="gt-mb-right">
@@ -339,8 +368,9 @@ export class EngineMenuBar {
 
         // Pull tab when collapsed
         this.pullTab = document.createElement('div');
-        this.pullTab.className = 'gt-mb-pull-tab';
-        this.pullTab.innerHTML = '▲ MENU';
+        this.pullTab.className = 'gt-mb-pull-tab show';
+        this.pullTab.innerHTML = '<span>🛠️</span> <span>ENGINE</span> <span style="font-size: 8px;">▼</span>';
+        this.pullTab.title = 'Buka Engine Menu Bar (File, Add Object, Edit, Scripting)';
         document.body.appendChild(this.pullTab);
 
         this.bindEvents();
@@ -389,6 +419,16 @@ export class EngineMenuBar {
         this.bar.querySelector('#mi-export').addEventListener('click', () => {
             new ExportGameModal(this.scene).show(this.scene);
         });
+
+        const miTour = this.bar.querySelector('#mi-tour');
+        if (miTour) {
+            miTour.addEventListener('click', () => {
+                fileDd.classList.remove('show');
+                if (typeof this.scene.startEngineUITour === 'function') {
+                    this.scene.startEngineUITour();
+                }
+            });
+        }
 
         // Dropdown actions: Add Object
         this.bar.querySelectorAll('#gt-mb-dd-add .gt-mb-menu-item').forEach(item => {
@@ -458,17 +498,41 @@ export class EngineMenuBar {
             }
         });
 
+        // Quick Button: Grid System
+        const gridBtn = this.bar.querySelector('#gt-mb-btn-grid');
+        if (gridBtn) {
+            gridBtn.addEventListener('click', () => {
+                GridSystem.toggle(this.scene);
+            });
+        }
+
         // Collapse / Expand Menu Bar
         const toggleBtn = this.bar.querySelector('#gt-mb-btn-toggle');
         toggleBtn.addEventListener('click', () => {
-            this.bar.classList.add('collapsed');
-            this.pullTab.classList.add('show');
+            this.collapse();
         });
 
         this.pullTab.addEventListener('click', () => {
-            this.bar.classList.remove('collapsed');
-            this.pullTab.classList.remove('show');
+            this.expand();
         });
+    }
+
+    collapse() {
+        this.isCollapsed = true;
+        this.bar.classList.add('collapsed');
+        this.pullTab.classList.add('show');
+        if (this.scene && this.scene.htmlHUD) {
+            this.scene.htmlHUD.adjustForMenuBar(false);
+        }
+    }
+
+    expand() {
+        this.isCollapsed = false;
+        this.bar.classList.remove('collapsed');
+        this.pullTab.classList.remove('show');
+        if (this.scene && this.scene.htmlHUD) {
+            this.scene.htmlHUD.adjustForMenuBar(true);
+        }
     }
 
     toggleEditMode(forceState) {
@@ -501,7 +565,15 @@ export class EngineMenuBar {
             this.scene = scene;
             if (this.npcDialogEditor) this.npcDialogEditor.scene = scene;
         }
+        if (this.scene) {
+            GridSystem.init(this.scene);
+        }
         this.bar.style.display = 'flex';
+        if (this.isCollapsed) {
+            this.collapse();
+        } else {
+            this.expand();
+        }
     }
 
     hide() {
@@ -513,5 +585,6 @@ export class EngineMenuBar {
         if (this.npcDialogEditor) {
             this.npcDialogEditor.close();
         }
+        GridSystem.deactivate();
     }
 }

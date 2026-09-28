@@ -14,6 +14,7 @@ import { HTMLGameHUD } from '../ui/HTMLGameHUD.js';
 import { HTMLInteractPrompt } from '../ui/HTMLInteractPrompt.js';
 import { QuestModal } from '../ui/QuestModal.js';
 import { NPCDialogEditorModal } from '../ui/NPCDialogEditorModal.js';
+import { GridSystem } from '../utils/GridSystem.js';
 
 // ===============================================================
 // SCENE 3: TEMPLATE KOSONG (HANYA LANTAI / TILES)
@@ -373,7 +374,11 @@ export class Scene3 extends Phaser.Scene {
         const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
         
         let snapX, snapY;
-        if (this.placementMode === 'tile' || this.placementMode === 'obstacle') {
+        if (GridSystem.isActive && GridSystem.snapEnabled) {
+            const snapped = GridSystem.snap(worldPoint.x, worldPoint.y, true);
+            snapX = snapped.x;
+            snapY = snapped.y;
+        } else if (this.placementMode === 'tile' || this.placementMode === 'obstacle') {
             snapX = Math.floor(worldPoint.x / 32) * 32 + 16;
             snapY = Math.floor(worldPoint.y / 24) * 24 + 12;
         } else {
@@ -391,7 +396,11 @@ export class Scene3 extends Phaser.Scene {
 
         const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
         let snapX, snapY;
-        if (this.placementMode === 'tile' || this.placementMode === 'obstacle') {
+        if (GridSystem.isActive && GridSystem.snapEnabled) {
+            const snapped = GridSystem.snap(worldPoint.x, worldPoint.y, true);
+            snapX = snapped.x;
+            snapY = snapped.y;
+        } else if (this.placementMode === 'tile' || this.placementMode === 'obstacle') {
             snapX = Math.floor(worldPoint.x / 32) * 32 + 16;
             snapY = Math.floor(worldPoint.y / 24) * 24 + 12;
         } else {

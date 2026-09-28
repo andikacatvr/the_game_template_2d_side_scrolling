@@ -453,6 +453,10 @@ export class SettingsModal {
                                 <span class="gt-key-badge">I</span>
                             </div>
                             <div class="gt-control-row">
+                                <span>Engine UI Tour</span>
+                                <span class="gt-key-badge" style="border-color: #38bdf8; color: #7dd3fc;">F</span>
+                            </div>
+                            <div class="gt-control-row">
                                 <span>Camera Zoom</span>
                                 <span class="gt-key-badge">Scroll / + / -</span>
                             </div>
