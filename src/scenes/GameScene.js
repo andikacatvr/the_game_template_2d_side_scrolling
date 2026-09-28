@@ -350,12 +350,13 @@ export class GameScene extends Phaser.Scene {
                 item.body.moves = false;
                 item.setDepth(15);
                 item.coinData = k;
+                // Ayunan melayang lembut 4px agar tetap 100% di dalam sel 50px tanpa menyentuh garis grid
                 this.tweens.add({
                     targets: item,
-                    y: k.y - 8,
+                    y: k.y - 4,
                     yoyo: true,
                     repeat: -1,
-                    duration: 800,
+                    duration: 900,
                     ease: 'Sine.easeInOut'
                 });
             }
@@ -365,16 +366,21 @@ export class GameScene extends Phaser.Scene {
         this.hazards = this.physics.add.staticGroup();
         const daftarDuri = (Array.isArray(map.duri) && map.duri.length > 0) 
             ? map.duri 
-            : [{ x: 400, y: 406 }];
+            : [{ x: 600, y: 388, lebar: 100 }];
 
         daftarDuri.forEach(d => {
             const targetY = (!d.y || d.y >= 400) ? 388 : d.y;
-            const lebar = d.lebar || 24;
-            const count = Math.max(1, Math.round(lebar / 24));
-            const startX = d.x - ((count - 1) * 24) / 2;
+            const lebar = d.lebar || 100;
+            const numCells = Math.max(1, Math.round(lebar / 50));
+            const totalWidth = numCells * 50;
+            const rawLeft = d.x - totalWidth / 2;
+            const startCol = Math.round(rawLeft / 50);
+            const startX = startCol * 50;
+            const totalSpikes = numCells * 2; // 2 duri per sel 50px (masing-masing 25px)
 
-            for (let i = 0; i < count; i++) {
-                const hz = this.hazards.create(startX + i * 24, targetY, 'skeleton_hazard');
+            for (let i = 0; i < totalSpikes; i++) {
+                const spikeX = startX + i * 25 + 12.5; // Titik tengah masing-masing duri 25px
+                const hz = this.hazards.create(spikeX, targetY, 'skeleton_hazard');
                 hz.setDepth(10);
                 hz.refreshBody();
             }
@@ -382,7 +388,7 @@ export class GameScene extends Phaser.Scene {
 
         // 5. NPC - Berdiri di atas lantai y = 400
         const npcConfig = map.npc || CONFIG_SKELETON.npc || {};
-        const npcX = npcConfig.posisiX || 200;
+        const npcX = npcConfig.posisiX || 225;
         const npcY = npcConfig.posisiY || 378;
         this.npc = this.physics.add.staticSprite(npcX, npcY, 'skeleton_npc');
         this.npcData = {
@@ -412,7 +418,7 @@ export class GameScene extends Phaser.Scene {
 
         // 6. Portal Gerbang - Berdiri di atas lantai y = 400
         const portalConfig = map.portal || {};
-        const portalX = portalConfig.posisiX || 1150;
+        const portalX = portalConfig.posisiX || 1175;
         const portalY = portalConfig.posisiY || 376;
         this.portalX = portalX;
         this.portalY = portalY;
@@ -439,6 +445,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     createNaturalSignpost() {
+        // Berdiri di Kolom 5 (x: 250..300), tepat di titik tengah x = 275
         const signX = 275;
         const signY = 398; // Kaki tiang tertancap pas di permukaan tanah y = 400
 
@@ -448,17 +455,17 @@ export class GameScene extends Phaser.Scene {
         const post = this.add.rectangle(0, -10, 5, 24, 0x5c2b09);
         const postHighlight = this.add.rectangle(-1, -10, 1.5, 24, 0x78350f);
 
-        // Papan kayu berukir (Rustic Wooden Plaque)
-        const board = this.add.rectangle(0, -26, 88, 24, 0x78350f).setStrokeStyle(1.5, 0xb45309);
-        const plankLine = this.add.rectangle(0, -26, 82, 1, 0x451a03);
+        // Papan kayu berukir 46px (Pas di dalam sel 50px antara x: 252 s/d 298, tidak terpotong garis grid 250 & 300!)
+        const board = this.add.rectangle(0, -26, 46, 24, 0x78350f).setStrokeStyle(1.5, 0xb45309);
+        const plankLine = this.add.rectangle(0, -26, 42, 1, 0x451a03);
 
         // Paku logam kecil di sudut
-        const nailL = this.add.circle(-38, -26, 1.5, 0x94a3b8);
-        const nailR = this.add.circle(38, -26, 1.5, 0x94a3b8);
+        const nailL = this.add.circle(-18, -26, 1.2, 0x94a3b8);
+        const nailR = this.add.circle(18, -26, 1.2, 0x94a3b8);
 
-        // Teks ukiran kayu
-        const signText = this.add.text(0, -26, '🪵 Lembah Es', {
-            fontSize: '9.5px',
+        // Teks ukiran kayu proporsional dan tajam
+        const signText = this.add.text(0, -26, 'Lembah Es', {
+            fontSize: '8px',
             fontStyle: 'bold',
             fill: '#fef3c7',
             fontFamily: FONT_BODY
@@ -534,17 +541,22 @@ export class GameScene extends Phaser.Scene {
         if (!this.gridWorldBlocks) this.gridWorldBlocks = new Map();
         // y adalah titik tengah vertikal platform (312 untuk surface 300)
         const row = Math.floor((y - 12) / 50);
-        const startX = centerX - ((tileCount - 1) * 50) / 2;
+
+        // Kunci penempatan agar balok platform selalu menempel presisi di batas sel kisi grid 50px
+        const totalWidth = tileCount * 50;
+        const rawLeft = centerX - totalWidth / 2;
+        const startCol = Math.round(rawLeft / 50);
+        const startX = startCol * 50; // Garis grid pembatas tepi kiri
 
         for (let i = 0; i < tileCount; i++) {
-            const x = startX + i * 50;
-            const col = Math.floor(x / 50);
+            const col = startCol + i;
+            const tileCenterX = startX + i * 50 + 25; // Tepat di titik tengah sel kolom 50px (+25px)
 
             let key = 'tile_plat_50_mid';
             if (i === 0) key = 'tile_plat_50_left';
             else if (i === tileCount - 1) key = 'tile_plat_50_right';
 
-            const plat = this.platforms.create(x, y, key).refreshBody();
+            const plat = this.platforms.create(tileCenterX, y, key).refreshBody();
             plat.setDepth(10);
             plat.gridCol = col;
             plat.gridRow = row;

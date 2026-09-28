@@ -58,29 +58,29 @@ export const DAFTAR_MAP = [
         background: 'bg_scene1.png', // Gambar di folder public atau public/aset_murid/
         warnaLangit: '#0b1329',
         lebarDunia: 1280,
-        spawn: { x: 150, y: 350 },
+        spawn: { x: 175, y: 350 }, // Berdiri pas di tengah Kolom 3 (x: 150..200)
 
-        // Platform tempat melompat { x, y, lebar, tinggi } - Pijakan atas menempel presisi di garis horizontal grid 50px
+        // Platform tempat melompat { x, y, lebar, tinggi } - Seluruh balok menempel presisi di petak grid 50px
         platform: [
-            { x: 450, y: 312, lebar: 150, tinggi: 24 }, // Pijakan atas tepat di garis y = 300 (Row 6, selebar 3 petak 50px)
-            { x: 725, y: 212, lebar: 200, tinggi: 24 }, // Pijakan atas tepat di garis y = 200 (Row 4, selebar 4 petak 50px)
-            { x: 1000, y: 262, lebar: 150, tinggi: 24 }  // Pijakan atas tepat di garis y = 250 (Row 5, selebar 3 petak 50px)
+            { x: 475, y: 312, lebar: 150, tinggi: 24 }, // Kolom 8, 9, 10 (x: 400..550), Pijakan tepat di garis y = 300
+            { x: 750, y: 212, lebar: 200, tinggi: 24 }, // Kolom 13, 14, 15, 16 (x: 650..850), Pijakan tepat di garis y = 200
+            { x: 975, y: 262, lebar: 150, tinggi: 24 }  // Kolom 18, 19, 20 (x: 900..1050), Pijakan tepat di garis y = 250
         ],
 
-        // Koin / Harta Karun { x, y, id, nama, icon } - Tepat di titik tengah Platform 2 (725, 150)
+        // Koin / Harta Karun { x, y, id, nama, icon } - Tepat di titik tengah sel Kolom 14, Row 2 (x: 700..750, y: 100..150)
         koin: [
-            { x: 725, y: 150, id: 'koin_emas', nama: 'Koin Emas Murni', icon: '' }
+            { x: 725, y: 125, id: 'koin_emas', nama: 'Koin Emas Murni', icon: '' }
         ],
 
-        // Rintangan Duri / Hazard { x, y, lebar } - Dasar duri menempel pas di atas lantai y = 400 (selebar 2 petak 50px)
+        // Rintangan Duri / Hazard { x, y, lebar } - Memenuhi persis 2 petak grid Kolom 11 & 12 (x: 550..650)
         duri: [
-            { x: 575, y: 388, lebar: 100 }
+            { x: 600, y: 388, lebar: 100 }
         ],
 
-        // Karakter NPC yang bisa diajak ngobrol - Berdiri tepat di lantai y = 400, kolom x = 200
+        // Karakter NPC yang bisa diajak ngobrol - Tepat di titik tengah sel Kolom 4 (x: 200..250, center = 225)
         npc: {
             nama: "Pemandu Engine (Tutorial Master)",
-            posisiX: 200,
+            posisiX: 225,
             posisiY: 378,
             portrait: "npc_portrait",
             dialog: [
@@ -91,13 +91,13 @@ export const DAFTAR_MAP = [
             ]
         },
 
-        // Portal Pintu ke Level Berikutnya - Berdiri di lantai y = 400, kolom x = 1150
+        // Portal Pintu ke Level Berikutnya - Tepat di titik tengah sel Kolom 23 (x: 1150..1200, center = 1175)
         portal: {
-            posisiX: 1150,
+            posisiX: 1175,
             posisiY: 376,
             tujuanMapId: 'Scene2', // Otomatis berpindah ke Scene 2: Teluk Victoria Hong Kong!
             pesanTerkunci: "Gerbang Terkunci! Kamu harus mengambil Koin Emas terlebih dahulu.",
-            pesanTerbuka: "Gerbang Terbuka! Berlayar menuju Scene 2: Teluk Hong Kong..."
+            pesanTerbuka: "Gerbang Terkunci! Berlayar menuju Scene 2: Teluk Hong Kong..."
         }
     },
 
