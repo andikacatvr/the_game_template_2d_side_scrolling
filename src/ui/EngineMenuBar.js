@@ -354,7 +354,7 @@ export class EngineMenuBar {
                 </button>
 
                 <!-- Quick Button: Grid System (Unity/Godot/Tiled Style) -->
-                <button class="gt-mb-tool-btn gt-mb-btn-grid" id="gt-mb-btn-grid" title="Toggle Grid System & Snap Koordinat (Shortcut: G)">
+                <button class="gt-mb-tool-btn gt-mb-btn-grid" id="gt-mb-btn-grid" title="Toggle Grid System 50px (Shortcut: G)">
                     <span>▦</span> Grid
                 </button>
             </div>

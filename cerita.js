@@ -58,30 +58,30 @@ export const DAFTAR_MAP = [
         background: 'bg_scene1.png', // Gambar di folder public atau public/aset_murid/
         warnaLangit: '#0b1329',
         lebarDunia: 1280,
-        spawn: { x: 160, y: 360 },
+        spawn: { x: 150, y: 350 },
 
-        // Platform tempat melompat { x, y, lebar, tinggi }
+        // Platform tempat melompat { x, y, lebar, tinggi } - Pijakan atas menempel presisi di garis horizontal grid 50px
         platform: [
-            { x: 440, y: 340, lebar: 180, tinggi: 24 },
-            { x: 720, y: 260, lebar: 200, tinggi: 24 },
-            { x: 980, y: 320, lebar: 160, tinggi: 24 }
+            { x: 425, y: 312, lebar: 160, tinggi: 24 }, // Pijakan atas tepat di garis y = 300 (Row 6)
+            { x: 700, y: 212, lebar: 192, tinggi: 24 }, // Pijakan atas tepat di garis y = 200 (Row 4)
+            { x: 975, y: 262, lebar: 160, tinggi: 24 }  // Pijakan atas tepat di garis y = 250 (Row 5)
         ],
 
-        // Koin / Harta Karun { x, y, id, nama, icon }
+        // Koin / Harta Karun { x, y, id, nama, icon } - Tepat di titik temu garis grid (700, 150)
         koin: [
-            { x: 720, y: 205, id: 'koin_emas', nama: 'Koin Emas Murni', icon: '' }
+            { x: 700, y: 150, id: 'koin_emas', nama: 'Koin Emas Murni', icon: '' }
         ],
 
-        // Rintangan Duri / Hazard { x, y, lebar }
+        // Rintangan Duri / Hazard { x, y, lebar } - Dasar duri menempel pas di atas lantai y = 400
         duri: [
-            { x: 580, y: 406, lebar: 90 }
+            { x: 550, y: 388, lebar: 96 }
         ],
 
-        // Karakter NPC yang bisa diajak ngobrol
+        // Karakter NPC yang bisa diajak ngobrol - Berdiri tepat di lantai y = 400, kolom x = 200
         npc: {
             nama: "Pemandu Engine (Tutorial Master)",
             posisiX: 200,
-            posisiY: 396,
+            posisiY: 378,
             portrait: "npc_portrait",
             dialog: [
                 "Halo calon kreator game! Selamat datang di Arena Eksplorasi 2D.",
@@ -91,10 +91,10 @@ export const DAFTAR_MAP = [
             ]
         },
 
-        // Portal Pintu ke Level Berikutnya
+        // Portal Pintu ke Level Berikutnya - Berdiri di lantai y = 400, kolom x = 1150
         portal: {
-            posisiX: 1180,
-            posisiY: 395,
+            posisiX: 1150,
+            posisiY: 376,
             tujuanMapId: 'Scene2', // Otomatis berpindah ke Scene 2: Teluk Victoria Hong Kong!
             pesanTerkunci: "Gerbang Terkunci! Kamu harus mengambil Koin Emas terlebih dahulu.",
             pesanTerbuka: "Gerbang Terbuka! Berlayar menuju Scene 2: Teluk Hong Kong..."

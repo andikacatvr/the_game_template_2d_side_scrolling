@@ -152,9 +152,8 @@ export class Scene3 extends Phaser.Scene {
     // LANTAI / TILES PENUH (KOSONG TANPA JURANG / HAZARD)
     // ===============================================================
     createGround(worldWidth) {
-        this.platforms = this.physics.add.staticGroup();
-
-        const groundY = 434;
+        // Lantai dasar rata di baris horizontal grid y = 400 (Row 8)
+        const groundY = 416;
         const tileCount = Math.ceil((worldWidth + 128) / 32);
 
         for (let i = 0; i < tileCount; i++) {
@@ -177,8 +176,8 @@ export class Scene3 extends Phaser.Scene {
     // PORTAL KEMBALI KE SCENE 2 (POLOS)
     // ===============================================================
     createReturnPortal() {
-        const portalX = 90;
-        const portalY = 396;
+        const portalX = 100; // Tepat di garis kolom x = 100
+        const portalY = 376; // Berdiri di atas lantai y = 400
         this.portalBack = this.add.container(portalX, portalY).setDepth(12);
 
         const ring = this.add.circle(0, 0, 24, 0x0284c7, 0.25).setStrokeStyle(2, 0x38bdf8);

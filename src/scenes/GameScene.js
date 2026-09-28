@@ -317,9 +317,9 @@ export class GameScene extends Phaser.Scene {
 
         this.platforms = this.physics.add.staticGroup();
 
-        // 1. Lantai Dasar Modular
+        // 1. Lantai Dasar Modular - Permukaan atas tepat sejajar garis horizontal grid y = 400 (Row 8)
         const tileCount = Math.ceil((worldW + 192) / 32);
-        this.buildTiledGround(-96, 434, tileCount);
+        this.buildTiledGround(-96, 416, tileCount);
 
         // 2. Platform Melayang dari data map
         if (Array.isArray(map.platform) && map.platform.length > 0) {
@@ -368,7 +368,7 @@ export class GameScene extends Phaser.Scene {
             : [{ x: 400, y: 406 }];
 
         daftarDuri.forEach(d => {
-            const targetY = (!d.y || d.y >= 418) ? 406 : d.y;
+            const targetY = (!d.y || d.y >= 400) ? 388 : d.y;
             const lebar = d.lebar || 24;
             const count = Math.max(1, Math.round(lebar / 24));
             const startX = d.x - ((count - 1) * 24) / 2;
@@ -380,10 +380,10 @@ export class GameScene extends Phaser.Scene {
             }
         });
 
-        // 5. NPC
+        // 5. NPC - Berdiri di atas lantai y = 400
         const npcConfig = map.npc || CONFIG_SKELETON.npc || {};
         const npcX = npcConfig.posisiX || 200;
-        const npcY = npcConfig.posisiY || 396;
+        const npcY = npcConfig.posisiY || 378;
         this.npc = this.physics.add.staticSprite(npcX, npcY, 'skeleton_npc');
         this.npcData = {
             name: npcConfig.nama || 'Penjaga Gerbang',
@@ -410,10 +410,10 @@ export class GameScene extends Phaser.Scene {
         // Floating Prompt di atas NPC diatur oleh HTMLInteractPrompt (tanpa kotak kaku)
         this.npcPrompt = null;
 
-        // 6. Portal Gerbang
+        // 6. Portal Gerbang - Berdiri di atas lantai y = 400
         const portalConfig = map.portal || {};
-        const portalX = portalConfig.posisiX || (worldW - 100);
-        const portalY = portalConfig.posisiY || 396;
+        const portalX = portalConfig.posisiX || 1150;
+        const portalY = portalConfig.posisiY || 376;
         this.portalX = portalX;
         this.portalY = portalY;
         this.portalTargetMapId = portalConfig.tujuanMapId || '';
@@ -439,8 +439,8 @@ export class GameScene extends Phaser.Scene {
     }
 
     createNaturalSignpost() {
-        const signX = 280;
-        const signY = 418;
+        const signX = 275;
+        const signY = 398; // Kaki tiang tertancap pas di permukaan tanah y = 400
 
         this.naturalSignContainer = this.add.container(signX, signY).setDepth(10);
 
@@ -558,7 +558,7 @@ export class GameScene extends Phaser.Scene {
         });
 
         // 3. Kabut Merayap di Tanah / Ground Crawling Fog (depth: 8)
-        this.fogGround = this.add.tileSprite(490, 412, 1280, 120, 'fx_fog_ground')
+        this.fogGround = this.add.tileSprite(490, 394, 1280, 120, 'fx_fog_ground')
             .setDepth(8)
             .setAlpha(0.70)
             .setScale(1, 1.2);

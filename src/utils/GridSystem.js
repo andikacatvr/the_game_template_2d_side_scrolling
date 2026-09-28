@@ -84,7 +84,7 @@ class GridSystemClass {
 
         AudioManager.playClick();
         if (this.scene.showFloatingToast) {
-            this.scene.showFloatingToast(`▦ Grid System Aktif (${this.cellSize}×${this.cellSize}px) [Tekan G]`, 0xa855f7);
+            this.scene.showFloatingToast('▦ Grid System 50px Aktif [Tekan G]', 0xa855f7);
         }
     }
 
@@ -342,7 +342,8 @@ class GridSystemClass {
             <div class="gt-grid-hud-title">
                 <span>▦</span>
                 <span>GRID:</span>
-                <span id="gt-grid-size-label" style="color: #ffffff;">${this.cellSize}px</span>
+                <span id="gt-grid-size-label" style="color: #ffffff; font-weight: 800;">50px</span>
+                <span style="font-size: 10px; color: #d8b4fe; font-weight: 700; background: rgba(168, 85, 247, 0.2); padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(168, 85, 247, 0.4);">16:9</span>
             </div>
 
             <div class="gt-grid-hud-coords">
@@ -351,35 +352,15 @@ class GridSystemClass {
                 <div>Pos: (<span id="gt-grid-pos-x">0</span>, <span id="gt-grid-pos-y">0</span>)</div>
             </div>
 
-            <!-- Pengatur Ukuran Kotak -->
-            <div class="gt-grid-size-btn-group" title="Pilih ukuran kotak grid">
-                <button class="gt-grid-size-btn ${this.cellSize === 25 ? 'active' : ''}" data-size="25" title="Detail halus (32×18 kotak)">25</button>
-                <button class="gt-grid-size-btn ${this.cellSize === 32 ? 'active' : ''}" data-size="32" title="Standar Tile / Platform 2D">32 (Tile)</button>
-                <button class="gt-grid-size-btn ${this.cellSize === 50 ? 'active' : ''}" data-size="50" title="Rasio 16:9 Pas Layar (16×9 kotak)">50 (16:9)</button>
-                <button class="gt-grid-size-btn ${this.cellSize === 64 ? 'active' : ''}" data-size="64" title="Minimalis & lapang">64</button>
+            <div style="font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 4px;">
+                <span>Toggle:</span>
+                <b style="color: #f1f5f9; background: rgba(255, 255, 255, 0.12); padding: 1px 6px; border-radius: 4px;">[G]</b>
             </div>
-
-            <button class="gt-grid-toggle-btn" id="gt-grid-snap-toggle" title="Snap aset ke petak terdekat (opsional)">
-                Snap: ${this.snapEnabled ? 'ON' : 'OFF'}
-            </button>
 
             <button class="gt-grid-close-btn" id="gt-grid-btn-close" title="Tutup Grid (Shortcut: G)">✕</button>
         `;
 
         document.body.appendChild(this.hudBadge);
-
-        // Pasang Event Listeners di Badge
-        this.hudBadge.querySelectorAll('.gt-grid-size-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const s = parseInt(btn.getAttribute('data-size'), 10);
-                this.setCellSize(s);
-            });
-        });
-
-        const snapBtn = document.getElementById('gt-grid-snap-toggle');
-        if (snapBtn) {
-            snapBtn.addEventListener('click', () => this.toggleSnap());
-        }
 
         const closeBtn = document.getElementById('gt-grid-btn-close');
         if (closeBtn) {
@@ -397,18 +378,6 @@ class GridSystemClass {
         if (rowEl) rowEl.textContent = row;
         if (posXEl) posXEl.textContent = wx;
         if (posYEl) posYEl.textContent = wy;
-    }
-
-    updateSizeButtonsUI() {
-        if (!this.hudBadge) return;
-        this.hudBadge.querySelectorAll('.gt-grid-size-btn').forEach(btn => {
-            const s = parseInt(btn.getAttribute('data-size'), 10);
-            if (s === this.cellSize) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
-        });
     }
 
     updateMenuBarButton(active) {
