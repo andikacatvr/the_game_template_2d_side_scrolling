@@ -224,6 +224,108 @@ export class BootScene extends Phaser.Scene {
         tpRight.strokeRoundedRect(0, 6, 32, 18, { tr: 5, br: 5, tl: 0, bl: 0 });
         tpRight.generateTexture('tile_plat_right', 32, 24);
 
+        // ===============================================================
+        // MODULAR 50x50 PIXEL GRID BLOCKS & 50px PLATFORMS
+        // ===============================================================
+        // 1. Modul Tanah Salju 50x50 (tile_block_50_snow)
+        const tbSnow = this.make.graphics({ x: 0, y: 0, add: false });
+        tbSnow.fillStyle(0x111a2c, 1); // Dasar batuan beku
+        tbSnow.fillRect(0, 0, 50, 50);
+        // Pola bebatuan dalam blok
+        tbSnow.fillStyle(0x182438, 1);
+        tbSnow.fillRect(5, 14, 18, 12);
+        tbSnow.fillRect(28, 22, 16, 14);
+        tbSnow.fillRect(10, 32, 15, 12);
+        // Kristal es bercahaya
+        tbSnow.fillStyle(0x38bdf8, 0.7);
+        tbSnow.fillRect(12, 18, 3, 3);
+        tbSnow.fillRect(34, 26, 3, 3);
+        // Lapisan tanah bawah salju
+        tbSnow.fillStyle(0x475569, 1);
+        tbSnow.fillRect(0, 0, 50, 10);
+        tbSnow.fillStyle(0x94a3b8, 1);
+        tbSnow.fillRect(0, 0, 50, 7);
+        // Lapisan salju tebal
+        tbSnow.fillStyle(0xe2e8f0, 1);
+        tbSnow.fillRect(0, 0, 50, 5);
+        // Kilau salju murni paling atas
+        tbSnow.fillStyle(0xffffff, 1);
+        tbSnow.fillRect(0, 0, 50, 2);
+        // Gundukan salju organik
+        tbSnow.fillStyle(0xe2e8f0, 1);
+        tbSnow.fillRect(6, 5, 8, 3);
+        tbSnow.fillRect(22, 5, 10, 4);
+        tbSnow.fillRect(38, 5, 7, 3);
+        // Garis tepi modular halus agar antar balok 50px terlihat rapi
+        tbSnow.lineStyle(1, 0x1e293b, 0.45);
+        tbSnow.strokeRect(0, 0, 50, 50);
+        tbSnow.generateTexture('tile_block_50_snow', 50, 50);
+
+        // 2. Modul Bawah Tanah 50x50 (tile_block_50_dirt)
+        const tbDirt = this.make.graphics({ x: 0, y: 0, add: false });
+        tbDirt.fillStyle(0x0a101d, 1); // Tanah dalam gelap beku
+        tbDirt.fillRect(0, 0, 50, 50);
+        tbDirt.fillStyle(0x141f30, 1);
+        tbDirt.fillRect(6, 6, 16, 14);
+        tbDirt.fillRect(26, 12, 18, 16);
+        tbDirt.fillRect(8, 26, 20, 18);
+        tbDirt.fillStyle(0x1f2e45, 1);
+        tbDirt.fillRect(10, 10, 6, 5);
+        tbDirt.fillRect(30, 16, 8, 6);
+        tbDirt.fillStyle(0x38bdf8, 0.5); // Kristal es bawah tanah
+        tbDirt.fillRect(12, 12, 3, 3);
+        tbDirt.fillRect(32, 18, 3, 3);
+        tbDirt.lineStyle(1, 0x141f30, 0.5);
+        tbDirt.strokeRect(0, 0, 50, 50);
+        tbDirt.generateTexture('tile_block_50_dirt', 50, 50);
+
+        // 3. Floating Platform Segmen 50px (Mid, Left, Right)
+        const p50Mid = this.make.graphics({ x: 0, y: 0, add: false });
+        p50Mid.fillStyle(0x1e293b, 1);
+        p50Mid.fillRect(0, 0, 50, 24);
+        p50Mid.fillStyle(0x94a3b8, 1);
+        p50Mid.fillRect(0, 0, 50, 6);
+        p50Mid.fillStyle(0xe2e8f0, 1);
+        p50Mid.fillRect(0, 0, 50, 4);
+        p50Mid.fillStyle(0xffffff, 1);
+        p50Mid.fillRect(0, 0, 50, 2);
+        p50Mid.fillStyle(0xe2e8f0, 0.9);
+        p50Mid.fillRect(10, 6, 3, 4);
+        p50Mid.fillRect(32, 6, 3, 5);
+        p50Mid.lineStyle(1, 0x0f172a, 0.8);
+        p50Mid.strokeRect(0, 0, 50, 24);
+        p50Mid.generateTexture('tile_plat_50_mid', 50, 24);
+
+        const p50Left = this.make.graphics({ x: 0, y: 0, add: false });
+        p50Left.fillStyle(0x1e293b, 1);
+        p50Left.fillRoundedRect(0, 0, 50, 24, { tl: 5, bl: 5, tr: 0, br: 0 });
+        p50Left.fillStyle(0x94a3b8, 1);
+        p50Left.fillRoundedRect(0, 0, 50, 6, { tl: 5, tr: 0, bl: 0, br: 0 });
+        p50Left.fillStyle(0xe2e8f0, 1);
+        p50Left.fillRoundedRect(0, 0, 50, 4, { tl: 5, tr: 0, bl: 0, br: 0 });
+        p50Left.fillStyle(0xffffff, 1);
+        p50Left.fillRoundedRect(0, 0, 50, 2, { tl: 5, tr: 0, bl: 0, br: 0 });
+        p50Left.fillStyle(0xe2e8f0, 0.9);
+        p50Left.fillRect(20, 6, 3, 4);
+        p50Left.lineStyle(1, 0x0f172a, 0.8);
+        p50Left.strokeRoundedRect(0, 0, 50, 24, { tl: 5, bl: 5, tr: 0, br: 0 });
+        p50Left.generateTexture('tile_plat_50_left', 50, 24);
+
+        const p50Right = this.make.graphics({ x: 0, y: 0, add: false });
+        p50Right.fillStyle(0x1e293b, 1);
+        p50Right.fillRoundedRect(0, 0, 50, 24, { tr: 5, br: 5, tl: 0, bl: 0 });
+        p50Right.fillStyle(0x94a3b8, 1);
+        p50Right.fillRoundedRect(0, 0, 50, 6, { tr: 5, tl: 0, bl: 0, br: 0 });
+        p50Right.fillStyle(0xe2e8f0, 1);
+        p50Right.fillRoundedRect(0, 0, 50, 4, { tr: 5, tl: 0, bl: 0, br: 0 });
+        p50Right.fillStyle(0xffffff, 1);
+        p50Right.fillRoundedRect(0, 0, 50, 2, { tr: 5, tl: 0, bl: 0, br: 0 });
+        p50Right.fillStyle(0xe2e8f0, 0.9);
+        p50Right.fillRect(26, 6, 3, 4);
+        p50Right.lineStyle(1, 0x0f172a, 0.8);
+        p50Right.strokeRoundedRect(0, 0, 50, 24, { tr: 5, br: 5, tl: 0, bl: 0 });
+        p50Right.generateTexture('tile_plat_50_right', 50, 24);
+
         // Fallback backward compatibility textures
         const gG = this.make.graphics({ x: 0, y: 0, add: false });
         gG.fillStyle(0x111a2c, 1);

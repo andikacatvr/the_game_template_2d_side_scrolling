@@ -62,19 +62,19 @@ export const DAFTAR_MAP = [
 
         // Platform tempat melompat { x, y, lebar, tinggi } - Pijakan atas menempel presisi di garis horizontal grid 50px
         platform: [
-            { x: 425, y: 312, lebar: 160, tinggi: 24 }, // Pijakan atas tepat di garis y = 300 (Row 6)
-            { x: 700, y: 212, lebar: 192, tinggi: 24 }, // Pijakan atas tepat di garis y = 200 (Row 4)
-            { x: 975, y: 262, lebar: 160, tinggi: 24 }  // Pijakan atas tepat di garis y = 250 (Row 5)
+            { x: 450, y: 312, lebar: 150, tinggi: 24 }, // Pijakan atas tepat di garis y = 300 (Row 6, selebar 3 petak 50px)
+            { x: 725, y: 212, lebar: 200, tinggi: 24 }, // Pijakan atas tepat di garis y = 200 (Row 4, selebar 4 petak 50px)
+            { x: 1000, y: 262, lebar: 150, tinggi: 24 }  // Pijakan atas tepat di garis y = 250 (Row 5, selebar 3 petak 50px)
         ],
 
-        // Koin / Harta Karun { x, y, id, nama, icon } - Tepat di titik temu garis grid (700, 150)
+        // Koin / Harta Karun { x, y, id, nama, icon } - Tepat di titik tengah Platform 2 (725, 150)
         koin: [
-            { x: 700, y: 150, id: 'koin_emas', nama: 'Koin Emas Murni', icon: '' }
+            { x: 725, y: 150, id: 'koin_emas', nama: 'Koin Emas Murni', icon: '' }
         ],
 
-        // Rintangan Duri / Hazard { x, y, lebar } - Dasar duri menempel pas di atas lantai y = 400
+        // Rintangan Duri / Hazard { x, y, lebar } - Dasar duri menempel pas di atas lantai y = 400 (selebar 2 petak 50px)
         duri: [
-            { x: 550, y: 388, lebar: 96 }
+            { x: 575, y: 388, lebar: 100 }
         ],
 
         // Karakter NPC yang bisa diajak ngobrol - Berdiri tepat di lantai y = 400, kolom x = 200

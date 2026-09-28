@@ -316,20 +316,20 @@ export class GameScene extends Phaser.Scene {
         }
 
         this.platforms = this.physics.add.staticGroup();
+        this.gridWorldBlocks = new Map();
 
-        // 1. Lantai Dasar Modular - Permukaan atas tepat sejajar garis horizontal grid y = 400 (Row 8)
-        const tileCount = Math.ceil((worldW + 192) / 32);
-        this.buildTiledGround(-96, 416, tileCount);
+        // 1. Lantai Dasar Modular 50x50 px - Permukaan atas tepat sejajar garis horizontal grid y = 400 (Row 8)
+        this.buildModular50Ground(worldW);
 
-        // 2. Platform Melayang dari data map
+        // 2. Platform Melayang Modular 50px dari data map
         if (Array.isArray(map.platform) && map.platform.length > 0) {
             map.platform.forEach(p => {
-                const count = Math.max(2, Math.round((p.lebar || 180) / 32));
-                this.buildTiledPlatform(p.x, p.y, count);
+                const count = Math.max(1, Math.round((p.lebar || 150) / 50));
+                this.buildModular50Platform(p.x, p.y, count);
             });
         } else {
-            this.buildTiledPlatform(250, 320, 4);
-            this.buildTiledPlatform(560, 270, 4);
+            this.buildModular50Platform(450, 312, 3);
+            this.buildModular50Platform(725, 212, 4);
         }
 
         // 3. Item Koin dari data map (Bisa jamak)
@@ -496,32 +496,69 @@ export class GameScene extends Phaser.Scene {
         );
     }
 
-    buildTiledGround(startX, y, tileCount = 25) {
-        for (let i = 0; i < tileCount; i++) {
-            const x = startX + 16 + i * 32;
-            let tileKey = 'tile_grass_mid';
-            if (i === 0) tileKey = 'tile_grass_left';
-            else if (i === tileCount - 1) tileKey = 'tile_grass_right';
+    buildModular50Ground(worldW) {
+        if (!this.gridWorldBlocks) this.gridWorldBlocks = new Map();
+        const startCol = -2;
+        const endCol = Math.ceil(worldW / 50) + 2;
 
-            this.platforms.create(x, y, tileKey).refreshBody();
+        for (let col = startCol; col <= endCol; col++) {
+            const x = col * 50 + 25; // Titik tengah kolom 50px
 
-            // Layer bawah tanah berlapis tebal ke bawah (sampai y: 560) agar tidak tembus void saat zoom out
-            for (let dy = 32; y + dy <= 560; dy += 32) {
-                this.platforms.create(x, y + dy, 'tile_dirt_sub').refreshBody();
-            }
+            // Row 8 (y: 400 - 450) -> Balok Permukaan Salju 50x50 px
+            const blockTop = this.platforms.create(x, 425, 'tile_block_50_snow').refreshBody();
+            blockTop.setDepth(10);
+            blockTop.gridCol = col;
+            blockTop.gridRow = 8;
+            blockTop.gridType = 'ground';
+            this.gridWorldBlocks.set(`${col},8`, blockTop);
+
+            // Row 9 (y: 450 - 500) -> Balok Bawah Tanah 50x50 px
+            const blockSub1 = this.platforms.create(x, 475, 'tile_block_50_dirt').refreshBody();
+            blockSub1.setDepth(9);
+            blockSub1.gridCol = col;
+            blockSub1.gridRow = 9;
+            blockSub1.gridType = 'subdirt';
+            this.gridWorldBlocks.set(`${col},9`, blockSub1);
+
+            // Row 10 (y: 500 - 550) -> Balok Bawah Tanah 50x50 px (agar tebal saat kamera zoom out)
+            const blockSub2 = this.platforms.create(x, 525, 'tile_block_50_dirt').refreshBody();
+            blockSub2.setDepth(9);
+            blockSub2.gridCol = col;
+            blockSub2.gridRow = 10;
+            blockSub2.gridType = 'subdirt';
+            this.gridWorldBlocks.set(`${col},10`, blockSub2);
         }
     }
 
-    buildTiledPlatform(centerX, y, tileCount = 4) {
-        const startX = centerX - ((tileCount - 1) * 32) / 2;
-        for (let i = 0; i < tileCount; i++) {
-            const x = startX + i * 32;
-            let tileKey = 'tile_plat_mid';
-            if (i === 0) tileKey = 'tile_plat_left';
-            else if (i === tileCount - 1) tileKey = 'tile_plat_right';
+    buildModular50Platform(centerX, y, tileCount = 3) {
+        if (!this.gridWorldBlocks) this.gridWorldBlocks = new Map();
+        // y adalah titik tengah vertikal platform (312 untuk surface 300)
+        const row = Math.floor((y - 12) / 50);
+        const startX = centerX - ((tileCount - 1) * 50) / 2;
 
-            this.platforms.create(x, y, tileKey).refreshBody();
+        for (let i = 0; i < tileCount; i++) {
+            const x = startX + i * 50;
+            const col = Math.floor(x / 50);
+
+            let key = 'tile_plat_50_mid';
+            if (i === 0) key = 'tile_plat_50_left';
+            else if (i === tileCount - 1) key = 'tile_plat_50_right';
+
+            const plat = this.platforms.create(x, y, key).refreshBody();
+            plat.setDepth(10);
+            plat.gridCol = col;
+            plat.gridRow = row;
+            plat.gridType = 'platform';
+            this.gridWorldBlocks.set(`${col},${row}`, plat);
         }
+    }
+
+    buildTiledGround(startX, y, tileCount = 25) {
+        this.buildModular50Ground(1280);
+    }
+
+    buildTiledPlatform(centerX, y, tileCount = 4) {
+        this.buildModular50Platform(centerX, y, Math.round(tileCount * 32 / 50));
     }
 
     createFogEffect() {
