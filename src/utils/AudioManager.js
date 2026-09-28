@@ -158,6 +158,48 @@ class AudioManagerClass {
         });
     }
 
+    // SFX 7: Dig / Break Block (Growtopia/Terraria Crunchy Impact)
+    playDig() {
+        this.init();
+        if (!this.ctx || this.sfxGain <= 0) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(35, now + 0.12);
+
+        gain.gain.setValueAtTime(0.32 * this.sfxGain, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.15);
+    }
+
+    // SFX 8: Place Block (Solid snap pop)
+    playPlace() {
+        this.init();
+        if (!this.ctx || this.sfxGain <= 0) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(360, now);
+        osc.frequency.exponentialRampToValueAtTime(180, now + 0.09);
+
+        gain.gain.setValueAtTime(0.26 * this.sfxGain, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.10);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.12);
+    }
+
     // Ambient Gentle BGM Generator (Looping peaceful chords)
     startAmbientBGM() {
         if (this.bgmActive) return;

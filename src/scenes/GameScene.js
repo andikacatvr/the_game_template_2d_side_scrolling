@@ -16,6 +16,7 @@ import { QuestModal } from '../ui/QuestModal.js';
 import { NPCDialogEditorModal } from '../ui/NPCDialogEditorModal.js';
 import { EngineMenuBar } from '../ui/EngineMenuBar.js';
 import { EngineUITourModal } from '../ui/EngineUITourModal.js';
+import { GridSystem } from '../utils/GridSystem.js';
 
 // ===============================================================
 // 3. GAME SCENE: SKELETON WITH FULL HUD & RESOLUTION MANAGER
@@ -165,6 +166,9 @@ export class GameScene extends Phaser.Scene {
         this.input.keyboard.on('keydown-I', () => this.toggleInventoryModal());
         this.input.keyboard.on('keydown-ESC', () => this.toggleSettingsModal());
 
+        // Input Klik Dunia untuk Alat Manipulasi World (Gali & Pasang Balok Modular 50px)
+        this.input.on('pointerdown', (pointer) => this.handleWorldPointerDown(pointer));
+
         // Mulai Ambient BGM
         AudioManager.startAmbientBGM();
 
@@ -206,6 +210,12 @@ export class GameScene extends Phaser.Scene {
         } else if (cmd === 'tp' || cmd === 'goto') {
             this.createAuraPulse(this.player ? this.player.x : 400, this.player ? this.player.y : 380, 0xa855f7);
             this.showFloatingToast('✓ Teleportasi berhasil!', 0xa855f7);
+        } else if (cmd === 'dig' || cmd === 'gali' || cmd === 'erase') {
+            GridSystem.setToolMode('dig');
+        } else if (cmd === 'build' || cmd === 'pasang' || cmd === 'place') {
+            GridSystem.setToolMode('build');
+        } else if (cmd === 'resetworld' || cmd === 'resetmap' || cmd === 'clearmap') {
+            this.resetWorldBlocks();
         }
     }
 
@@ -571,6 +581,227 @@ export class GameScene extends Phaser.Scene {
 
     buildTiledPlatform(centerX, y, tileCount = 4) {
         this.buildModular50Platform(centerX, y, Math.round(tileCount * 32 / 50));
+    }
+
+    // ===============================================================
+    // WORLD MANIPULATION SYSTEM (GALI / HAPUS & PASANG BALOK GRID 50px)
+    // Mirip mekanik Sandbox di Terraria, Growtopia, & Minecraft 2D
+    // ===============================================================
+    handleWorldPointerDown(pointer) {
+        // Abaikan jika pointer mengenai elemen HTML (Menu bar, console, modal)
+        if (pointer.event && pointer.event.target && pointer.event.target.tagName !== 'CANVAS') return;
+
+        if (!GridSystem || GridSystem.toolMode === 'none') return;
+
+        const cam = this.cameras.main;
+        const wp = cam.getWorldPoint(pointer.x, pointer.y);
+
+        if (GridSystem.toolMode === 'dig') {
+            this.handleWorldDig(wp.x, wp.y);
+        } else if (GridSystem.toolMode === 'build') {
+            this.handleWorldBuild(wp.x, wp.y);
+        }
+    }
+
+    handleWorldDig(worldX, worldY) {
+        const col = Math.floor(worldX / 50);
+        const row = Math.floor(worldY / 50);
+        const key = `${col},${row}`;
+
+        // 1. Cek apakah ada Balok Platform / Tanah di gridWorldBlocks
+        let block = this.gridWorldBlocks ? this.gridWorldBlocks.get(key) : null;
+        if (block && block.active) {
+            const cx = block.x;
+            const cy = block.y;
+            const bType = block.gridType || 'ground';
+
+            // Partikel hancur & suara gali
+            this.spawnBlockBreakParticles(cx, cy, bType);
+            AudioManager.playDig();
+
+            // Hapus dari grup fisika & Map
+            this.platforms.remove(block, true, true);
+            this.gridWorldBlocks.delete(key);
+
+            const label = bType === 'platform' ? 'Platform' : (bType === 'snow' ? 'Balok Salju' : 'Balok Tanah');
+            this.showFloatingBlockToast(cx, cy - 20, `-1 ${label}`, 0xef4444);
+            return true;
+        }
+
+        // 2. Cek apakah ada Hazard / Duri di petak ini
+        if (this.hazards) {
+            const hzList = this.hazards.getChildren();
+            const foundHz = hzList.find(hz => hz.active && Math.abs(hz.x - (col * 50 + 25)) < 30 && Math.abs(hz.y - (row * 50 + 25)) < 30);
+            if (foundHz) {
+                this.spawnBlockBreakParticles(foundHz.x, foundHz.y, 'hazard');
+                AudioManager.playDig();
+                this.hazards.remove(foundHz, true, true);
+                this.showFloatingBlockToast(foundHz.x, foundHz.y - 20, '-1 Duri', 0xef4444);
+                return true;
+            }
+        }
+
+        // 3. Cek apakah ada Koin di petak ini
+        if (this.items) {
+            const coinList = this.items.getChildren();
+            const foundCoin = coinList.find(c => c.active && Math.abs(c.x - (col * 50 + 25)) < 30 && Math.abs(c.y - (row * 50 + 25)) < 30);
+            if (foundCoin) {
+                this.spawnBlockBreakParticles(foundCoin.x, foundCoin.y, 'coin');
+                AudioManager.playDig();
+                this.items.remove(foundCoin, true, true);
+                this.showFloatingBlockToast(foundCoin.x, foundCoin.y - 20, '-1 Koin', 0xfacc15);
+                return true;
+            }
+        }
+
+        // Jika sel kosong
+        this.showFloatingBlockToast(col * 50 + 25, row * 50 + 25, 'Kosong', 0x94a3b8);
+        return false;
+    }
+
+    handleWorldBuild(worldX, worldY) {
+        const col = Math.floor(worldX / 50);
+        const row = Math.floor(worldY / 50);
+        const key = `${col},${row}`;
+
+        if (!this.gridWorldBlocks) this.gridWorldBlocks = new Map();
+
+        // Jangan timpa jika sudah ada balok aktif
+        if (this.gridWorldBlocks.has(key)) {
+            this.showFloatingBlockToast(col * 50 + 25, row * 50 + 15, '⚠️ Sudah ada balok!', 0xf59e0b);
+            return false;
+        }
+
+        const tileCenterX = col * 50 + 25;
+        let newBlock = null;
+        let bType = 'ground';
+
+        if (row >= 8) {
+            // Balok tanah / salju jika di level bawah tanah (row 8 = salju, row 9+ = tanah dalam)
+            const textureKey = (row === 8) ? 'tile_block_50_snow' : 'tile_block_50_dirt';
+            newBlock = this.platforms.create(tileCenterX, row * 50 + 25, textureKey).refreshBody();
+            newBlock.setDepth(10);
+            bType = (row === 8) ? 'snow' : 'dirt';
+        } else {
+            // Platform melayang jika di atas tanah (row < 8)
+            // Permukaan pijakan tepat di garis y = row * 50, center = row * 50 + 12
+            newBlock = this.platforms.create(tileCenterX, row * 50 + 12, 'tile_plat_50_mid').refreshBody();
+            newBlock.setDepth(10);
+            bType = 'platform';
+        }
+
+        newBlock.gridCol = col;
+        newBlock.gridRow = row;
+        newBlock.gridType = bType;
+        this.gridWorldBlocks.set(key, newBlock);
+
+        // Efek partikel & audio
+        this.spawnBlockPlaceParticles(tileCenterX, newBlock.y);
+        AudioManager.playPlace();
+
+        const label = bType === 'platform' ? 'Platform' : (bType === 'snow' ? 'Balok Salju' : 'Balok Tanah');
+        this.showFloatingBlockToast(tileCenterX, row * 50 - 15, `+1 ${label}`, 0x22c55e);
+        return true;
+    }
+
+    spawnBlockBreakParticles(x, y, type = 'ground') {
+        const colors = (type === 'snow') 
+            ? [0xe2e8f0, 0xffffff, 0x94a3b8] 
+            : (type === 'dirt') 
+                ? [0x78350f, 0x451a03, 0x92400e]
+                : (type === 'hazard')
+                    ? [0xef4444, 0xf87171, 0x991b1b]
+                    : (type === 'coin')
+                        ? [0xfacc15, 0xfef08a, 0xeab308]
+                        : [0x38bdf8, 0x64748b, 0x1e293b];
+
+        for (let i = 0; i < 10; i++) {
+            const color = Phaser.Utils.Array.GetRandom(colors);
+            const pSize = Phaser.Math.Between(4, 7);
+            const particle = this.add.rectangle(x + Phaser.Math.Between(-12, 12), y + Phaser.Math.Between(-12, 12), pSize, pSize, color).setDepth(30);
+            const angle = Phaser.Math.Between(0, 360) * (Math.PI / 180);
+            const speed = Phaser.Math.Between(40, 100);
+
+            this.tweens.add({
+                targets: particle,
+                x: particle.x + Math.cos(angle) * speed,
+                y: particle.y + Math.sin(angle) * speed + 35,
+                alpha: 0,
+                scaleX: 0.2,
+                scaleY: 0.2,
+                angle: Phaser.Math.Between(-180, 180),
+                duration: Phaser.Math.Between(400, 600),
+                ease: 'Quad.easeOut',
+                onComplete: () => particle.destroy()
+            });
+        }
+    }
+
+    spawnBlockPlaceParticles(x, y) {
+        const ring = this.add.rectangle(x, y, 48, 48).setDepth(28);
+        ring.setStrokeStyle(2, 0x22c55e, 0.9);
+        ring.setFillStyle(0x22c55e, 0.2);
+
+        this.tweens.add({
+            targets: ring,
+            scaleX: 1.25,
+            scaleY: 1.25,
+            alpha: 0,
+            duration: 350,
+            ease: 'Quad.easeOut',
+            onComplete: () => ring.destroy()
+        });
+    }
+
+    showFloatingBlockToast(x, y, text, color = 0xffffff) {
+        const hexColor = typeof color === 'string' ? color : ('#' + color.toString(16).padStart(6, '0'));
+        const txt = this.add.text(x, y, text, {
+            fontSize: '11px',
+            fontStyle: 'bold',
+            fill: hexColor,
+            stroke: '#000000',
+            strokeThickness: 3,
+            fontFamily: FONT_BODY
+        }).setOrigin(0.5).setDepth(9999);
+
+        this.tweens.add({
+            targets: txt,
+            y: y - 24,
+            alpha: 0,
+            duration: 750,
+            ease: 'Cubic.easeOut',
+            onComplete: () => txt.destroy()
+        });
+    }
+
+    resetWorldBlocks() {
+        if (!this.gridWorldBlocks) return;
+
+        // 1. Bersihkan semua balok dinamis saat ini
+        this.gridWorldBlocks.forEach((block) => {
+            if (block && block.active) {
+                this.platforms.remove(block, true, true);
+            }
+        });
+        this.gridWorldBlocks.clear();
+
+        // 2. Bangun kembali tanah default
+        const map = this.currentMap || {};
+        const worldW = map.lebarDunia || 1280;
+        this.buildModular50Ground(worldW);
+
+        // 3. Bangun kembali platform dari map data
+        if (Array.isArray(map.platform) && map.platform.length > 0) {
+            map.platform.forEach(p => {
+                const count = Math.max(1, Math.round((p.lebar || 150) / 50));
+                this.buildModular50Platform(p.x, p.y, count);
+            });
+        }
+
+        AudioManager.playSuccess();
+        if (this.showFloatingToast) {
+            this.showFloatingToast('✓ Struktur Dunia di-reset ke kondisi awal!', 0x10b981);
+        }
     }
 
     createFogEffect() {

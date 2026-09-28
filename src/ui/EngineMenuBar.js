@@ -226,6 +226,46 @@ export class EngineMenuBar {
                     box-shadow: 0 0 14px rgba(168, 85, 247, 0.6) !important;
                 }
 
+                /* World Manipulation: Dig / Break Button */
+                .gt-mb-btn-dig {
+                    background: rgba(239, 68, 68, 0.15);
+                    border-color: rgba(239, 68, 68, 0.35);
+                    color: #f87171;
+                }
+
+                .gt-mb-btn-dig:hover {
+                    background: #dc2626;
+                    color: #ffffff;
+                }
+
+                .gt-mb-btn-dig.active-dig {
+                    background: #ef4444 !important;
+                    color: #ffffff !important;
+                    font-weight: 800 !important;
+                    border-color: #f87171 !important;
+                    box-shadow: 0 0 12px rgba(239, 68, 68, 0.6) !important;
+                }
+
+                /* World Manipulation: Build / Place Button */
+                .gt-mb-btn-build {
+                    background: rgba(34, 197, 94, 0.15);
+                    border-color: rgba(34, 197, 94, 0.35);
+                    color: #4ade80;
+                }
+
+                .gt-mb-btn-build:hover {
+                    background: #16a34a;
+                    color: #ffffff;
+                }
+
+                .gt-mb-btn-build.active-build {
+                    background: #22c55e !important;
+                    color: #ffffff !important;
+                    font-weight: 800 !important;
+                    border-color: #4ade80 !important;
+                    box-shadow: 0 0 12px rgba(34, 197, 94, 0.6) !important;
+                }
+
                 /* Wrench Edit Button (Growtopia Style) */
                 .gt-mb-btn-edit {
                     background: rgba(245, 158, 11, 0.15);
@@ -356,6 +396,16 @@ export class EngineMenuBar {
                 <!-- Quick Button: Grid System (Unity/Godot/Tiled Style) -->
                 <button class="gt-mb-tool-btn gt-mb-btn-grid" id="gt-mb-btn-grid" title="Toggle Grid System 50px (Shortcut: G)">
                     <span>▦</span> Grid
+                </button>
+
+                <!-- Quick Button: Gali / Hapus Balok (Growtopia/Terraria Style) -->
+                <button class="gt-mb-tool-btn gt-mb-btn-dig" id="gt-mb-btn-dig" title="Mode Gali &amp; Hapus Balok / Objek (Shortcut: X)">
+                    <span>⛏️</span> Gali [X]
+                </button>
+
+                <!-- Quick Button: Pasang Balok Modular -->
+                <button class="gt-mb-tool-btn gt-mb-btn-build" id="gt-mb-btn-build" title="Mode Pasang Balok Lego Modular (Shortcut: B)">
+                    <span>🧱</span> Pasang [B]
                 </button>
             </div>
 
@@ -503,6 +553,22 @@ export class EngineMenuBar {
         if (gridBtn) {
             gridBtn.addEventListener('click', () => {
                 GridSystem.toggle(this.scene);
+            });
+        }
+
+        // Quick Button: Gali / Hapus
+        const digBtn = this.bar.querySelector('#gt-mb-btn-dig');
+        if (digBtn) {
+            digBtn.addEventListener('click', () => {
+                GridSystem.setToolMode('dig');
+            });
+        }
+
+        // Quick Button: Pasang Balok
+        const buildBtn = this.bar.querySelector('#gt-mb-btn-build');
+        if (buildBtn) {
+            buildBtn.addEventListener('click', () => {
+                GridSystem.setToolMode('build');
             });
         }
 

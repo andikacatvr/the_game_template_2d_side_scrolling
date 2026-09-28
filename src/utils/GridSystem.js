@@ -15,6 +15,7 @@ class GridSystemClass {
         this.isActive = false;
         this.cellSize = 50; // Default 50px (Pas rasio 16:9: 16 kolom × 9 baris genap di 800×450)
         this.colorMode = 'dual'; // 'dual' (Hitam+Putih Kontras Otomatis), 'white' (Putih), 'black' (Hitam)
+        this.toolMode = 'none'; // 'none' (Normal), 'dig' (Gali/Hapus Balok & Objek), 'build' (Pasang Balok)
         this.snapEnabled = false; // Default OFF agar tidak mengunci penempatan objek
         this.graphics = null;
         this.hudBadge = null;
@@ -28,7 +29,7 @@ class GridSystemClass {
         this.cleanup();
         this.scene = scene;
 
-        // Pasang listener tombol keyboard [G] untuk toggle grid & [C] ganti warna
+        // Pasang listener tombol keyboard: [G] toggle grid, [C] ganti warna, [X] mode gali/hapus, [B] mode pasang
         this.keyListener = (e) => {
             // Abaikan jika sedang mengetik di input / console / textarea
             const tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
@@ -38,6 +39,10 @@ class GridSystemClass {
                 this.toggle(this.scene);
             } else if ((e.key === 'c' || e.key === 'C') && this.isActive) {
                 this.cycleColorMode();
+            } else if (e.key === 'x' || e.key === 'X') {
+                this.setToolMode('dig');
+            } else if (e.key === 'b' || e.key === 'B') {
+                this.setToolMode('build');
             }
         };
         window.addEventListener('keydown', this.keyListener);
@@ -114,6 +119,30 @@ class GridSystemClass {
         AudioManager.playClick();
         if (this.scene && this.scene.showFloatingToast) {
             this.scene.showFloatingToast('▦ Grid System Dinonaktifkan', 0x64748b);
+        }
+    }
+
+    setToolMode(mode) {
+        if (this.toolMode === mode) {
+            this.toolMode = 'none';
+        } else {
+            this.toolMode = mode;
+            if (!this.isActive) {
+                this.activate();
+            }
+        }
+
+        AudioManager.playClick();
+        this.updateToolButtonsUI();
+
+        if (this.scene && this.scene.showFloatingToast) {
+            if (this.toolMode === 'dig') {
+                this.scene.showFloatingToast('⛏️ Mode Gali / Hapus Aktif [Klik tanah atau platform untuk menghancurkan]', 0xef4444);
+            } else if (this.toolMode === 'build') {
+                this.scene.showFloatingToast('🧱 Mode Pasang Balok Aktif [Klik petak kosong untuk pasang balok]', 0x22c55e);
+            } else {
+                this.scene.showFloatingToast('🔍 Mode Grid Normal', 0x38bdf8);
+            }
         }
     }
 
@@ -213,19 +242,41 @@ class GridSystemClass {
 
             this.hoverCell = { col, row, x: cellWorldX, y: cellWorldY };
 
-            // Kotak highlight seleksi dengan double-outline hitam & putih
-            g.fillStyle(0xffffff, 0.12);
-            g.fillRect(cellWorldX, cellWorldY, step, step);
-            g.lineStyle(3, 0x000000, 0.85);
-            g.strokeRect(cellWorldX, cellWorldY, step, step);
-            g.lineStyle(1.5, 0xffffff, 0.95);
-            g.strokeRect(cellWorldX, cellWorldY, step, step);
+            if (this.toolMode === 'dig') {
+                // Mode Gali / Hapus: Kotak merah menyala + tanda silang (X)
+                g.fillStyle(0xef4444, 0.28);
+                g.fillRect(cellWorldX, cellWorldY, step, step);
+                g.lineStyle(2.5, 0xef4444, 1.0);
+                g.strokeRect(cellWorldX, cellWorldY, step, step);
 
-            // Titik tengah sel berkontras tinggi
-            g.fillStyle(0x000000, 0.9);
-            g.fillCircle(cellWorldX + step / 2, cellWorldY + step / 2, 3.5);
-            g.fillStyle(0xffffff, 1.0);
-            g.fillCircle(cellWorldX + step / 2, cellWorldY + step / 2, 2);
+                g.lineStyle(2, 0xffffff, 0.95);
+                g.lineBetween(cellWorldX + 15, cellWorldY + 15, cellWorldX + step - 15, cellWorldY + step - 15);
+                g.lineBetween(cellWorldX + step - 15, cellWorldY + 15, cellWorldX + 15, cellWorldY + step - 15);
+            } else if (this.toolMode === 'build') {
+                // Mode Pasang: Kotak hijau zamrud menyala + tanda plus (+)
+                g.fillStyle(0x22c55e, 0.28);
+                g.fillRect(cellWorldX, cellWorldY, step, step);
+                g.lineStyle(2.5, 0x22c55e, 1.0);
+                g.strokeRect(cellWorldX, cellWorldY, step, step);
+
+                g.lineStyle(2, 0xffffff, 0.95);
+                g.lineBetween(cellWorldX + step / 2, cellWorldY + 13, cellWorldX + step / 2, cellWorldY + step - 13);
+                g.lineBetween(cellWorldX + 13, cellWorldY + step / 2, cellWorldX + step - 13, cellWorldY + step / 2);
+            } else {
+                // Mode Normal: Kotak highlight seleksi dengan double-outline hitam & putih
+                g.fillStyle(0xffffff, 0.12);
+                g.fillRect(cellWorldX, cellWorldY, step, step);
+                g.lineStyle(3, 0x000000, 0.85);
+                g.strokeRect(cellWorldX, cellWorldY, step, step);
+                g.lineStyle(1.5, 0xffffff, 0.95);
+                g.strokeRect(cellWorldX, cellWorldY, step, step);
+
+                // Titik tengah sel berkontras tinggi
+                g.fillStyle(0x000000, 0.9);
+                g.fillCircle(cellWorldX + step / 2, cellWorldY + step / 2, 3.5);
+                g.fillStyle(0xffffff, 1.0);
+                g.fillCircle(cellWorldX + step / 2, cellWorldY + step / 2, 2);
+            }
 
             // Update teks live di floating badge
             this.updateHUDText(col, row, cellWorldX, cellWorldY);
@@ -348,6 +399,56 @@ class GridSystemClass {
                     border-color: #ffffff;
                 }
 
+                /* World Manipulation Tools (Gali / Pasang / Reset) */
+                .gt-grid-tool-btn-group {
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                    border-left: 1px solid rgba(255, 255, 255, 0.15);
+                    border-right: 1px solid rgba(255, 255, 255, 0.15);
+                    padding: 0 8px;
+                }
+
+                .gt-grid-tool-btn {
+                    padding: 3px 9px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    border-radius: 6px;
+                    background: rgba(255, 255, 255, 0.08);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    color: #cbd5e1;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                    transition: all 0.12s ease;
+                }
+
+                .gt-grid-tool-btn:hover {
+                    background: rgba(255, 255, 255, 0.2);
+                    color: #ffffff;
+                }
+
+                .gt-grid-tool-btn.active-dig {
+                    background: #ef4444 !important;
+                    color: #ffffff !important;
+                    border-color: #f87171 !important;
+                    box-shadow: 0 0 10px rgba(239, 68, 68, 0.6) !important;
+                }
+
+                .gt-grid-tool-btn.active-build {
+                    background: #22c55e !important;
+                    color: #ffffff !important;
+                    border-color: #4ade80 !important;
+                    box-shadow: 0 0 10px rgba(34, 197, 94, 0.6) !important;
+                }
+
+                .gt-grid-btn-reset:hover {
+                    background: #eab308 !important;
+                    color: #0f172a !important;
+                    border-color: #fde047 !important;
+                }
+
                 .gt-grid-close-btn {
                     background: transparent;
                     border: none;
@@ -380,6 +481,19 @@ class GridSystemClass {
                 <div>Pos: (<span id="gt-grid-pos-x">0</span>, <span id="gt-grid-pos-y">0</span>)</div>
             </div>
 
+            <!-- Kelompok Alat Manipulasi World -->
+            <div class="gt-grid-tool-btn-group">
+                <button class="gt-grid-tool-btn" id="gt-grid-tool-dig" title="Mode Gali / Hapus Balok & Objek (Shortcut: X)">
+                    ⛏️ Gali [X]
+                </button>
+                <button class="gt-grid-tool-btn" id="gt-grid-tool-build" title="Mode Pasang Balok Modular (Shortcut: B)">
+                    🧱 Pasang [B]
+                </button>
+                <button class="gt-grid-tool-btn gt-grid-btn-reset" id="gt-grid-btn-reset" title="Kembalikan semua balok tanah ke kondisi awal">
+                    ↺ Reset
+                </button>
+            </div>
+
             <div style="font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 4px;">
                 <span>Toggle:</span>
                 <b style="color: #f1f5f9; background: rgba(255, 255, 255, 0.12); padding: 1px 6px; border-radius: 4px;">[G]</b>
@@ -395,6 +509,25 @@ class GridSystemClass {
 
         document.body.appendChild(this.hudBadge);
 
+        const digBtn = document.getElementById('gt-grid-tool-dig');
+        if (digBtn) {
+            digBtn.addEventListener('click', () => this.setToolMode('dig'));
+        }
+
+        const buildBtn = document.getElementById('gt-grid-tool-build');
+        if (buildBtn) {
+            buildBtn.addEventListener('click', () => this.setToolMode('build'));
+        }
+
+        const resetBtn = document.getElementById('gt-grid-btn-reset');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                if (this.scene && typeof this.scene.resetWorldBlocks === 'function') {
+                    this.scene.resetWorldBlocks();
+                }
+            });
+        }
+
         const colorBtn = document.getElementById('gt-grid-btn-color');
         if (colorBtn) {
             colorBtn.addEventListener('click', () => this.cycleColorMode());
@@ -404,6 +537,20 @@ class GridSystemClass {
         if (closeBtn) {
             closeBtn.addEventListener('click', () => this.deactivate());
         }
+
+        this.updateToolButtonsUI();
+    }
+
+    updateToolButtonsUI() {
+        const digBtn = document.getElementById('gt-grid-tool-dig');
+        const buildBtn = document.getElementById('gt-grid-tool-build');
+        const mbDigBtn = document.getElementById('gt-mb-btn-dig');
+        const mbBuildBtn = document.getElementById('gt-mb-btn-build');
+
+        if (digBtn) digBtn.classList.toggle('active-dig', this.toolMode === 'dig');
+        if (buildBtn) buildBtn.classList.toggle('active-build', this.toolMode === 'build');
+        if (mbDigBtn) mbDigBtn.classList.toggle('active-dig', this.toolMode === 'dig');
+        if (mbBuildBtn) mbBuildBtn.classList.toggle('active-build', this.toolMode === 'build');
     }
 
     updateColorModeButtonUI() {
