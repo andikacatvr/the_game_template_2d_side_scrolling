@@ -47,53 +47,53 @@ export class HTMLTitleMenu {
                     -webkit-user-select: none;
                 }
 
-                /* Container Tombol Menu di Sisi Kanan (Digeser lebih ke kiri agar seimbang dengan logo) */
+                /* Container Tombol Menu di Sisi Kanan (Ukuran proporsional, tidak menabrak logo) */
                 .gt-title-btn-stack {
                     position: absolute;
-                    right: clamp(100px, 22vw, 360px);
+                    right: clamp(60px, 15vw, 240px);
                     top: 50%;
                     transform: translateY(-50%);
                     display: flex;
                     flex-direction: column;
-                    gap: 22px;
-                    width: clamp(360px, 30vw, 500px);
+                    gap: 14px;
+                    width: clamp(250px, 20vw, 320px);
                     pointer-events: auto;
                     animation: titleMenuBob 2.5s ease-in-out infinite;
                 }
 
                 @keyframes titleMenuBob {
                     0%, 100% { transform: translateY(-50%); }
-                    50% { transform: translateY(calc(-50% - 6px)); }
+                    50% { transform: translateY(calc(-50% - 5px)); }
                 }
 
-                /* Tombol Utama Neo-Brutalist Tactile (Ukuran Besar & Gagah) */
+                /* Tombol Utama Neo-Brutalist Tactile (Ukuran Pas, Ramping, & Elegan) */
                 .gt-title-btn {
                     position: relative;
                     width: 100%;
-                    height: clamp(64px, 8.5vh, 78px);
+                    height: clamp(48px, 6.5vh, 56px);
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     font-family: 'Inter', sans-serif;
-                    font-size: clamp(20px, 1.6vw, 24px);
-                    font-weight: 900;
-                    letter-spacing: 0.5px;
-                    border: 3.5px solid #0f172a;
-                    border-radius: 12px;
-                    box-shadow: 0 7px 0 #0f172a;
+                    font-size: clamp(15px, 1.1vw, 17px);
+                    font-weight: 800;
+                    letter-spacing: 0.4px;
+                    border: 3px solid #0f172a;
+                    border-radius: 10px;
+                    box-shadow: 0 5px 0 #0f172a;
                     cursor: pointer;
                     transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.15s ease;
                     outline: none;
                 }
 
                 .gt-title-btn:hover {
-                    transform: translateY(-4px);
-                    box-shadow: 0 11px 0 #0f172a;
+                    transform: translateY(-3px);
+                    box-shadow: 0 8px 0 #0f172a;
                 }
 
                 .gt-title-btn:active {
-                    transform: translateY(3px);
-                    box-shadow: 0 3px 0 #0f172a;
+                    transform: translateY(2px);
+                    box-shadow: 0 2px 0 #0f172a;
                 }
 
                 /* Varian 1: Play Tutorial (Putih Bersih) */
@@ -123,22 +123,22 @@ export class HTMLTitleMenu {
                     background-color: #1e293b;
                 }
 
-                /* Tombol About di Pojok Kanan Bawah (Lebih Besar & Mudah Diklik) */
+                /* Tombol About di Pojok Kanan Bawah */
                 .gt-title-about-btn {
                     position: absolute;
-                    right: 32px;
-                    bottom: 22px;
-                    padding: 10px 28px;
-                    height: 46px;
+                    right: 28px;
+                    bottom: 20px;
+                    padding: 8px 22px;
+                    height: 38px;
                     background-color: #ffffff;
                     color: #0f172a;
                     font-family: 'Inter', sans-serif;
-                    font-size: 16px;
+                    font-size: 14px;
                     font-weight: 800;
                     letter-spacing: 0.4px;
-                    border: 3px solid #0f172a;
+                    border: 2.5px solid #0f172a;
                     border-radius: 8px;
-                    box-shadow: 0 4px 0 #0f172a;
+                    box-shadow: 0 3.5px 0 #0f172a;
                     cursor: pointer;
                     pointer-events: auto;
                     display: flex;
@@ -150,8 +150,8 @@ export class HTMLTitleMenu {
 
                 .gt-title-about-btn:hover {
                     background-color: #f1f5f9;
-                    transform: translateY(-3px);
-                    box-shadow: 0 7px 0 #0f172a;
+                    transform: translateY(-2px);
+                    box-shadow: 0 5.5px 0 #0f172a;
                 }
 
                 .gt-title-about-btn:active {
