@@ -1814,10 +1814,9 @@ export class GameScene extends Phaser.Scene {
         // Stabilisasi Pendaratan & Coyote Time:
         if (isGrounded) {
             // Efek pendaratan hanya dipicu jika karakter benar-benar melayang di udara (> 90ms)
-            // Mencegah bug karakter gepeng & semburan debu berulang saat lari di atas sambungan balok
             if (this.airTime > 90 && this.player.body.velocity.y >= 0) {
                 this.createDustEffect(this.player.x, this.player.y + (this.player.displayHeight ? this.player.displayHeight / 2 : 22));
-                this.triggerSquash(1.15, 0.85, 140);
+                this.triggerLandSquash();
             }
             this.airTime = 0;
             this.coyoteTimer = 130;
@@ -1899,7 +1898,7 @@ export class GameScene extends Phaser.Scene {
             CodeInspector.record('jump');
 
             this.createDustEffect(this.player.x, this.player.y + (this.player.displayHeight ? this.player.displayHeight / 2 : 22));
-            this.triggerSquash(0.86, 1.20, 160);
+            this.triggerJumpSquash();
         }
 
         // 4. VARIABLE JUMP HEIGHT: Short hop jika tombol lompat hanya ditekan cepat
@@ -1954,6 +1953,72 @@ export class GameScene extends Phaser.Scene {
                 onComplete: () => dust.destroy()
             });
         }
+    }
+
+    // Efek Penyet / Squash saat ancang-ancang melompat (Memipih lebar kocak, lalu melesat memanjang)
+    triggerJumpSquash() {
+        if (!this.player || !this.player.active) return;
+        if (this.squashTween) {
+            this.squashTween.stop();
+            this.squashTween = null;
+        }
+        const baseSX = this.playerBaseScaleX || 1;
+        const baseSY = this.playerBaseScaleY || 1;
+
+        // Fase 1: Memipih penyet super elastis (lebar 150%, tinggi 50%)
+        this.player.setScale(baseSX * 1.50, baseSY * 0.50);
+
+        this.squashTween = this.tweens.add({
+            targets: this.player,
+            scaleX: baseSX * 0.74,
+            scaleY: baseSY * 1.36,
+            duration: 85,
+            ease: 'Sine.easeIn',
+            onComplete: () => {
+                if (!this.player || !this.player.active) return;
+                this.squashTween = this.tweens.add({
+                    targets: this.player,
+                    scaleX: baseSX,
+                    scaleY: baseSY,
+                    duration: 170,
+                    ease: 'Back.easeOut',
+                    onComplete: () => {
+                        if (this.player && this.player.active) {
+                            this.player.setScale(baseSX, baseSY);
+                        }
+                        this.squashTween = null;
+                    }
+                });
+            }
+        });
+    }
+
+    // Efek Penyet / Squash saat mendarat di lantai (Membal elastis seperti jeli)
+    triggerLandSquash() {
+        if (!this.player || !this.player.active) return;
+        if (this.squashTween) {
+            this.squashTween.stop();
+            this.squashTween = null;
+        }
+        const baseSX = this.playerBaseScaleX || 1;
+        const baseSY = this.playerBaseScaleY || 1;
+
+        // Memipih penyet lebar (lebar 152%, tinggi 48%)
+        this.player.setScale(baseSX * 1.52, baseSY * 0.48);
+
+        this.squashTween = this.tweens.add({
+            targets: this.player,
+            scaleX: baseSX,
+            scaleY: baseSY,
+            duration: 210,
+            ease: 'Back.easeOut',
+            onComplete: () => {
+                if (this.player && this.player.active) {
+                    this.player.setScale(baseSX, baseSY);
+                }
+                this.squashTween = null;
+            }
+        });
     }
 
     triggerSquash(scaleRatioX, scaleRatioY, duration = 150) {
