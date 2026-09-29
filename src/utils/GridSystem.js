@@ -193,40 +193,41 @@ class GridSystemClass {
         const startY = Math.floor(worldMinY / step) * step - step * 2;
         const endY = Math.ceil(worldMaxY / step) * step + step * 2;
 
-        // 1. Gambar Garis Vertikal (Penuh dari ujung atas ke ujung bawah layar)
-        for (let wx = startX; wx <= endX; wx += step) {
-            const isMajor = (Math.round(wx) % (step * 4) === 0);
-
-            if (this.colorMode === 'dual') {
-                // Dual Kontras: Lapisan luar bayangan hitam + inti putih terang
-                // Otomatis kontras di atas objek putih (salju) maupun objek gelap (tanah/langit)!
-                g.lineStyle(isMajor ? 2.5 : 2, 0x000000, isMajor ? 0.70 : 0.45);
-                g.lineBetween(wx, startY, wx, endY);
-                g.lineStyle(isMajor ? 1.5 : 1, 0xffffff, isMajor ? 0.95 : 0.75);
-                g.lineBetween(wx, startY, wx, endY);
-            } else if (this.colorMode === 'white') {
-                g.lineStyle(isMajor ? 2 : 1, 0xffffff, isMajor ? 0.95 : 0.65);
-                g.lineBetween(wx, startY, wx, endY);
-            } else if (this.colorMode === 'black') {
-                g.lineStyle(isMajor ? 2 : 1, 0x000000, isMajor ? 0.90 : 0.60);
+        // Gambar Garis Vertikal & Horizontal dengan ketebalan 1px konsisten 100% tanpa variasi tebal-tipis
+        if (this.colorMode === 'white') {
+            // Mode Putih Bersih (Uniform 1px, elegan & tajam)
+            g.lineStyle(1, 0xffffff, 0.55);
+            for (let wx = startX; wx <= endX; wx += step) {
                 g.lineBetween(wx, startY, wx, endY);
             }
-        }
+            for (let wy = startY; wy <= endY; wy += step) {
+                g.lineBetween(startX, wy, endX, wy);
+            }
+        } else if (this.colorMode === 'black') {
+            // Mode Hitam Pekat (Uniform 1px, presisi & rapi)
+            g.lineStyle(1, 0x000000, 0.45);
+            for (let wx = startX; wx <= endX; wx += step) {
+                g.lineBetween(wx, startY, wx, endY);
+            }
+            for (let wy = startY; wy <= endY; wy += step) {
+                g.lineBetween(startX, wy, endX, wy);
+            }
+        } else {
+            // Mode Dual-Kontras: 1px Bayangan Lembut (+1px) + 1px Inti Putih Terang
+            // Menghasilkan garis kontras tinggi yang 100% seragam di salju maupun langit gelap
+            g.lineStyle(1, 0x000000, 0.35);
+            for (let wx = startX; wx <= endX; wx += step) {
+                g.lineBetween(wx + 1, startY, wx + 1, endY);
+            }
+            for (let wy = startY; wy <= endY; wy += step) {
+                g.lineBetween(startX, wy + 1, endX, wy + 1);
+            }
 
-        // 2. Gambar Garis Horizontal (Penuh dari ujung kiri ke ujung kanan layar)
-        for (let wy = startY; wy <= endY; wy += step) {
-            const isMajor = (Math.round(wy) % (step * 4) === 0);
-
-            if (this.colorMode === 'dual') {
-                g.lineStyle(isMajor ? 2.5 : 2, 0x000000, isMajor ? 0.70 : 0.45);
-                g.lineBetween(startX, wy, endX, wy);
-                g.lineStyle(isMajor ? 1.5 : 1, 0xffffff, isMajor ? 0.95 : 0.75);
-                g.lineBetween(startX, wy, endX, wy);
-            } else if (this.colorMode === 'white') {
-                g.lineStyle(isMajor ? 2 : 1, 0xffffff, isMajor ? 0.95 : 0.65);
-                g.lineBetween(startX, wy, endX, wy);
-            } else if (this.colorMode === 'black') {
-                g.lineStyle(isMajor ? 2 : 1, 0x000000, isMajor ? 0.90 : 0.60);
+            g.lineStyle(1, 0xffffff, 0.75);
+            for (let wx = startX; wx <= endX; wx += step) {
+                g.lineBetween(wx, startY, wx, endY);
+            }
+            for (let wy = startY; wy <= endY; wy += step) {
                 g.lineBetween(startX, wy, endX, wy);
             }
         }
