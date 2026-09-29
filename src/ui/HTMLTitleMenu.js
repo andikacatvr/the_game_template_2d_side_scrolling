@@ -50,37 +50,37 @@ export class HTMLTitleMenu {
                 /* Container Tombol Menu di Sisi Kanan (Ukuran proporsional, tidak menabrak logo) */
                 .gt-title-btn-stack {
                     position: absolute;
-                    right: clamp(60px, 15vw, 240px);
+                    right: clamp(60px, 14vw, 240px);
                     top: 50%;
                     transform: translateY(-50%);
                     display: flex;
                     flex-direction: column;
-                    gap: 14px;
-                    width: clamp(250px, 20vw, 320px);
+                    gap: 16px;
+                    width: clamp(290px, 24vw, 380px);
                     pointer-events: auto;
                     animation: titleMenuBob 2.5s ease-in-out infinite;
                 }
 
                 @keyframes titleMenuBob {
                     0%, 100% { transform: translateY(-50%); }
-                    50% { transform: translateY(calc(-50% - 5px)); }
+                    50% { transform: translateY(calc(-50% - 6px)); }
                 }
 
-                /* Tombol Utama Neo-Brutalist Tactile (Ukuran Pas, Ramping, & Elegan) */
+                /* Tombol Utama Neo-Brutalist Tactile (Ukuran Pas & Proporsional) */
                 .gt-title-btn {
                     position: relative;
                     width: 100%;
-                    height: clamp(48px, 6.5vh, 56px);
+                    height: clamp(56px, 7.5vh, 66px);
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     font-family: 'Inter', sans-serif;
-                    font-size: clamp(15px, 1.1vw, 17px);
-                    font-weight: 800;
-                    letter-spacing: 0.4px;
-                    border: 3px solid #0f172a;
-                    border-radius: 10px;
-                    box-shadow: 0 5px 0 #0f172a;
+                    font-size: clamp(17px, 1.3vw, 20px);
+                    font-weight: 900;
+                    letter-spacing: 0.5px;
+                    border: 3.5px solid #0f172a;
+                    border-radius: 12px;
+                    box-shadow: 0 6px 0 #0f172a;
                     cursor: pointer;
                     transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.15s ease;
                     outline: none;
@@ -88,11 +88,11 @@ export class HTMLTitleMenu {
 
                 .gt-title-btn:hover {
                     transform: translateY(-3px);
-                    box-shadow: 0 8px 0 #0f172a;
+                    box-shadow: 0 9px 0 #0f172a;
                 }
 
                 .gt-title-btn:active {
-                    transform: translateY(2px);
+                    transform: translateY(3px);
                     box-shadow: 0 2px 0 #0f172a;
                 }
 
@@ -126,19 +126,19 @@ export class HTMLTitleMenu {
                 /* Tombol About di Pojok Kanan Bawah */
                 .gt-title-about-btn {
                     position: absolute;
-                    right: 28px;
-                    bottom: 20px;
-                    padding: 8px 22px;
-                    height: 38px;
+                    right: 30px;
+                    bottom: 22px;
+                    padding: 9px 24px;
+                    height: 42px;
                     background-color: #ffffff;
                     color: #0f172a;
                     font-family: 'Inter', sans-serif;
-                    font-size: 14px;
+                    font-size: 15px;
                     font-weight: 800;
                     letter-spacing: 0.4px;
-                    border: 2.5px solid #0f172a;
+                    border: 3px solid #0f172a;
                     border-radius: 8px;
-                    box-shadow: 0 3.5px 0 #0f172a;
+                    box-shadow: 0 4px 0 #0f172a;
                     cursor: pointer;
                     pointer-events: auto;
                     display: flex;
@@ -151,7 +151,7 @@ export class HTMLTitleMenu {
                 .gt-title-about-btn:hover {
                     background-color: #f1f5f9;
                     transform: translateY(-2px);
-                    box-shadow: 0 5.5px 0 #0f172a;
+                    box-shadow: 0 6px 0 #0f172a;
                 }
 
                 .gt-title-about-btn:active {
