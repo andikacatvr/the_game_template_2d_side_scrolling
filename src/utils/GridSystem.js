@@ -14,7 +14,6 @@ class GridSystemClass {
         this.scene = null;
         this.isActive = false;
         this.cellSize = 50; // Default 50px (Pas rasio 16:9: 16 kolom × 9 baris genap di 800×450)
-        this.colorMode = 'dual'; // 'dual' (Hitam+Putih Kontras Otomatis), 'white' (Putih), 'black' (Hitam)
         this.toolMode = 'none'; // 'none' (Normal), 'dig' (Gali/Hapus Balok & Objek), 'build' (Pasang Balok)
         this.snapEnabled = false; // Default OFF agar tidak mengunci penempatan objek
         this.graphics = null;
@@ -29,7 +28,7 @@ class GridSystemClass {
         this.cleanup();
         this.scene = scene;
 
-        // Pasang listener tombol keyboard: [G] toggle grid, [C] ganti warna, [X] mode gali/hapus, [B] mode pasang
+        // Pasang listener tombol keyboard: [G] toggle grid, [X] mode gali/hapus, [B] mode pasang
         this.keyListener = (e) => {
             // Abaikan jika sedang mengetik di input / console / textarea
             const tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
@@ -37,8 +36,6 @@ class GridSystemClass {
 
             if (e.key === 'g' || e.key === 'G') {
                 this.toggle(this.scene);
-            } else if ((e.key === 'c' || e.key === 'C') && this.isActive) {
-                this.cycleColorMode();
             } else if (e.key === 'x' || e.key === 'X') {
                 this.setToolMode('dig');
             } else if (e.key === 'b' || e.key === 'B') {
@@ -146,29 +143,6 @@ class GridSystemClass {
         }
     }
 
-    cycleColorMode() {
-        if (this.colorMode === 'dual') {
-            this.colorMode = 'white';
-        } else if (this.colorMode === 'white') {
-            this.colorMode = 'black';
-        } else {
-            this.colorMode = 'dual';
-        }
-
-        AudioManager.playClick();
-        this.updateColorModeButtonUI();
-
-        const label = this.colorMode === 'dual' 
-            ? '🌓 Dual-Kontras (Hitam-Putih)' 
-            : this.colorMode === 'white' 
-                ? '⚪ Putih Bersih' 
-                : '⚫ Hitam Pekat';
-
-        if (this.scene && this.scene.showFloatingToast) {
-            this.scene.showFloatingToast(`Warna Grid: ${label}`, 0x38bdf8);
-        }
-    }
-
     renderGrid() {
         if (!this.isActive || !this.graphics || !this.scene || !this.scene.cameras || !this.scene.cameras.main) return;
 
@@ -193,43 +167,13 @@ class GridSystemClass {
         const startY = Math.floor(worldMinY / step) * step - step * 2;
         const endY = Math.ceil(worldMaxY / step) * step + step * 2;
 
-        // Gambar Garis Vertikal & Horizontal dengan ketebalan 1px konsisten 100% tanpa variasi tebal-tipis
-        if (this.colorMode === 'white') {
-            // Mode Putih Bersih (Uniform 1px, elegan & tajam)
-            g.lineStyle(1, 0xffffff, 0.55);
-            for (let wx = startX; wx <= endX; wx += step) {
-                g.lineBetween(wx, startY, wx, endY);
-            }
-            for (let wy = startY; wy <= endY; wy += step) {
-                g.lineBetween(startX, wy, endX, wy);
-            }
-        } else if (this.colorMode === 'black') {
-            // Mode Hitam Pekat (Uniform 1px, presisi & rapi)
-            g.lineStyle(1, 0x000000, 0.45);
-            for (let wx = startX; wx <= endX; wx += step) {
-                g.lineBetween(wx, startY, wx, endY);
-            }
-            for (let wy = startY; wy <= endY; wy += step) {
-                g.lineBetween(startX, wy, endX, wy);
-            }
-        } else {
-            // Mode Dual-Kontras: 1px Bayangan Lembut (+1px) + 1px Inti Putih Terang
-            // Menghasilkan garis kontras tinggi yang 100% seragam di salju maupun langit gelap
-            g.lineStyle(1, 0x000000, 0.35);
-            for (let wx = startX; wx <= endX; wx += step) {
-                g.lineBetween(wx + 1, startY, wx + 1, endY);
-            }
-            for (let wy = startY; wy <= endY; wy += step) {
-                g.lineBetween(startX, wy + 1, endX, wy + 1);
-            }
-
-            g.lineStyle(1, 0xffffff, 0.75);
-            for (let wx = startX; wx <= endX; wx += step) {
-                g.lineBetween(wx, startY, wx, endY);
-            }
-            for (let wy = startY; wy <= endY; wy += step) {
-                g.lineBetween(startX, wy, endX, wy);
-            }
+        // Gambar Garis Vertikal & Horizontal Putih Bersih (Uniform 1px, elegan, tajam, & konsisten)
+        g.lineStyle(1, 0xffffff, 0.45);
+        for (let wx = startX; wx <= endX; wx += step) {
+            g.lineBetween(wx, startY, wx, endY);
+        }
+        for (let wy = startY; wy <= endY; wy += step) {
+            g.lineBetween(startX, wy, endX, wy);
         }
 
         // 3. Highlight Kotak Sel Aktif di bawah kursor mouse
@@ -380,26 +324,6 @@ class GridSystemClass {
                     box-shadow: 0 0 8px rgba(168, 85, 247, 0.6);
                 }
 
-                .gt-grid-color-btn {
-                    padding: 3px 9px;
-                    font-size: 11px;
-                    font-weight: 700;
-                    border-radius: 6px;
-                    background: rgba(255, 255, 255, 0.08);
-                    border: 1px solid rgba(255, 255, 255, 0.2);
-                    color: #f8fafc;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
-                    transition: all 0.12s ease;
-                }
-
-                .gt-grid-color-btn:hover {
-                    background: rgba(255, 255, 255, 0.18);
-                    border-color: #ffffff;
-                }
-
                 /* World Manipulation Tools (Gali / Pasang / Reset) */
                 .gt-grid-tool-btn-group {
                     display: flex;
@@ -500,11 +424,6 @@ class GridSystemClass {
                 <b style="color: #f1f5f9; background: rgba(255, 255, 255, 0.12); padding: 1px 6px; border-radius: 4px;">[G]</b>
             </div>
 
-            <!-- Tombol Switch Warna Kontras Hitam/Putih -->
-            <button class="gt-grid-color-btn" id="gt-grid-btn-color" title="Ganti mode warna: Dual Kontras / Putih / Hitam (Shortcut: C)">
-                🌓 Kontras
-            </button>
-
             <button class="gt-grid-close-btn" id="gt-grid-btn-close" title="Tutup Grid (Shortcut: G)">✕</button>
         `;
 
@@ -529,11 +448,6 @@ class GridSystemClass {
             });
         }
 
-        const colorBtn = document.getElementById('gt-grid-btn-color');
-        if (colorBtn) {
-            colorBtn.addEventListener('click', () => this.cycleColorMode());
-        }
-
         const closeBtn = document.getElementById('gt-grid-btn-close');
         if (closeBtn) {
             closeBtn.addEventListener('click', () => this.deactivate());
@@ -552,21 +466,6 @@ class GridSystemClass {
         if (buildBtn) buildBtn.classList.toggle('active-build', this.toolMode === 'build');
         if (mbDigBtn) mbDigBtn.classList.toggle('active-dig', this.toolMode === 'dig');
         if (mbBuildBtn) mbBuildBtn.classList.toggle('active-build', this.toolMode === 'build');
-    }
-
-    updateColorModeButtonUI() {
-        const colorBtn = document.getElementById('gt-grid-btn-color');
-        if (!colorBtn) return;
-        if (this.colorMode === 'dual') {
-            colorBtn.innerHTML = '🌓 Kontras';
-            colorBtn.title = 'Mode Kontras Otomatis (Hitam + Putih). Klik untuk ganti ke Putih (Shortcut: C)';
-        } else if (this.colorMode === 'white') {
-            colorBtn.innerHTML = '⚪ Putih';
-            colorBtn.title = 'Mode Garis Putih. Klik untuk ganti ke Hitam (Shortcut: C)';
-        } else if (this.colorMode === 'black') {
-            colorBtn.innerHTML = '⚫ Hitam';
-            colorBtn.title = 'Mode Garis Hitam. Klik untuk ganti ke Kontras Otomatis (Shortcut: C)';
-        }
     }
 
     updateHUDText(col, row, wx, wy) {
