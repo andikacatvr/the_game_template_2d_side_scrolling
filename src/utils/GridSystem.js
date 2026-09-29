@@ -21,6 +21,7 @@ class GridSystemClass {
         this.updateListener = null;
         this.keyListener = null;
         this.hoverCell = { col: 0, row: 0, x: 0, y: 0 };
+        this.lastHudPos = null; // Posisi floating toolbar yang bisa digeser (draggable)
     }
 
     init(scene) {
@@ -261,12 +262,38 @@ class GridSystemClass {
                     user-select: none;
                     -webkit-user-select: none;
                     pointer-events: auto;
+                    cursor: grab;
+                    touch-action: none;
+                    transition: box-shadow 0.15s ease, border-color 0.15s ease;
                     animation: gridHudFadeIn 0.2s ease;
+                }
+
+                .gt-grid-hud.is-dragging {
+                    cursor: grabbing !important;
+                    border-color: #c084fc !important;
+                    box-shadow: 0 10px 32px rgba(168, 85, 247, 0.65), 0 0 20px rgba(168, 85, 247, 0.45) !important;
+                    transform: scale(1.02);
+                    animation: none !important;
                 }
 
                 @keyframes gridHudFadeIn {
                     from { opacity: 0; transform: translate(-50%, 10px); }
                     to { opacity: 1; transform: translate(-50%, 0); }
+                }
+
+                .gt-grid-drag-handle {
+                    font-size: 15px;
+                    color: #a855f7;
+                    cursor: grab;
+                    line-height: 1;
+                    opacity: 0.85;
+                    margin-right: -1px;
+                    transition: color 0.15s ease, opacity 0.15s ease;
+                }
+
+                .gt-grid-hud:hover .gt-grid-drag-handle {
+                    color: #c084fc;
+                    opacity: 1;
                 }
 
                 .gt-grid-hud-title {
@@ -397,7 +424,8 @@ class GridSystemClass {
                 }
             </style>
 
-            <div class="gt-grid-hud-title">
+            <div class="gt-grid-hud-title" title="Tahan dan geser untuk memindahkan toolbar (Drag to move)">
+                <span class="gt-grid-drag-handle">⠿</span>
                 <span>▦</span>
                 <span>GRID:</span>
                 <span id="gt-grid-size-label" style="color: #ffffff; font-weight: 800;">50px</span>
@@ -432,6 +460,83 @@ class GridSystemClass {
         `;
 
         document.body.appendChild(this.hudBadge);
+
+        // Pulihkan posisi floating terakhir jika sebelumnya pernah digeser
+        if (this.lastHudPos) {
+            this.hudBadge.style.bottom = 'auto';
+            this.hudBadge.style.right = 'auto';
+            this.hudBadge.style.transform = 'none';
+            this.hudBadge.style.left = `${this.lastHudPos.left}px`;
+            this.hudBadge.style.top = `${this.lastHudPos.top}px`;
+        }
+
+        // Pasang Interaksi Dragging Floating Toolbar
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        let initialLeft = 0;
+        let initialTop = 0;
+
+        const onPointerDown = (e) => {
+            // Jangan memicu drag jika klik berasal dari tombol kontrol
+            if (e.target.closest('button') || e.target.closest('input')) return;
+            if (e.button !== 0 && e.pointerType === 'mouse') return;
+
+            isDragging = true;
+            this.hudBadge.classList.add('is-dragging');
+
+            startX = e.clientX;
+            startY = e.clientY;
+
+            const rect = this.hudBadge.getBoundingClientRect();
+            initialLeft = rect.left;
+            initialTop = rect.top;
+
+            this.hudBadge.style.bottom = 'auto';
+            this.hudBadge.style.right = 'auto';
+            this.hudBadge.style.left = `${initialLeft}px`;
+            this.hudBadge.style.top = `${initialTop}px`;
+            this.hudBadge.style.transform = 'none';
+
+            if (this.hudBadge.setPointerCapture) {
+                try { this.hudBadge.setPointerCapture(e.pointerId); } catch (_) {}
+            }
+            e.stopPropagation();
+        };
+
+        const onPointerMove = (e) => {
+            if (!isDragging) return;
+
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+
+            const rect = this.hudBadge.getBoundingClientRect();
+            const pad = 10;
+            const maxLeft = window.innerWidth - rect.width - pad;
+            const maxTop = window.innerHeight - rect.height - pad;
+
+            const newLeft = Math.max(pad, Math.min(maxLeft, initialLeft + dx));
+            const newTop = Math.max(pad, Math.min(maxTop, initialTop + dy));
+
+            this.hudBadge.style.left = `${newLeft}px`;
+            this.hudBadge.style.top = `${newTop}px`;
+
+            this.lastHudPos = { left: newLeft, top: newTop };
+        };
+
+        const onPointerUp = (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            this.hudBadge.classList.remove('is-dragging');
+            if (this.hudBadge.releasePointerCapture) {
+                try { this.hudBadge.releasePointerCapture(e.pointerId); } catch (_) {}
+            }
+        };
+
+        this.hudBadge.addEventListener('pointerdown', onPointerDown);
+        this.hudBadge.addEventListener('pointermove', onPointerMove);
+        this.hudBadge.addEventListener('pointerup', onPointerUp);
+        this.hudBadge.addEventListener('pointercancel', onPointerUp);
 
         const digBtn = document.getElementById('gt-grid-tool-dig');
         if (digBtn) {
