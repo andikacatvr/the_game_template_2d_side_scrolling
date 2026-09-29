@@ -25,7 +25,7 @@ export class SettingsModal {
         // 2. HTML Markup & CSS
         this.overlay.innerHTML = `
             <style>
-                @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Outfit:wght@500;600;700;800&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
 
                 .gt-settings-overlay {
                     position: fixed;
@@ -34,14 +34,14 @@ export class SettingsModal {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    background: rgba(4, 8, 19, 0.78);
-                    backdrop-filter: blur(8px);
-                    -webkit-backdrop-filter: blur(8px);
+                    background: rgba(0, 0, 0, 0.85);
+                    backdrop-filter: blur(12px);
+                    -webkit-backdrop-filter: blur(12px);
                     opacity: 1;
                     visibility: visible;
-                    transition: opacity 0.22s ease, visibility 0.22s ease;
-                    font-family: 'Outfit', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    padding: 16px;
+                    transition: opacity 0.2s ease, visibility 0.2s ease;
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    padding: 20px;
                     box-sizing: border-box;
                     user-select: none;
                     -webkit-user-select: none;
@@ -53,93 +53,126 @@ export class SettingsModal {
                     pointer-events: none;
                 }
 
+                /* Modern Black Obsidian Window */
                 .gt-settings-card {
                     position: relative;
-                    width: min(720px, 95vw);
+                    width: min(760px, 95vw);
                     max-height: min(580px, 92vh);
-                    background: linear-gradient(135deg, rgba(13, 22, 44, 0.96) 0%, rgba(9, 15, 30, 0.98) 100%);
-                    border: 1.5px solid rgba(56, 189, 248, 0.35);
-                    border-radius: 18px;
-                    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.85), 
-                                0 0 35px rgba(56, 189, 248, 0.15),
-                                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                    background: #181818;
+                    border: 1px solid #333333;
+                    border-radius: 12px;
+                    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.05);
                     display: flex;
                     flex-direction: column;
                     overflow: hidden;
-                    transform: scale(1);
-                    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+                    animation: setModalEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+
+                @keyframes setModalEnter {
+                    0% { transform: scale(0.96); opacity: 0; }
+                    100% { transform: scale(1); opacity: 1; }
                 }
 
                 .gt-settings-overlay.hidden .gt-settings-card {
-                    transform: scale(0.94) translateY(10px);
+                    transform: scale(0.96);
+                    opacity: 0;
                 }
 
-                /* Header */
+                /* Header (Projects Hub Style) */
                 .gt-settings-header {
+                    height: 46px;
+                    background: #1e1e1e;
+                    border-bottom: 1px solid #2d2d2d;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    padding: 16px 24px;
-                    background: rgba(15, 23, 42, 0.6);
-                    border-bottom: 1px solid rgba(56, 189, 248, 0.15);
+                    padding: 0 18px;
+                    flex-shrink: 0;
                 }
 
                 .gt-settings-title {
                     display: flex;
                     align-items: center;
                     gap: 10px;
-                    font-size: 17px;
-                    font-weight: 800;
-                    letter-spacing: 2px;
+                    font-size: 13.5px;
+                    font-weight: 700;
                     color: #ffffff;
-                    text-transform: uppercase;
+                    letter-spacing: 0.2px;
                 }
 
                 .gt-settings-title .badge-icon {
-                    width: 24px;
-                    height: 24px;
-                    background: linear-gradient(135deg, #0284c7, #38bdf8);
-                    border-radius: 6px;
+                    width: 22px;
+                    height: 22px;
+                    background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+                    border-radius: 5px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 13px;
+                    font-size: 12px;
+                    color: #fff;
+                    box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35);
+                }
+
+                .gt-settings-logo-badge {
+                    font-size: 10px;
+                    font-weight: 700;
+                    padding: 2px 7px;
+                    background: rgba(56, 189, 248, 0.14);
+                    color: #38bdf8;
+                    border: 1px solid rgba(56, 189, 248, 0.28);
+                    border-radius: 4px;
+                    letter-spacing: 0.3px;
                 }
 
                 .gt-settings-close-x {
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 6px;
                     background: transparent;
-                    border: 1px solid rgba(255, 255, 255, 0.15);
-                    color: #94a3b8;
-                    width: 32px;
-                    height: 32px;
-                    border-radius: 8px;
+                    border: none;
+                    color: #9e9e9e;
+                    font-size: 15px;
+                    cursor: pointer;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 16px;
-                    cursor: pointer;
                     transition: all 0.15s ease;
                 }
 
                 .gt-settings-close-x:hover {
-                    background: rgba(239, 68, 68, 0.2);
-                    border-color: #ef4444;
+                    background: #e11d48;
                     color: #ffffff;
                 }
 
                 /* Body Grid */
                 .gt-settings-body {
-                    padding: 20px 24px;
+                    padding: 20px 22px;
                     overflow-y: auto;
                     display: grid;
                     grid-template-columns: 1fr 1fr;
-                    gap: 24px;
+                    gap: 22px;
+                    background: #141414;
+                    flex: 1;
+                }
+
+                .gt-settings-body::-webkit-scrollbar {
+                    width: 6px;
+                }
+                .gt-settings-body::-webkit-scrollbar-track {
+                    background: #141414;
+                }
+                .gt-settings-body::-webkit-scrollbar-thumb {
+                    background: #262626;
+                    border-radius: 3px;
+                }
+                .gt-settings-body::-webkit-scrollbar-thumb:hover {
+                    background: #383838;
                 }
 
                 @media (max-width: 640px) {
                     .gt-settings-body {
                         grid-template-columns: 1fr;
-                        gap: 18px;
+                        gap: 16px;
                         padding: 16px;
                     }
                 }
@@ -147,14 +180,14 @@ export class SettingsModal {
                 .gt-settings-col {
                     display: flex;
                     flex-direction: column;
-                    gap: 18px;
+                    gap: 14px;
                 }
 
                 .gt-section-title {
-                    font-size: 12px;
-                    font-weight: 800;
-                    letter-spacing: 1.5px;
-                    color: #fbbf24;
+                    font-size: 11px;
+                    font-weight: 700;
+                    letter-spacing: 1px;
+                    color: #94a3b8;
                     text-transform: uppercase;
                     display: flex;
                     align-items: center;
@@ -166,24 +199,29 @@ export class SettingsModal {
                     content: '';
                     flex: 1;
                     height: 1px;
-                    background: rgba(251, 191, 36, 0.2);
+                    background: #27272a;
                 }
 
                 .gt-setting-item {
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    background: rgba(15, 23, 42, 0.45);
-                    border: 1px solid rgba(56, 189, 248, 0.12);
-                    padding: 10px 14px;
-                    border-radius: 10px;
+                    background: #1a1a1a;
+                    border: 1px solid #282828;
+                    padding: 9px 13px;
+                    border-radius: 8px;
                     gap: 12px;
+                    transition: border-color 0.15s ease;
+                }
+
+                .gt-setting-item:hover {
+                    border-color: #383838;
                 }
 
                 .gt-setting-item label {
-                    font-size: 13px;
+                    font-size: 12.5px;
                     font-weight: 600;
-                    color: #e2e8f0;
+                    color: #f4f4f5;
                     white-space: nowrap;
                 }
 
@@ -202,7 +240,7 @@ export class SettingsModal {
                     width: 100px;
                     height: 6px;
                     border-radius: 3px;
-                    background: #1e293b;
+                    background: #27272a;
                     outline: none;
                     cursor: pointer;
                     transition: background 0.15s;
@@ -211,61 +249,65 @@ export class SettingsModal {
                 .gt-slider::-webkit-slider-thumb {
                     -webkit-appearance: none;
                     appearance: none;
-                    width: 16px;
-                    height: 16px;
+                    width: 15px;
+                    height: 15px;
                     border-radius: 50%;
                     background: #38bdf8;
-                    box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+                    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
                     cursor: pointer;
                     transition: transform 0.15s, background 0.15s;
                 }
 
                 .gt-slider::-webkit-slider-thumb:hover {
-                    transform: scale(1.2);
+                    transform: scale(1.18);
                     background: #7dd3fc;
                 }
 
                 .gt-val-badge {
                     min-width: 40px;
                     text-align: right;
-                    font-size: 12px;
-                    font-weight: 800;
+                    font-size: 11.5px;
+                    font-weight: 600;
                     color: #38bdf8;
-                    font-family: 'Nunito', monospace;
+                    font-family: 'JetBrains Mono', monospace;
                 }
 
                 /* Toggle Button */
                 .gt-toggle-btn {
-                    padding: 6px 14px;
-                    border-radius: 8px;
-                    font-size: 12px;
-                    font-weight: 800;
+                    padding: 5px 12px;
+                    border-radius: 6px;
+                    font-size: 11.5px;
+                    font-weight: 600;
                     cursor: pointer;
-                    border: 1.5px solid #475569;
-                    background: #1e293b;
-                    color: #94a3b8;
+                    border: 1px solid #333338;
+                    background: #202024;
+                    color: #a1a1aa;
                     transition: all 0.15s ease;
                 }
 
+                .gt-toggle-btn:hover {
+                    background: #28282e;
+                    border-color: #3f3f46;
+                    color: #e4e4e7;
+                }
+
                 .gt-toggle-btn.active {
-                    background: #16a34a;
-                    border-color: #86efac;
-                    color: #ffffff;
-                    box-shadow: 0 0 10px rgba(22, 163, 74, 0.35);
+                    background: rgba(34, 197, 94, 0.16);
+                    border-color: #22c55e;
+                    color: #4ade80;
                 }
 
                 .gt-toggle-btn.fast {
-                    background: #2563eb;
-                    border-color: #60a5fa;
-                    color: #ffffff;
-                    box-shadow: 0 0 10px rgba(37, 99, 235, 0.35);
+                    background: rgba(56, 189, 248, 0.16);
+                    border-color: #38bdf8;
+                    color: #38bdf8;
                 }
 
                 /* Controls List */
                 .gt-controls-list {
                     display: flex;
                     flex-direction: column;
-                    gap: 8px;
+                    gap: 6px;
                 }
 
                 .gt-control-row {
@@ -273,98 +315,105 @@ export class SettingsModal {
                     align-items: center;
                     justify-content: space-between;
                     font-size: 12px;
-                    color: #cbd5e1;
-                    padding: 4px 0;
+                    color: #a1a1aa;
+                    background: #1a1a1a;
+                    border: 1px solid #242427;
+                    border-radius: 6px;
+                    padding: 6px 10px;
                 }
 
                 .gt-key-badge {
-                    background: #0f172a;
-                    border: 1px solid #334155;
-                    border-radius: 6px;
+                    background: #202024;
+                    border: 1px solid #333338;
+                    border-radius: 5px;
                     padding: 3px 8px;
-                    font-family: 'Nunito', monospace;
-                    font-size: 11px;
-                    font-weight: 800;
-                    color: #f8fafc;
-                    box-shadow: 0 2px 0 #1e293b;
+                    font-family: 'JetBrains Mono', monospace;
+                    font-size: 10.5px;
+                    font-weight: 600;
+                    color: #f4f4f5;
+                    box-shadow: 0 2px 0 #141416;
                 }
 
                 /* Footer Actions */
                 .gt-settings-footer {
-                    padding: 14px 24px;
-                    background: rgba(10, 16, 32, 0.8);
-                    border-top: 1px solid rgba(56, 189, 248, 0.15);
+                    padding: 12px 20px;
+                    background: #181818;
+                    border-top: 1px solid #282828;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
                     gap: 12px;
                     flex-wrap: wrap;
+                    flex-shrink: 0;
                 }
 
                 .gt-btn-primary {
-                    background: linear-gradient(135deg, #0284c7, #0ea5e9);
-                    border: 1.5px solid #38bdf8;
-                    color: #ffffff;
-                    padding: 9px 20px;
-                    border-radius: 10px;
-                    font-size: 13px;
-                    font-weight: 800;
+                    background: #27272a;
+                    border: 1px solid #3f3f46;
+                    color: #f4f4f5;
+                    padding: 7px 18px;
+                    border-radius: 6px;
+                    font-size: 12px;
+                    font-weight: 600;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
                     gap: 8px;
                     transition: all 0.15s ease;
-                    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
                 }
 
                 .gt-btn-primary:hover {
-                    transform: translateY(-1px);
-                    box-shadow: 0 6px 16px rgba(14, 165, 233, 0.4);
-                    filter: brightness(1.1);
+                    background: #323238;
+                    border-color: #52525b;
+                    color: #ffffff;
                 }
 
                 .gt-btn-action {
-                    background: #1e293b;
-                    border: 1.5px solid #475569;
-                    color: #ffffff;
-                    padding: 8px 16px;
-                    border-radius: 10px;
+                    background: #27272a;
+                    border: 1px solid #3f3f46;
+                    color: #f4f4f5;
+                    padding: 7px 16px;
+                    border-radius: 6px;
                     font-size: 12px;
-                    font-weight: 700;
+                    font-weight: 600;
                     cursor: pointer;
                     transition: all 0.15s ease;
                 }
 
                 .gt-btn-action:hover {
-                    background: #334155;
-                    border-color: #64748b;
+                    background: #323238;
+                    border-color: #52525b;
+                    color: #ffffff;
                 }
 
                 .gt-btn-save {
-                    background: #15803d;
-                    border-color: #86efac;
-                    color: #ffffff;
+                    background: rgba(34, 197, 94, 0.16);
+                    border: 1px solid rgba(34, 197, 94, 0.35);
+                    color: #4ade80;
                 }
 
                 .gt-btn-save:hover {
-                    background: #16a34a;
+                    background: #22c55e;
+                    color: #052e16;
+                    border-color: #22c55e;
                 }
 
                 .gt-btn-danger {
-                    background: #7f1d1d;
-                    border-color: #ef4444;
-                    color: #fecaca;
+                    background: rgba(239, 68, 68, 0.15);
+                    border: 1px solid rgba(239, 68, 68, 0.35);
+                    color: #f87171;
                 }
 
                 .gt-btn-danger:hover {
-                    background: #991b1b;
+                    background: #ef4444;
                     color: #ffffff;
+                    border-color: #ef4444;
                 }
 
                 .gt-btn-disabled {
-                    background: #1e293b;
-                    border-color: #334155;
-                    color: #64748b;
+                    background: #1c1c1f;
+                    border: 1px solid #28282b;
+                    color: #52525b;
                     cursor: not-allowed;
                 }
             </style>
@@ -374,7 +423,8 @@ export class SettingsModal {
                 <div class="gt-settings-header">
                     <div class="gt-settings-title">
                         <span class="badge-icon">⚙</span>
-                        <span>SETTINGS</span>
+                        <span>Settings</span>
+                        <span class="gt-settings-logo-badge">Preferences</span>
                     </div>
                     <button class="gt-settings-close-x" id="gt-close-x-btn" title="Close (ESC)">✕</button>
                 </div>
@@ -454,7 +504,7 @@ export class SettingsModal {
                             </div>
                             <div class="gt-control-row">
                                 <span>Engine UI Tour</span>
-                                <span class="gt-key-badge" style="border-color: #38bdf8; color: #7dd3fc;">F</span>
+                                <span class="gt-key-badge" style="border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;">F</span>
                             </div>
                             <div class="gt-control-row">
                                 <span>Camera Zoom</span>
