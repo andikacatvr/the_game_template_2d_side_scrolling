@@ -23,7 +23,7 @@ export class InventoryModal {
         // 2. HTML & CSS
         this.overlay.innerHTML = `
             <style>
-                @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Outfit:wght@500;600;700;800&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
 
                 .gt-inventory-overlay {
                     position: fixed;
@@ -32,14 +32,14 @@ export class InventoryModal {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    background: rgba(4, 8, 19, 0.78);
-                    backdrop-filter: blur(8px);
-                    -webkit-backdrop-filter: blur(8px);
+                    background: rgba(0, 0, 0, 0.85);
+                    backdrop-filter: blur(12px);
+                    -webkit-backdrop-filter: blur(12px);
                     opacity: 1;
                     visibility: visible;
-                    transition: opacity 0.22s ease, visibility 0.22s ease;
-                    font-family: 'Outfit', 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    padding: 16px;
+                    transition: opacity 0.2s ease, visibility 0.2s ease;
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    padding: 20px;
                     box-sizing: border-box;
                     user-select: none;
                     -webkit-user-select: none;
@@ -51,89 +51,106 @@ export class InventoryModal {
                     pointer-events: none;
                 }
 
+                /* Modern Black Obsidian Window */
                 .gt-inventory-card {
                     position: relative;
-                    width: min(740px, 95vw);
+                    width: min(760px, 95vw);
                     max-height: min(560px, 92vh);
-                    background: linear-gradient(135deg, rgba(13, 22, 44, 0.96) 0%, rgba(9, 15, 30, 0.98) 100%);
-                    border: 1.5px solid rgba(251, 191, 36, 0.35);
-                    border-radius: 18px;
-                    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.85), 
-                                0 0 35px rgba(251, 191, 36, 0.15),
-                                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                    background: #181818;
+                    border: 1px solid #333333;
+                    border-radius: 12px;
+                    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.05);
                     display: flex;
                     flex-direction: column;
                     overflow: hidden;
-                    transform: scale(1);
-                    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+                    animation: invModalEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+
+                @keyframes invModalEnter {
+                    0% { transform: scale(0.96); opacity: 0; }
+                    100% { transform: scale(1); opacity: 1; }
                 }
 
                 .gt-inventory-overlay.hidden .gt-inventory-card {
-                    transform: scale(0.94) translateY(10px);
+                    transform: scale(0.96);
+                    opacity: 0;
                 }
 
-                /* Header */
+                /* Topbar / Header (Projects Hub Style) */
                 .gt-inv-header {
+                    height: 46px;
+                    background: #1e1e1e;
+                    border-bottom: 1px solid #2d2d2d;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    padding: 16px 24px;
-                    background: rgba(15, 23, 42, 0.6);
-                    border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+                    padding: 0 18px;
+                    flex-shrink: 0;
                 }
 
                 .gt-inv-title {
                     display: flex;
                     align-items: center;
                     gap: 10px;
-                    font-size: 17px;
-                    font-weight: 800;
-                    letter-spacing: 2px;
-                    color: #fbbf24;
-                    text-transform: uppercase;
+                    font-size: 13.5px;
+                    font-weight: 700;
+                    color: #ffffff;
+                    letter-spacing: 0.2px;
                 }
 
                 .gt-inv-title .badge-icon {
-                    width: 26px;
-                    height: 26px;
-                    background: linear-gradient(135deg, #d97706, #fbbf24);
-                    border-radius: 7px;
+                    width: 22px;
+                    height: 22px;
+                    background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+                    border-radius: 5px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 14px;
-                    color: #0f172a;
+                    font-size: 12px;
+                    color: #fff;
+                    box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35);
+                }
+
+                .gt-inv-logo-badge {
+                    font-size: 10px;
+                    font-weight: 700;
+                    padding: 2px 7px;
+                    background: rgba(56, 189, 248, 0.14);
+                    color: #38bdf8;
+                    border: 1px solid rgba(56, 189, 248, 0.28);
+                    border-radius: 4px;
+                    letter-spacing: 0.3px;
                 }
 
                 .gt-inv-close-x {
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 6px;
                     background: transparent;
-                    border: 1px solid rgba(255, 255, 255, 0.15);
-                    color: #94a3b8;
-                    width: 32px;
-                    height: 32px;
-                    border-radius: 8px;
+                    border: none;
+                    color: #9e9e9e;
+                    font-size: 15px;
+                    cursor: pointer;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 16px;
-                    cursor: pointer;
                     transition: all 0.15s ease;
                 }
 
                 .gt-inv-close-x:hover {
-                    background: rgba(239, 68, 68, 0.2);
-                    border-color: #ef4444;
+                    background: #e11d48;
                     color: #ffffff;
                 }
 
-                /* Main Content (2 Columns: Grid + Detail) */
+                /* Main Body (2 Columns: Slots Grid + Detail) */
                 .gt-inv-body {
-                    padding: 20px 24px;
+                    padding: 20px 22px;
                     overflow-y: auto;
                     display: grid;
-                    grid-template-columns: 1.4fr 1fr;
-                    gap: 24px;
+                    grid-template-columns: 1.35fr 1fr;
+                    gap: 20px;
                     flex: 1;
+                    background: #141414;
                 }
 
                 @media (max-width: 650px) {
@@ -154,39 +171,39 @@ export class InventoryModal {
                 .gt-slots-grid {
                     display: grid;
                     grid-template-columns: repeat(5, 1fr);
-                    gap: 10px;
+                    gap: 8px;
                 }
 
                 .gt-slot {
                     aspect-ratio: 1;
-                    background: rgba(15, 23, 42, 0.55);
-                    border: 1.5px solid rgba(56, 189, 248, 0.18);
-                    border-radius: 12px;
+                    background: #1a1a1a;
+                    border: 1px solid #282828;
+                    border-radius: 8px;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
                     cursor: pointer;
                     position: relative;
-                    transition: all 0.18s ease;
-                    padding: 4px;
+                    transition: all 0.15s ease;
+                    padding: 6px 4px;
                 }
 
                 .gt-slot:hover {
-                    background: rgba(30, 41, 59, 0.7);
-                    border-color: #38bdf8;
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+                    background: #242424;
+                    border-color: #3f3f46;
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
                 }
 
                 .gt-slot.selected {
-                    background: rgba(30, 58, 138, 0.5);
-                    border-color: #fbbf24;
-                    box-shadow: 0 0 14px rgba(251, 191, 36, 0.4);
+                    background: #182234;
+                    border-color: #38bdf8;
+                    box-shadow: 0 0 0 1px #38bdf8, 0 4px 16px rgba(56, 189, 248, 0.18);
                 }
 
                 .gt-slot.has-item {
-                    border-color: rgba(56, 189, 248, 0.35);
+                    border-color: #333333;
                 }
 
                 .gt-slot-num {
@@ -194,21 +211,21 @@ export class InventoryModal {
                     top: 4px;
                     left: 6px;
                     font-size: 9px;
-                    font-weight: 800;
-                    color: #475569;
-                    font-family: 'Nunito', monospace;
+                    font-weight: 600;
+                    color: #52525b;
+                    font-family: 'JetBrains Mono', monospace;
                 }
 
                 .gt-slot-icon {
                     font-size: 22px;
-                    margin-bottom: 2px;
-                    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+                    margin-bottom: 3px;
+                    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
                 }
 
                 .gt-slot-name {
                     font-size: 9.5px;
-                    font-weight: 700;
-                    color: #e2e8f0;
+                    font-weight: 600;
+                    color: #f4f4f5;
                     text-align: center;
                     max-width: 90%;
                     overflow: hidden;
@@ -217,16 +234,16 @@ export class InventoryModal {
                 }
 
                 .gt-slot-empty {
-                    font-size: 10px;
-                    font-weight: 600;
-                    color: #475569;
+                    font-size: 9.5px;
+                    font-weight: 500;
+                    color: #52525b;
                 }
 
                 /* Detail Panel */
                 .gt-item-detail {
-                    background: rgba(15, 23, 42, 0.6);
-                    border: 1px solid rgba(56, 189, 248, 0.18);
-                    border-radius: 14px;
+                    background: #18181b;
+                    border: 1px solid #27272a;
+                    border-radius: 10px;
                     padding: 18px;
                     display: flex;
                     flex-direction: column;
@@ -237,68 +254,83 @@ export class InventoryModal {
                     display: flex;
                     align-items: center;
                     gap: 12px;
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                    border-bottom: 1px solid #27272a;
                     padding-bottom: 12px;
                 }
 
                 .gt-detail-icon-wrap {
-                    width: 46px;
-                    height: 46px;
-                    border-radius: 10px;
-                    background: linear-gradient(135deg, rgba(30, 58, 138, 0.6), rgba(15, 23, 42, 0.8));
-                    border: 1px solid #38bdf8;
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 8px;
+                    background: #202024;
+                    border: 1px solid rgba(56, 189, 248, 0.35);
+                    box-shadow: 0 0 12px rgba(56, 189, 248, 0.15);
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 24px;
+                    font-size: 22px;
+                    flex-shrink: 0;
                 }
 
                 .gt-detail-title-wrap {
                     display: flex;
                     flex-direction: column;
                     gap: 4px;
+                    min-width: 0;
                 }
 
                 .gt-detail-name {
-                    font-size: 15px;
-                    font-weight: 800;
-                    color: #fbbf24;
+                    font-size: 14px;
+                    font-weight: 700;
+                    color: #f4f4f5;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
                 }
 
                 .gt-detail-type {
-                    font-size: 10px;
+                    font-size: 9.5px;
                     font-weight: 700;
                     color: #38bdf8;
                     text-transform: uppercase;
-                    letter-spacing: 1px;
+                    letter-spacing: 0.5px;
+                    padding: 2px 7px;
+                    background: rgba(56, 189, 248, 0.12);
+                    border: 1px solid rgba(56, 189, 248, 0.25);
+                    border-radius: 4px;
+                    display: inline-block;
+                    width: fit-content;
                 }
 
                 .gt-detail-desc {
                     font-size: 12px;
-                    color: #cbd5e1;
-                    line-height: 1.5;
+                    color: #a1a1aa;
+                    line-height: 1.6;
                     flex: 1;
                 }
 
                 .gt-detail-hint {
                     font-size: 11px;
-                    color: #64748b;
-                    font-style: italic;
-                    background: rgba(0, 0, 0, 0.2);
-                    padding: 8px 10px;
-                    border-radius: 8px;
-                    border-left: 2px solid #38bdf8;
+                    color: #71717a;
+                    background: #121214;
+                    padding: 9px 11px;
+                    border-radius: 6px;
+                    border: 1px solid #27272a;
+                    border-left: 3px solid #38bdf8;
+                    font-family: 'JetBrains Mono', monospace;
+                    line-height: 1.4;
                 }
 
                 /* Footer */
                 .gt-inv-footer {
-                    padding: 14px 24px;
-                    background: rgba(10, 16, 32, 0.8);
-                    border-top: 1px solid rgba(251, 191, 36, 0.15);
+                    padding: 12px 20px;
+                    background: #181818;
+                    border-top: 1px solid #282828;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
                     gap: 12px;
+                    flex-shrink: 0;
                 }
 
                 .gt-capacity-wrap {
@@ -308,47 +340,46 @@ export class InventoryModal {
                 }
 
                 .gt-capacity-bar {
-                    width: 120px;
-                    height: 8px;
-                    background: #1e293b;
-                    border-radius: 4px;
+                    width: 130px;
+                    height: 6px;
+                    background: #27272a;
+                    border-radius: 3px;
                     overflow: hidden;
                 }
 
                 .gt-capacity-fill {
                     height: 100%;
-                    background: linear-gradient(90deg, #10b981, #38bdf8);
-                    border-radius: 4px;
+                    background: linear-gradient(90deg, #0284c7 0%, #38bdf8 100%);
+                    border-radius: 3px;
                     transition: width 0.3s ease;
                 }
 
                 .gt-capacity-text {
-                    font-size: 12px;
-                    font-weight: 700;
-                    color: #94a3b8;
-                    font-family: 'Nunito', monospace;
+                    font-size: 11.5px;
+                    font-weight: 600;
+                    color: #a1a1aa;
+                    font-family: 'JetBrains Mono', monospace;
                 }
 
                 .gt-btn-close-inv {
-                    background: linear-gradient(135deg, #d97706, #f59e0b);
-                    border: 1.5px solid #fbbf24;
-                    color: #0f172a;
-                    padding: 9px 20px;
-                    border-radius: 10px;
-                    font-size: 13px;
-                    font-weight: 800;
+                    background: #27272a;
+                    border: 1px solid #3f3f46;
+                    color: #f4f4f5;
+                    padding: 7px 18px;
+                    border-radius: 6px;
+                    font-size: 12px;
+                    font-weight: 600;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
                     gap: 8px;
                     transition: all 0.15s ease;
-                    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
                 }
 
                 .gt-btn-close-inv:hover {
-                    transform: translateY(-1px);
-                    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
-                    filter: brightness(1.1);
+                    background: #323238;
+                    border-color: #52525b;
+                    color: #ffffff;
                 }
             </style>
 
@@ -357,7 +388,8 @@ export class InventoryModal {
                 <div class="gt-inv-header">
                     <div class="gt-inv-title">
                         <span class="badge-icon">🎒</span>
-                        <span>ADVENTURER'S INVENTORY</span>
+                        <span>Inventory</span>
+                        <span class="gt-inv-logo-badge">Bag</span>
                     </div>
                     <button class="gt-inv-close-x" id="gt-close-inv-x" title="Close (I / ESC)">✕</button>
                 </div>
@@ -384,7 +416,7 @@ export class InventoryModal {
                             Click any slot in your bag to inspect the item's details, lore, and usage instructions.
                         </div>
                         <div class="gt-detail-hint" id="gt-detail-hint">
-                            💡 Tip: Items collected during your journey remain safely stored in your save file.
+                            💡 Items collected during your journey remain safely stored in your save file.
                         </div>
                     </div>
                 </div>
