@@ -279,6 +279,79 @@ export class BootScene extends Phaser.Scene {
         tbDirt.strokeRect(0, 0, 50, 50);
         tbDirt.generateTexture('tile_block_50_dirt', 50, 50);
 
+        // 2b. Modul Bebatuan Gua Bawah Tanah 50x50 (tile_block_50_stone)
+        const tbStone = this.make.graphics({ x: 0, y: 0, add: false });
+        tbStone.fillStyle(0x0a111c, 1); // Bebatuan gua slate gelap pekat
+        tbStone.fillRect(0, 0, 50, 50);
+        tbStone.fillStyle(0x131f30, 1);
+        tbStone.fillRect(4, 4, 20, 18);
+        tbStone.fillRect(26, 8, 20, 18);
+        tbStone.fillRect(8, 26, 22, 20);
+        tbStone.fillRect(32, 28, 14, 18);
+        tbStone.fillStyle(0x1e3048, 1);
+        tbStone.fillRect(6, 6, 8, 6);
+        tbStone.fillRect(28, 10, 10, 6);
+        tbStone.fillRect(10, 28, 10, 8);
+        // Retakan batu alami (chiselled cracks)
+        tbStone.lineStyle(1.5, 0x05080f, 0.9);
+        tbStone.lineBetween(4, 22, 24, 22);
+        tbStone.lineBetween(24, 22, 24, 48);
+        tbStone.lineBetween(24, 22, 46, 22);
+        tbStone.lineBetween(14, 4, 14, 22);
+        // Garis tepi modular halus
+        tbStone.lineStyle(1, 0x101a28, 0.6);
+        tbStone.strokeRect(0, 0, 50, 50);
+        tbStone.generateTexture('tile_block_50_stone', 50, 50);
+
+        // 2c. Modul Permata / Ore Kristal Terpendam 50x50 (tile_block_50_ore_gem)
+        const tbGem = this.make.graphics({ x: 0, y: 0, add: false });
+        tbGem.fillStyle(0x0a111c, 1);
+        tbGem.fillRect(0, 0, 50, 50);
+        tbGem.fillStyle(0x131f30, 1);
+        tbGem.fillRect(4, 4, 42, 42);
+        // Retakan batu tempat mineral berkumpul
+        tbGem.lineStyle(1.5, 0x05080f, 0.85);
+        tbGem.lineBetween(8, 25, 42, 25);
+        tbGem.lineBetween(25, 8, 25, 42);
+        // Kristal Safir Besar di Tengah (Glow + Facet 3D)
+        tbGem.fillStyle(0x0284c7, 1); // Lapisan luar safir
+        tbGem.fillRect(16, 16, 18, 18);
+        tbGem.fillStyle(0x38bdf8, 1); // Badan safir terang
+        tbGem.fillRect(18, 18, 14, 14);
+        tbGem.fillStyle(0xbae6fd, 1); // Kilau facet intan
+        tbGem.fillRect(20, 20, 6, 6);
+        tbGem.fillStyle(0xffffff, 1); // Titik kilau murni
+        tbGem.fillRect(21, 21, 2, 2);
+        // Butiran kristal kecil di sudut
+        tbGem.fillStyle(0x38bdf8, 0.9);
+        tbGem.fillRect(8, 10, 4, 4);
+        tbGem.fillRect(38, 34, 5, 5);
+        tbGem.fillStyle(0xffffff, 0.95);
+        tbGem.fillRect(9, 11, 1, 1);
+        tbGem.fillRect(39, 35, 2, 2);
+        tbGem.lineStyle(1, 0x38bdf8, 0.4);
+        tbGem.strokeRect(0, 0, 50, 50);
+        tbGem.generateTexture('tile_block_50_ore_gem', 50, 50);
+
+        // 2d. Modul Dasar Bumi Tak Tertembus 50x50 (tile_block_50_bedrock)
+        const tbBedrock = this.make.graphics({ x: 0, y: 0, add: false });
+        tbBedrock.fillStyle(0x040608, 1); // Obsidian / Basalt hitam legam
+        tbBedrock.fillRect(0, 0, 50, 50);
+        tbBedrock.fillStyle(0x0b0e14, 1);
+        tbBedrock.fillRect(4, 4, 20, 20);
+        tbBedrock.fillRect(26, 26, 20, 20);
+        tbBedrock.fillStyle(0x131922, 1);
+        tbBedrock.fillRect(6, 6, 8, 8);
+        tbBedrock.fillRect(28, 28, 8, 8);
+        // Pola silang tak tertembus (indestructible lattice)
+        tbBedrock.lineStyle(2, 0x020304, 1);
+        tbBedrock.lineBetween(0, 0, 50, 50);
+        tbBedrock.lineBetween(50, 0, 0, 50);
+        tbBedrock.lineBetween(0, 25, 50, 25);
+        tbBedrock.lineStyle(1, 0x1f2937, 0.5);
+        tbBedrock.strokeRect(0, 0, 50, 50);
+        tbBedrock.generateTexture('tile_block_50_bedrock', 50, 50);
+
         // 3. Floating Platform Segmen 50px (Mid, Left, Right)
         const p50Mid = this.make.graphics({ x: 0, y: 0, add: false });
         p50Mid.fillStyle(0x1e293b, 1);

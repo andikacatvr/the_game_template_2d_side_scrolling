@@ -116,10 +116,11 @@ export class GameScene extends Phaser.Scene {
         this.engineUITour = new EngineUITourModal(this);
         this.isTourActive = false;
 
-        // Setup Batas Dunia Fisika & Kamera (Diperlebar ke 1280 agar mencakup layar penuh tanpa batas void)
-        const worldWidth = 1280;
-        this.physics.world.setBounds(0, 0, worldWidth, 450);
-        this.cameras.main.setBounds(0, 0, worldWidth, 450);
+        // Setup Batas Dunia Fisika & Kamera (Mendukung eksplorasi bawah tanah luas ala Terraria/Growtopia)
+        const worldWidth = (this.currentMap && this.currentMap.lebarDunia) || 1400;
+        const worldHeight = (this.currentMap && this.currentMap.tinggiDunia) || 1000;
+        this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
+        this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
         this.cameras.main.setRoundPixels(true);
 
         // Kamera otomatis mengikuti karakter pemain dengan pergerakan lerp halus (0.08)
@@ -295,17 +296,18 @@ export class GameScene extends Phaser.Scene {
 
     createWorld() {
         const map = this.currentMap || {};
-        const worldW = map.lebarDunia || 1280;
+        const worldW = map.lebarDunia || 1400;
+        const worldH = map.tinggiDunia || 1000;
 
-        // 0. Batas kamera dan fisika sesuai lebar dunia map
-        this.cameras.main.setBounds(0, 0, worldW, 450);
-        this.physics.world.setBounds(0, 0, worldW, 450);
+        // 0. Batas kamera dan fisika sesuai lebar & kedalaman dunia map
+        this.cameras.main.setBounds(0, 0, worldW, worldH);
+        this.physics.world.setBounds(0, 0, worldW, worldH);
 
         if (map.warnaLangit) {
             this.cameras.main.setBackgroundColor(map.warnaLangit);
         }
 
-        // Background Gambar
+        // Background Gambar Langit Permukaan
         let bgKey = null;
         if (this.textures.exists(map.id + '_bg')) {
             bgKey = map.id + '_bg';
@@ -324,6 +326,24 @@ export class GameScene extends Phaser.Scene {
             
             this.bgOverlay = this.add.rectangle(worldW / 2, 225, worldW, 580, 0x07111e, 0.2)
                 .setDepth(-9);
+        }
+
+        // Latar Belakang Bawah Tanah / Cavern Backdrop (y: 400 s/d worldH)
+        if (worldH > 450) {
+            const caveHeight = worldH - 400;
+            const caveCenterY = 400 + caveHeight / 2;
+            this.caveBg = this.add.rectangle(worldW / 2, caveCenterY, worldW, caveHeight, 0x050a12)
+                .setDepth(-10);
+
+            // Lapisan siluet bebatuan gua & stalaktit atmosferik
+            this.caveGfx = this.add.graphics().setDepth(-9);
+            this.caveGfx.fillStyle(0x0c1422, 0.55);
+            for (let cx = 0; cx < worldW; cx += 100) {
+                // Stalaktit menggantung di atap gua
+                this.caveGfx.fillTriangle(cx, 400, cx + 50, 470, cx + 100, 400);
+                // Pilar batu dari dasar
+                this.caveGfx.fillTriangle(cx + 25, worldH, cx + 65, worldH - 60, cx + 105, worldH);
+            }
         }
 
         this.platforms = this.physics.add.staticGroup();
@@ -519,6 +539,15 @@ export class GameScene extends Phaser.Scene {
         const startCol = -2;
         const endCol = Math.ceil(worldW / 50) + 2;
 
+        const map = this.currentMap || {};
+        const worldH = map.tinggiDunia || 1000;
+        const maxRow = Math.min(25, Math.floor(worldH / 50)); // Default 20 baris (Row 0 s/d 19)
+
+        // Koordinat rahasia keberadaan mineral Kristal Safir terpendam di dalam gua
+        const secretGemCoords = new Set([
+            '3,12', '6,11', '9,15', '13,12', '16,16', '18,10', '21,14', '24,17'
+        ]);
+
         for (let col = startCol; col <= endCol; col++) {
             const x = col * 50 + 25; // Titik tengah kolom 50px
 
@@ -527,24 +556,49 @@ export class GameScene extends Phaser.Scene {
             blockTop.setDepth(10);
             blockTop.gridCol = col;
             blockTop.gridRow = 8;
-            blockTop.gridType = 'ground';
+            blockTop.gridType = 'snow';
             this.gridWorldBlocks.set(`${col},8`, blockTop);
 
-            // Row 9 (y: 450 - 500) -> Balok Bawah Tanah 50x50 px
-            const blockSub1 = this.platforms.create(x, 475, 'tile_block_50_dirt').refreshBody();
-            blockSub1.setDepth(9);
-            blockSub1.gridCol = col;
-            blockSub1.gridRow = 9;
-            blockSub1.gridType = 'subdirt';
-            this.gridWorldBlocks.set(`${col},9`, blockSub1);
+            // Row 9 s/d maxRow - 1 (Underground Strata)
+            for (let r = 9; r < maxRow - 1; r++) {
+                const y = r * 50 + 25;
+                const key = `${col},${r}`;
 
-            // Row 10 (y: 500 - 550) -> Balok Bawah Tanah 50x50 px (agar tebal saat kamera zoom out)
-            const blockSub2 = this.platforms.create(x, 525, 'tile_block_50_dirt').refreshBody();
-            blockSub2.setDepth(9);
-            blockSub2.gridCol = col;
-            blockSub2.gridRow = 10;
-            blockSub2.gridType = 'subdirt';
-            this.gridWorldBlocks.set(`${col},10`, blockSub2);
+                // Cek apakah petak ini mengandung mineral kristal berharga
+                if (secretGemCoords.has(key) && col >= 0 && col <= Math.floor(worldW / 50)) {
+                    const gemBlock = this.platforms.create(x, y, 'tile_block_50_ore_gem').refreshBody();
+                    gemBlock.setDepth(9);
+                    gemBlock.gridCol = col;
+                    gemBlock.gridRow = r;
+                    gemBlock.gridType = 'gem';
+                    this.gridWorldBlocks.set(key, gemBlock);
+                } else if (r <= 13) {
+                    // Lapisan Tanah Bawah Permukaan (Subsurface Dirt)
+                    const dirtBlock = this.platforms.create(x, y, 'tile_block_50_dirt').refreshBody();
+                    dirtBlock.setDepth(9);
+                    dirtBlock.gridCol = col;
+                    dirtBlock.gridRow = r;
+                    dirtBlock.gridType = 'dirt';
+                    this.gridWorldBlocks.set(key, dirtBlock);
+                } else {
+                    // Lapisan Bebatuan Gua Dalam (Deep Cavern Slate Stone)
+                    const stoneBlock = this.platforms.create(x, y, 'tile_block_50_stone').refreshBody();
+                    stoneBlock.setDepth(9);
+                    stoneBlock.gridCol = col;
+                    stoneBlock.gridRow = r;
+                    stoneBlock.gridType = 'stone';
+                    this.gridWorldBlocks.set(key, stoneBlock);
+                }
+            }
+
+            // Row Terakhir (Row maxRow - 1, misal Row 19: y: 950 - 1000) -> Bedrock Tak Tertembus
+            const bedrockY = (maxRow - 1) * 50 + 25;
+            const bedrock = this.platforms.create(x, bedrockY, 'tile_block_50_bedrock').refreshBody();
+            bedrock.setDepth(10);
+            bedrock.gridCol = col;
+            bedrock.gridRow = maxRow - 1;
+            bedrock.gridType = 'bedrock';
+            this.gridWorldBlocks.set(`${col},${maxRow - 1}`, bedrock);
         }
     }
 
@@ -609,14 +663,53 @@ export class GameScene extends Phaser.Scene {
         const row = Math.floor(worldY / 50);
         const key = `${col},${row}`;
 
-        // 1. Cek apakah ada Balok Platform / Tanah di gridWorldBlocks
+        // 1. Cek apakah ada Balok Platform / Tanah / Batu / Bedrock di gridWorldBlocks
         let block = this.gridWorldBlocks ? this.gridWorldBlocks.get(key) : null;
         if (block && block.active) {
             const cx = block.x;
             const cy = block.y;
-            const bType = block.gridType || 'ground';
+            const bType = block.gridType || 'dirt';
 
-            // Partikel hancur & suara gali
+            // Bedrock tidak bisa dihancurkan
+            if (bType === 'bedrock') {
+                this.showFloatingBlockToast(cx, cy - 20, '⚠️ Bedrock Tak Tertembus!', 0x94a3b8);
+                AudioManager.playClick();
+                this.tweens.add({
+                    targets: block,
+                    x: cx + 3,
+                    yoyo: true,
+                    repeat: 3,
+                    duration: 35,
+                    onComplete: () => { block.x = cx; }
+                });
+                return false;
+            }
+
+            // Jika menemukan mineral kristal safir langka
+            if (bType === 'gem') {
+                this.spawnBlockBreakParticles(cx, cy, 'gem');
+                AudioManager.playGem();
+
+                this.platforms.remove(block, true, true);
+                this.gridWorldBlocks.delete(key);
+
+                const gemItem = {
+                    id: `permata_${col}_${row}`,
+                    nama: 'Permata Safir Bawah Tanah 💎',
+                    deskripsi: 'Permata kristal murni langka yang digali dari kedalaman perut bumi.',
+                    icon: '💎'
+                };
+                this.inventory.push(gemItem);
+                this.updateInventoryBadge();
+
+                this.showFloatingBlockToast(cx, cy - 20, '💎 +1 Permata Safir!', 0x38bdf8);
+                if (this.showFloatingToast) {
+                    this.showFloatingToast('💎 Menemukan Permata Safir Bawah Tanah! (Masuk Tas)', 0x38bdf8);
+                }
+                return true;
+            }
+
+            // Balok tanah, salju, batu, atau platform biasa
             this.spawnBlockBreakParticles(cx, cy, bType);
             AudioManager.playDig();
 
@@ -624,7 +717,12 @@ export class GameScene extends Phaser.Scene {
             this.platforms.remove(block, true, true);
             this.gridWorldBlocks.delete(key);
 
-            const label = bType === 'platform' ? 'Platform' : (bType === 'snow' ? 'Balok Salju' : 'Balok Tanah');
+            let label = 'Balok';
+            if (bType === 'platform') label = 'Platform';
+            else if (bType === 'snow') label = 'Balok Salju';
+            else if (bType === 'stone') label = 'Batu Gua';
+            else label = 'Balok Tanah';
+
             this.showFloatingBlockToast(cx, cy - 20, `-1 ${label}`, 0xef4444);
             return true;
         }
@@ -677,15 +775,23 @@ export class GameScene extends Phaser.Scene {
         let newBlock = null;
         let bType = 'ground';
 
-        if (row >= 8) {
-            // Balok tanah / salju jika di level bawah tanah (row 8 = salju, row 9+ = tanah dalam)
-            const textureKey = (row === 8) ? 'tile_block_50_snow' : 'tile_block_50_dirt';
-            newBlock = this.platforms.create(tileCenterX, row * 50 + 25, textureKey).refreshBody();
+        if (row === 8) {
+            // Permukaan salju
+            newBlock = this.platforms.create(tileCenterX, row * 50 + 25, 'tile_block_50_snow').refreshBody();
             newBlock.setDepth(10);
-            bType = (row === 8) ? 'snow' : 'dirt';
+            bType = 'snow';
+        } else if (row >= 9 && row <= 13) {
+            // Lapisan tanah bawah permukaan
+            newBlock = this.platforms.create(tileCenterX, row * 50 + 25, 'tile_block_50_dirt').refreshBody();
+            newBlock.setDepth(9);
+            bType = 'dirt';
+        } else if (row >= 14) {
+            // Lapisan batu gua dalam
+            newBlock = this.platforms.create(tileCenterX, row * 50 + 25, 'tile_block_50_stone').refreshBody();
+            newBlock.setDepth(9);
+            bType = 'stone';
         } else {
             // Platform melayang jika di atas tanah (row < 8)
-            // Permukaan pijakan tepat di garis y = row * 50, center = row * 50 + 12
             newBlock = this.platforms.create(tileCenterX, row * 50 + 12, 'tile_plat_50_mid').refreshBody();
             newBlock.setDepth(10);
             bType = 'platform';
@@ -700,7 +806,12 @@ export class GameScene extends Phaser.Scene {
         this.spawnBlockPlaceParticles(tileCenterX, newBlock.y);
         AudioManager.playPlace();
 
-        const label = bType === 'platform' ? 'Platform' : (bType === 'snow' ? 'Balok Salju' : 'Balok Tanah');
+        let label = 'Balok';
+        if (bType === 'platform') label = 'Platform';
+        else if (bType === 'snow') label = 'Balok Salju';
+        else if (bType === 'stone') label = 'Batu Gua';
+        else label = 'Balok Tanah';
+
         this.showFloatingBlockToast(tileCenterX, row * 50 - 15, `+1 ${label}`, 0x22c55e);
         return true;
     }
@@ -710,11 +821,15 @@ export class GameScene extends Phaser.Scene {
             ? [0xe2e8f0, 0xffffff, 0x94a3b8] 
             : (type === 'dirt') 
                 ? [0x78350f, 0x451a03, 0x92400e]
-                : (type === 'hazard')
-                    ? [0xef4444, 0xf87171, 0x991b1b]
-                    : (type === 'coin')
-                        ? [0xfacc15, 0xfef08a, 0xeab308]
-                        : [0x38bdf8, 0x64748b, 0x1e293b];
+                : (type === 'stone')
+                    ? [0x334155, 0x1e293b, 0x64748b]
+                    : (type === 'gem')
+                        ? [0x38bdf8, 0x0284c7, 0xbae6fd, 0xffffff]
+                        : (type === 'hazard')
+                            ? [0xef4444, 0xf87171, 0x991b1b]
+                            : (type === 'coin')
+                                ? [0xfacc15, 0xfef08a, 0xeab308]
+                                : [0x38bdf8, 0x64748b, 0x1e293b];
 
         for (let i = 0; i < 10; i++) {
             const color = Phaser.Utils.Array.GetRandom(colors);
@@ -788,7 +903,7 @@ export class GameScene extends Phaser.Scene {
 
         // 2. Bangun kembali tanah default
         const map = this.currentMap || {};
-        const worldW = map.lebarDunia || 1280;
+        const worldW = map.lebarDunia || 1400;
         this.buildModular50Ground(worldW);
 
         // 3. Bangun kembali platform dari map data

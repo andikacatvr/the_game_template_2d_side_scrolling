@@ -200,6 +200,29 @@ class AudioManagerClass {
         osc.stop(now + 0.12);
     }
 
+    // SFX 9: Gem / Crystal Discovery (Bright magical chime)
+    playGem() {
+        this.init();
+        if (!this.ctx || this.sfxGain <= 0) return;
+        const freqs = [783.99, 1046.50, 1318.51, 1567.98]; // G5, C6, E6, G6
+        freqs.forEach((freq, idx) => {
+            const now = this.ctx.currentTime + idx * 0.06;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now);
+
+            gain.gain.setValueAtTime(0.24 * this.sfxGain, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.30);
+        });
+    }
+
     // Ambient Gentle BGM Generator (Looping peaceful chords)
     startAmbientBGM() {
         if (this.bgmActive) return;

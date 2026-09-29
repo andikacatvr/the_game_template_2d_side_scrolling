@@ -57,7 +57,8 @@ export const DAFTAR_MAP = [
         nama: 'Level 1: Lembah Bersalju',
         background: 'bg_scene1.png', // Gambar di folder public atau public/aset_murid/
         warnaLangit: '#0b1329',
-        lebarDunia: 1280,
+        lebarDunia: 1400,
+        tinggiDunia: 1000, // 20 Baris (Row 0-7: Langit, Row 8: Salju, Row 9-13: Tanah, Row 14-18: Bebatuan Gua & Kristal, Row 19: Bedrock)
         spawn: { x: 175, y: 350 }, // Berdiri pas di tengah Kolom 3 (x: 150..200)
 
         // Platform tempat melompat { x, y, lebar, tinggi } - Seluruh balok menempel presisi di petak grid 50px
@@ -85,9 +86,9 @@ export const DAFTAR_MAP = [
             portrait: "npc_portrait",
             dialog: [
                 "Halo calon kreator game! Selamat datang di Arena Eksplorasi 2D.",
-                "Game ini dirancang untuk kamu modifikasi sesuka hati secara live!",
-                "Tekan tombol [F] kapan saja di dekatku untuk melihat Tur Interaktif pengenalan seluruh tombol engine (File, Add Object, Wrench Edit, Scripting, Inspect, & Console)!",
-                "Atau coba ketik command /speed 350 atau /jump 550 di console bawah untuk melompati rintangan di depan!"
+                "Tahukah kamu? Kamu sekarang bisa menekan shortcut [X] untuk menggali ke dalam tanah ala Terraria/Growtopia! Kamera akan otomatis mengikutimu ke kedalaman gua.",
+                "Gali terus ke bawah untuk menemukan mineral kristal safir langka terpendam, atau tekan [B] untuk menumpuk balok platform untuk memanjat kembali!",
+                "Tekan tombol [F] kapan saja di dekatku untuk melihat Tur Interaktif pengenalan seluruh tombol engine!"
             ]
         },
 
