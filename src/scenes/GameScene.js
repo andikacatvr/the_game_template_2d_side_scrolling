@@ -123,8 +123,16 @@ export class GameScene extends Phaser.Scene {
         this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
         this.cameras.main.setRoundPixels(true);
 
-        // Kamera otomatis mengikuti karakter pemain dengan pergerakan lerp halus (0.08)
-        this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
+        // Smart Ground Clamp Camera Anchor:
+        // Menjaga permukaan tanah tetap di bagian bawah layar saat di daratan,
+        // dan otomatis meluncur ke bawah mengikuti kedalaman saat pemain menggali ke dalam tanah.
+        this.cameraAnchor = {
+            x: this.player ? this.player.x : 175,
+            y: Math.max(225, (this.player ? this.player.y : 350) - 160)
+        };
+
+        // Kamera otomatis mengikuti cameraAnchor dengan pergerakan lerp halus (0.08)
+        this.cameras.main.startFollow(this.cameraAnchor, true, 0.08, 0.08);
 
         // Inisialisasi Zoom Kamera (Touchpad, Mouse, Layar Sentuh HP, & Tombol HUD)
         const camCfg = CONFIG_SKELETON.kamera || {};
@@ -132,7 +140,7 @@ export class GameScene extends Phaser.Scene {
             minZoom: camCfg.zoomMinimal !== undefined ? camCfg.zoomMinimal : 0.85,
             maxZoom: camCfg.zoomMaksimal || 1.6,
             defaultZoom: camCfg.zoomAwal !== undefined ? camCfg.zoomAwal : 0.85,
-            followTarget: this.player,
+            followTarget: this.cameraAnchor,
             centerOnZoomOut: false
         });
         const rightEdge = this.scale.width;
@@ -1703,7 +1711,12 @@ export class GameScene extends Phaser.Scene {
 
         if (!this.player || !this.player.body) return;
 
-        // Update floating prompts (HTML Boxless text)
+        // Smart Ground Clamp Camera Tracking:
+        // Menjaga pandangan daratan luas (tanah di dasar layar), dan otomatis meluncur ke bawah saat pemain menggali ke gua
+        if (this.cameraAnchor) {
+            this.cameraAnchor.x = this.player.x;
+            this.cameraAnchor.y = Math.max(225, this.player.y - 160);
+        }
         let activePromptTarget = null;
 
         // 1. Cek NPC
