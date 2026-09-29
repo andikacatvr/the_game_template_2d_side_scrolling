@@ -68,11 +68,11 @@ class GridSystemClass {
         if (!this.scene) return;
         this.isActive = true;
 
-        // 1. Buat Graphics Object di Phaser (Depth tinggi, scroll factor 1 agar diproses di koordinat dunia Phaser)
+        // 1. Buat Graphics Object di Phaser (Depth tinggi, scroll factor 0 agar dirender langsung di koordinat layar tanpa distorsi kamera)
         if (!this.graphics) {
             this.graphics = this.scene.add.graphics();
             this.graphics.setDepth(99990);
-            this.graphics.setScrollFactor(1);
+            this.graphics.setScrollFactor(0);
         }
 
         // 2. Buat Floating HUD Badge di HTML
@@ -162,23 +162,34 @@ class GridSystemClass {
         const worldMaxY = Math.max(pTopLeft.y, pBottomRight.y);
 
         // Ekstensi garis melebihi batas layar agar memenuhi 100% layar tanpa celah
-        const startX = Math.floor(worldMinX / step) * step - step * 2;
-        const endX = Math.ceil(worldMaxX / step) * step + step * 2;
-        const startY = Math.floor(worldMinY / step) * step - step * 2;
-        const endY = Math.ceil(worldMaxY / step) * step + step * 2;
+        const startX = Math.floor(worldMinX / step) * step - step;
+        const endX = Math.ceil(worldMaxX / step) * step + step;
+        const startY = Math.floor(worldMinY / step) * step - step;
+        const endY = Math.ceil(worldMaxY / step) * step + step;
+
+        const screenW = Math.max(cam.width, this.scene.scale ? this.scene.scale.width : 800);
+        const screenH = Math.max(cam.height, this.scene.scale ? this.scene.scale.height : 450);
 
         // Gambar Garis Vertikal & Horizontal Putih Bersih (Uniform 1px, elegan, tajam, & konsisten)
+        // Menggunakan proyeksi koordinat layar integer (Math.round), setiap garis mendarat tepat pada
+        // 1 kolom/baris pixel fisik layar tanpa sub-pixel anti-aliasing / blur / garis belang tebal-tipis!
         g.lineStyle(1, 0xffffff, 0.45);
         for (let wx = startX; wx <= endX; wx += step) {
-            g.lineBetween(wx, startY, wx, endY);
+            const sx = Math.round((wx - pTopLeft.x) * cam.zoom);
+            if (sx >= -1 && sx <= screenW + 1) {
+                g.lineBetween(sx, 0, sx, screenH);
+            }
         }
         for (let wy = startY; wy <= endY; wy += step) {
-            g.lineBetween(startX, wy, endX, wy);
+            const sy = Math.round((wy - pTopLeft.y) * cam.zoom);
+            if (sy >= -1 && sy <= screenH + 1) {
+                g.lineBetween(0, sy, screenW, sy);
+            }
         }
 
         // 3. Highlight Kotak Sel Aktif di bawah kursor mouse
         const pointer = this.scene.input.activePointer;
-        if (pointer && pointer.x >= 0 && pointer.x <= cam.width && pointer.y >= 0 && pointer.y <= cam.height) {
+        if (pointer && pointer.x >= 0 && pointer.x <= screenW && pointer.y >= 0 && pointer.y <= screenH) {
             const worldPointer = cam.getWorldPoint(pointer.x, pointer.y);
             const col = Math.floor(worldPointer.x / step);
             const row = Math.floor(worldPointer.y / step);
@@ -187,40 +198,46 @@ class GridSystemClass {
 
             this.hoverCell = { col, row, x: cellWorldX, y: cellWorldY };
 
+            // Proyeksikan batas kotak sel ke koordinat layar yang sinkron presisi dengan garis grid
+            const boxSx = Math.round((cellWorldX - pTopLeft.x) * cam.zoom);
+            const boxSy = Math.round((cellWorldY - pTopLeft.y) * cam.zoom);
+            const boxSw = Math.round(((cellWorldX + step) - pTopLeft.x) * cam.zoom) - boxSx;
+            const boxSh = Math.round(((cellWorldY + step) - pTopLeft.y) * cam.zoom) - boxSy;
+
             if (this.toolMode === 'dig') {
                 // Mode Gali / Hapus: Kotak merah menyala + tanda silang (X)
                 g.fillStyle(0xef4444, 0.28);
-                g.fillRect(cellWorldX, cellWorldY, step, step);
+                g.fillRect(boxSx, boxSy, boxSw, boxSh);
                 g.lineStyle(2.5, 0xef4444, 1.0);
-                g.strokeRect(cellWorldX, cellWorldY, step, step);
+                g.strokeRect(boxSx, boxSy, boxSw, boxSh);
 
                 g.lineStyle(2, 0xffffff, 0.95);
-                g.lineBetween(cellWorldX + 15, cellWorldY + 15, cellWorldX + step - 15, cellWorldY + step - 15);
-                g.lineBetween(cellWorldX + step - 15, cellWorldY + 15, cellWorldX + 15, cellWorldY + step - 15);
+                g.lineBetween(boxSx + 15, boxSy + 15, boxSx + boxSw - 15, boxSy + boxSh - 15);
+                g.lineBetween(boxSx + boxSw - 15, boxSy + 15, boxSx + 15, boxSy + boxSh - 15);
             } else if (this.toolMode === 'build') {
                 // Mode Pasang: Kotak hijau zamrud menyala + tanda plus (+)
                 g.fillStyle(0x22c55e, 0.28);
-                g.fillRect(cellWorldX, cellWorldY, step, step);
+                g.fillRect(boxSx, boxSy, boxSw, boxSh);
                 g.lineStyle(2.5, 0x22c55e, 1.0);
-                g.strokeRect(cellWorldX, cellWorldY, step, step);
+                g.strokeRect(boxSx, boxSy, boxSw, boxSh);
 
                 g.lineStyle(2, 0xffffff, 0.95);
-                g.lineBetween(cellWorldX + step / 2, cellWorldY + 13, cellWorldX + step / 2, cellWorldY + step - 13);
-                g.lineBetween(cellWorldX + 13, cellWorldY + step / 2, cellWorldX + step - 13, cellWorldY + step / 2);
+                g.lineBetween(boxSx + boxSw / 2, boxSy + 13, boxSx + boxSw / 2, boxSy + boxSh - 13);
+                g.lineBetween(boxSx + 13, boxSy + boxSh / 2, boxSx + boxSw - 13, boxSy + boxSh / 2);
             } else {
                 // Mode Normal: Kotak highlight seleksi dengan double-outline hitam & putih
                 g.fillStyle(0xffffff, 0.12);
-                g.fillRect(cellWorldX, cellWorldY, step, step);
+                g.fillRect(boxSx, boxSy, boxSw, boxSh);
                 g.lineStyle(3, 0x000000, 0.85);
-                g.strokeRect(cellWorldX, cellWorldY, step, step);
+                g.strokeRect(boxSx, boxSy, boxSw, boxSh);
                 g.lineStyle(1.5, 0xffffff, 0.95);
-                g.strokeRect(cellWorldX, cellWorldY, step, step);
+                g.strokeRect(boxSx, boxSy, boxSw, boxSh);
 
                 // Titik tengah sel berkontras tinggi
                 g.fillStyle(0x000000, 0.9);
-                g.fillCircle(cellWorldX + step / 2, cellWorldY + step / 2, 3.5);
+                g.fillCircle(boxSx + boxSw / 2, boxSy + boxSh / 2, 3.5);
                 g.fillStyle(0xffffff, 1.0);
-                g.fillCircle(cellWorldX + step / 2, cellWorldY + step / 2, 2);
+                g.fillCircle(boxSx + boxSw / 2, boxSy + boxSh / 2, 2);
             }
 
             // Update teks live di floating badge

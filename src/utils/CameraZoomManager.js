@@ -16,7 +16,7 @@ import { FONT_BODY } from './helpers.js';
 // ===============================================================
 
 export class CameraZoomManager {
-    static globalZoom = 0.85;
+    static globalZoom = 1.0;
 
     /**
      * @param {Phaser.Scene} scene
@@ -24,9 +24,9 @@ export class CameraZoomManager {
      */
     constructor(scene, options = {}) {
         this.scene = scene;
-        this.minZoom = options.minZoom !== undefined ? options.minZoom : 0.85;
+        this.minZoom = options.minZoom !== undefined ? options.minZoom : 0.8;
         this.maxZoom = options.maxZoom !== undefined ? options.maxZoom : 1.6;
-        this.defaultZoom = options.defaultZoom !== undefined ? options.defaultZoom : 0.85;
+        this.defaultZoom = options.defaultZoom !== undefined ? options.defaultZoom : 1.0;
         
         // Gunakan zoom global terakhir jika masih dalam batas
         const savedZoom = CameraZoomManager.globalZoom;

@@ -120,6 +120,7 @@ export class GameScene extends Phaser.Scene {
         const worldWidth = 1280;
         this.physics.world.setBounds(0, 0, worldWidth, 450);
         this.cameras.main.setBounds(0, 0, worldWidth, 450);
+        this.cameras.main.setRoundPixels(true);
 
         // Kamera otomatis mengikuti karakter pemain dengan pergerakan lerp halus (0.08)
         this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
@@ -127,9 +128,9 @@ export class GameScene extends Phaser.Scene {
         // Inisialisasi Zoom Kamera (Touchpad, Mouse, Layar Sentuh HP, & Tombol HUD)
         const camCfg = CONFIG_SKELETON.kamera || {};
         this.zoomManager = new CameraZoomManager(this, {
-            minZoom: camCfg.zoomMinimal !== undefined ? camCfg.zoomMinimal : 0.85,
+            minZoom: camCfg.zoomMinimal !== undefined ? camCfg.zoomMinimal : 0.8,
             maxZoom: camCfg.zoomMaksimal || 1.6,
-            defaultZoom: camCfg.zoomAwal !== undefined ? camCfg.zoomAwal : 0.85,
+            defaultZoom: camCfg.zoomAwal !== undefined ? camCfg.zoomAwal : 1.0,
             followTarget: this.player,
             centerOnZoomOut: false
         });

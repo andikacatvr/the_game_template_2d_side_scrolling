@@ -109,8 +109,9 @@ export class Scene3 extends Phaser.Scene {
         this.input.on('pointerdown', (pointer) => this.handlePlacementClick(pointer));
 
         // Zoom Kamera
+        this.cameras.main.setRoundPixels(true);
         this.zoomManager = new CameraZoomManager(this, {
-            minZoom: 0.85,
+            minZoom: 0.8,
             maxZoom: 1.6,
             defaultZoom: 1.0,
             followTarget: this.player

@@ -22,7 +22,7 @@ const config = {
     height: 450,
     parent: 'game-container',
     pixelArt: false,
-    roundPixels: false,
+    roundPixels: true,
     scale: {
         mode: Phaser.Scale.EXPAND,
         autoCenter: Phaser.Scale.CENTER_BOTH
@@ -34,7 +34,7 @@ const config = {
     render: {
         antialias: true,
         antialiasGL: true,
-        roundPixels: false,
+        roundPixels: true,
         pixelArt: false,
         powerPreference: 'high-performance'
     },
