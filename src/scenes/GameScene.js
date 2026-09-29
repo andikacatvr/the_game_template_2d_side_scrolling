@@ -128,9 +128,9 @@ export class GameScene extends Phaser.Scene {
         // Inisialisasi Zoom Kamera (Touchpad, Mouse, Layar Sentuh HP, & Tombol HUD)
         const camCfg = CONFIG_SKELETON.kamera || {};
         this.zoomManager = new CameraZoomManager(this, {
-            minZoom: camCfg.zoomMinimal !== undefined ? camCfg.zoomMinimal : 0.8,
+            minZoom: camCfg.zoomMinimal !== undefined ? camCfg.zoomMinimal : 0.85,
             maxZoom: camCfg.zoomMaksimal || 1.6,
-            defaultZoom: camCfg.zoomAwal !== undefined ? camCfg.zoomAwal : 1.0,
+            defaultZoom: camCfg.zoomAwal !== undefined ? camCfg.zoomAwal : 0.85,
             followTarget: this.player,
             centerOnZoomOut: false
         });

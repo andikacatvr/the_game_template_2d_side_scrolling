@@ -39,8 +39,8 @@ export const CONFIG_SKELETON = {
 
     // 5. Pengaturan Kamera & Zoom
     kamera: {
-        zoomAwal: 1.0,        // 1.0 = Normal 100% (Pixel-perfect 1:1, tajam & konsisten tanpa blur)
-        zoomMinimal: 0.8,     // 0.8 = Lebih Luas
+        zoomAwal: 0.85,        // 0.85 = Normal (85%)
+        zoomMinimal: 0.85,     // 0.85 = Lebih Luas
         zoomMaksimal: 1.6      // 1.6 = Detail Dekat
     }
 };
