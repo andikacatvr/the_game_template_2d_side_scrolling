@@ -1010,6 +1010,15 @@ export class GameScene extends Phaser.Scene {
             }
         }
 
+        // Variabel animasi elastisitas & timer platformer halus
+        this.playerBaseScaleX = this.player.scaleX || 1;
+        this.playerBaseScaleY = this.player.scaleY || 1;
+        this.coyoteTimer = 0;
+        this.jumpBufferTimer = 0;
+        this.prevJumpPressed = false;
+        this.isJumping = false;
+        this.squashTween = null;
+
         // Ambil item -> masuk inventory
         if (this.items) {
             this.physics.add.overlap(this.player, this.items, (player, item) => {
@@ -1699,7 +1708,7 @@ export class GameScene extends Phaser.Scene {
         }
     }
 
-    update() {
+    update(time, delta) {
         // Update panah tutorial interaktif & arah langkah
         this.updateTutorialArrows();
 
@@ -1792,24 +1801,119 @@ export class GameScene extends Phaser.Scene {
         const right = (this.cursors && this.cursors.right.isDown) || (this.keys && this.keys.d.isDown) || this.touchState.right;
         const jump = (this.cursors && this.cursors.up.isDown) || (this.keys && this.keys.w.isDown) || (this.keys && this.keys.space.isDown) || this.touchState.jump;
 
-        if (left) {
-            this.player.setVelocityX(-speed);
-            CodeInspector.record('move');
-        } else if (right) {
-            this.player.setVelocityX(speed);
+        const dt = Math.min((delta || 16.6) / 1000, 0.05); // Detik per frame
+        const isGrounded = !!(this.player.body.touching.down || this.player.body.blocked.down);
+
+        // 1. HORIZONTAL MOVEMENT: Akselerasi & Deselerasi Halus (Smooth Inertia & Skid)
+        let targetVx = 0;
+        if (left && !right) targetVx = -speed;
+        else if (right && !left) targetVx = speed;
+
+        const currentVx = this.player.body.velocity.x;
+        let newVx = currentVx;
+
+        if (targetVx !== 0) {
+            // Cek apakah pemain sedang berbalik arah mendadak (skid/drift)
+            const isTurnaround = (currentVx > 25 && targetVx < 0) || (currentVx < -25 && targetVx > 0);
+            const rate = isTurnaround 
+                ? (isGrounded ? 2600 : 1800) 
+                : (isGrounded ? 1500 : 1100);
+
+            if (targetVx > currentVx) {
+                newVx = Math.min(targetVx, currentVx + rate * dt);
+            } else {
+                newVx = Math.max(targetVx, currentVx - rate * dt);
+            }
+
+            // Efek partikel gesekan tanah (skid dust) saat berbalik arah
+            if (isTurnaround && isGrounded && Math.abs(currentVx) > 90) {
+                this.createSkidEffect(this.player.x, this.player.y + (this.player.displayHeight ? this.player.displayHeight / 2 : 22), currentVx > 0 ? 1 : -1);
+            }
+
+            // Arah pandang karakter (FlipX)
+            if (targetVx < 0) this.player.setFlipX(true);
+            else if (targetVx > 0) this.player.setFlipX(false);
             CodeInspector.record('move');
         } else {
-            this.player.setVelocityX(0);
+            // Deselerasi / Friksi rem saat tombol dilepas (tidak langsung freeze kaku)
+            const friction = isGrounded ? 1600 : 550;
+            if (Math.abs(currentVx) <= friction * dt) {
+                newVx = 0;
+            } else if (currentVx > 0) {
+                newVx = currentVx - friction * dt;
+            } else {
+                newVx = currentVx + friction * dt;
+            }
+        }
+        this.player.setVelocityX(newVx);
+
+        // 2. COYOTE TIME: Toleransi melompat sesaat setelah meninggalkan platform (120ms)
+        if (isGrounded) {
+            this.coyoteTimer = 120;
+        } else {
+            this.coyoteTimer = Math.max(0, (this.coyoteTimer || 0) - (delta || 16.6));
         }
 
-        const isGrounded = !!(this.player.body.touching.down || this.player.body.blocked.down);
-        if (jump && isGrounded) {
+        // 3. JUMP BUFFER: Antrian input tombol lompat sebelum kaki mendarat (120ms)
+        const jumpJustPressed = jump && !this.prevJumpPressed;
+        this.prevJumpPressed = jump;
+
+        if (jumpJustPressed) {
+            this.jumpBufferTimer = 120;
+        } else {
+            this.jumpBufferTimer = Math.max(0, (this.jumpBufferTimer || 0) - (delta || 16.6));
+        }
+
+        // 4. TRIGGER JUMP: Berhasil lompat jika ada antrian input & (sedang di tanah ATAU dalam coyote window)
+        const canJump = (this.jumpBufferTimer > 0) && (isGrounded || this.coyoteTimer > 0);
+        if (canJump) {
+            this.jumpBufferTimer = 0;
+            this.coyoteTimer = 0;
+            this.isJumping = true;
             this.player.setVelocityY(jumpSpeed);
             AudioManager.playJump();
             CodeInspector.record('jump');
+
             this.createDustEffect(this.player.x, this.player.y + (this.player.displayHeight ? this.player.displayHeight / 2 : 22));
-        } else if (!this.wasGrounded && isGrounded && this.player.body.velocity.y >= 0) {
+
+            // Visual Juice: Squash & Stretch saat melompat (Stretch vertikal memanjang)
+            const baseSX = this.playerBaseScaleX || 1;
+            const baseSY = this.playerBaseScaleY || 1;
+            this.player.setScale(baseSX * 0.82, baseSY * 1.25);
+            if (this.squashTween) this.squashTween.stop();
+            this.squashTween = this.tweens.add({
+                targets: this.player,
+                scaleX: baseSX,
+                scaleY: baseSY,
+                duration: 170,
+                ease: 'Back.easeOut'
+            });
+        }
+
+        // 5. VARIABLE JUMP HEIGHT: Short hop jika tombol lompat hanya ditekan cepat (tap)
+        if (!jump && this.isJumping && this.player.body.velocity.y < -60) {
+            this.player.setVelocityY(this.player.body.velocity.y * 0.52);
+            this.isJumping = false;
+        }
+        if (isGrounded && this.player.body.velocity.y >= 0) {
+            this.isJumping = false;
+        }
+
+        // 6. LANDING IMPACT SQUASH: Efek membal elastis saat mendarat di tanah
+        if (!this.wasGrounded && isGrounded && this.player.body.velocity.y >= 0) {
             this.createDustEffect(this.player.x, this.player.y + (this.player.displayHeight ? this.player.displayHeight / 2 : 22));
+
+            const baseSX = this.playerBaseScaleX || 1;
+            const baseSY = this.playerBaseScaleY || 1;
+            this.player.setScale(baseSX * 1.24, baseSY * 0.78);
+            if (this.squashTween) this.squashTween.stop();
+            this.squashTween = this.tweens.add({
+                targets: this.player,
+                scaleX: baseSX,
+                scaleY: baseSY,
+                duration: 160,
+                ease: 'Back.easeOut'
+            });
         }
         this.wasGrounded = isGrounded;
 
@@ -1838,6 +1942,22 @@ export class GameScene extends Phaser.Scene {
                 scale: 0.2,
                 alpha: 0,
                 duration: Phaser.Math.Between(250, 400),
+                ease: 'Quad.easeOut',
+                onComplete: () => dust.destroy()
+            });
+        }
+    }
+
+    createSkidEffect(x, y, dir = 1) {
+        for (let i = 0; i < 3; i++) {
+            const dust = this.add.circle(x - dir * 8 + Phaser.Math.Between(-4, 4), y - 2, Phaser.Math.Between(2, 3), 0xe2e8f0, 0.65).setDepth(11);
+            this.tweens.add({
+                targets: dust,
+                x: dust.x - dir * Phaser.Math.Between(10, 20),
+                y: dust.y - Phaser.Math.Between(2, 6),
+                scale: 0.2,
+                alpha: 0,
+                duration: 200,
                 ease: 'Quad.easeOut',
                 onComplete: () => dust.destroy()
             });
