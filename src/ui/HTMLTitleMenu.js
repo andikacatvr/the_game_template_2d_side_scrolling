@@ -47,10 +47,10 @@ export class HTMLTitleMenu {
                     -webkit-user-select: none;
                 }
 
-                /* Container Tombol Menu di Sisi Kanan (Jarak lega 80px dari logo, seimbang di tengah) */
+                /* Container Tombol Menu di Sisi Kanan (Digeser +60px seimbang tepat di tengah layar) */
                 .gt-title-btn-stack {
                     position: absolute;
-                    left: calc(50% + 50px);
+                    left: calc(50% + 110px);
                     top: 50%;
                     transform: translateY(-50%);
                     display: flex;

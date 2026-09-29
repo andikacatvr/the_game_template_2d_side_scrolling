@@ -26,6 +26,20 @@ export class DisplayManager {
                 this.applyResolution();
             }
         });
+
+        // Mencegah browser page zoom tidak sengaja (Ctrl + Wheel, Touchpad Pinch, & Ctrl + Plus/Minus)
+        // Menjaga elemen HTML dan Canvas Phaser tetap sinkron dan tidak berubah ukuran sendiri
+        window.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && (e.key === '=' || e.key === '-' || e.key === '+' || e.key === '_' || e.key === '0')) {
+                e.preventDefault();
+            }
+        });
     }
 
     static get current() {
