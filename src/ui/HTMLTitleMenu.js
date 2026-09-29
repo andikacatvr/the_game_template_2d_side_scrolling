@@ -47,18 +47,29 @@ export class HTMLTitleMenu {
                     -webkit-user-select: none;
                 }
 
-                /* Container Tombol Menu di Sisi Kanan (Ukuran proporsional, tidak menabrak logo) */
+                /* Container Tombol Menu di Sisi Kanan (Terkunci presisi relatif terhadap titik tengah 50%) */
                 .gt-title-btn-stack {
                     position: absolute;
-                    right: clamp(60px, 14vw, 240px);
+                    left: calc(50% + 18px);
                     top: 50%;
                     transform: translateY(-50%);
                     display: flex;
                     flex-direction: column;
                     gap: 16px;
-                    width: clamp(290px, 24vw, 380px);
+                    width: 340px;
+                    max-width: calc(50vw - 36px);
                     pointer-events: auto;
                     animation: titleMenuBob 2.5s ease-in-out infinite;
+                }
+
+                @media (max-width: 760px) {
+                    .gt-title-btn-stack {
+                        left: 50%;
+                        top: calc(50% + 110px);
+                        transform: translate(-50%, 0);
+                        width: min(320px, 90vw);
+                        max-width: 90vw;
+                    }
                 }
 
                 @keyframes titleMenuBob {
@@ -66,16 +77,16 @@ export class HTMLTitleMenu {
                     50% { transform: translateY(calc(-50% - 6px)); }
                 }
 
-                /* Tombol Utama Neo-Brutalist Tactile (Ukuran Pas & Proporsional) */
+                /* Tombol Utama Neo-Brutalist Tactile (Ukuran Tetap 60px Mantap di Semua Browser) */
                 .gt-title-btn {
                     position: relative;
                     width: 100%;
-                    height: clamp(56px, 7.5vh, 66px);
+                    height: 60px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     font-family: 'Inter', sans-serif;
-                    font-size: clamp(17px, 1.3vw, 20px);
+                    font-size: 18px;
                     font-weight: 900;
                     letter-spacing: 0.5px;
                     border: 3.5px solid #0f172a;
@@ -84,6 +95,7 @@ export class HTMLTitleMenu {
                     cursor: pointer;
                     transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.15s ease;
                     outline: none;
+                    box-sizing: border-box;
                 }
 
                 .gt-title-btn:hover {

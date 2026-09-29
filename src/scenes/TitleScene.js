@@ -43,15 +43,20 @@ export class TitleScene extends Phaser.Scene {
 
         // ─────────────────────────────────────────────────────────
         // ─────────────────────────────────────────────────────────
-        // SISI KIRI: LOGO JUDUL GAME (SEJAJAR DAN SEIMBANG PRESISI)
+        // SISI KIRI: LOGO JUDUL GAME (SEJAJAR DAN SEIMBANG PRESISI DENGAN TOMBOL MENU)
         // ─────────────────────────────────────────────────────────
-        const leftCenterX = centerX - 133; // x = 267 (Margin kiri = 107px)
+        const leftCenterX = centerX - 188; // Sisi kiri seimbang simetris dengan tombol di centerX + 18
         const titleContainer = this.add.container(leftCenterX, centerY).setDepth(10);
 
         const titleLogoImg = this.add.image(0, 0, 'title_logo');
         titleLogoImg.setDisplaySize(340, 340 * (1080 / 1920)); // proporsional 16:9 sesuai file logo_thegametemplate.png
 
         titleContainer.add(titleLogoImg);
+
+        // Listener resize adaptif agar logo selalu seimbang tepat di samping tombol menu
+        this.scale.on('resize', (gameSize) => {
+            titleContainer.setPosition((gameSize.width / 2) - 188, gameSize.height / 2);
+        });
 
         // Animasi melayang lembut logo judul
         this.tweens.add({
