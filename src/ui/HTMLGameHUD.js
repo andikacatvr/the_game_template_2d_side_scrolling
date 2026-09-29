@@ -36,7 +36,7 @@ export class HTMLGameHUD {
 
         this.dom.innerHTML = `
             <style>
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800&family=JetBrains+Mono:wght@700&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;700&display=swap');
 
                 .gt-hud-root {
                     position: fixed;
@@ -48,7 +48,7 @@ export class HTMLGameHUD {
                     justify-content: space-between;
                     pointer-events: none;
                     z-index: 99990;
-                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+                    font-family: 'Jost', -apple-system, BlinkMacSystemFont, sans-serif;
                     user-select: none;
                     -webkit-user-select: none;
                     transition: top 0.2s ease;
@@ -57,30 +57,31 @@ export class HTMLGameHUD {
                 .gt-hud-left, .gt-hud-right {
                     display: flex;
                     align-items: center;
-                    gap: 12px;
+                    gap: 10px;
                     pointer-events: auto;
                 }
 
-                /* A. HP DISPLAY */
+                /* A. HP DISPLAY (Black Obsidian Style) */
                 .gt-hud-hp-box {
-                    height: 52px;
-                    background: rgba(15, 23, 42, 0.95);
-                    border: 2px solid rgba(255, 255, 255, 0.2);
-                    border-radius: 10px;
-                    padding: 0 18px;
+                    height: 44px;
+                    background: #181818;
+                    border: 1px solid #333333;
+                    border-radius: 8px;
+                    padding: 0 16px;
                     display: flex;
                     align-items: center;
                     gap: 12px;
-                    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
-                    backdrop-filter: blur(8px);
-                    -webkit-backdrop-filter: blur(8px);
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.03);
+                    backdrop-filter: blur(12px);
+                    -webkit-backdrop-filter: blur(12px);
                 }
 
                 .gt-hud-hp-label {
                     color: #f43f5e;
-                    font-size: 15px;
-                    font-weight: 900;
-                    letter-spacing: 0.8px;
+                    font-size: 14.5px;
+                    font-weight: 800;
+                    letter-spacing: 0.5px;
+                    font-family: 'Jost', sans-serif;
                 }
 
                 .gt-hud-hp-hearts {
@@ -90,147 +91,147 @@ export class HTMLGameHUD {
                 }
 
                 .gt-hud-heart-block {
-                    width: 14px;
-                    height: 14px;
+                    width: 13px;
+                    height: 13px;
                     background: #f43f5e;
                     border-radius: 3px;
-                    box-shadow: 0 0 10px rgba(244, 63, 94, 0.8);
+                    box-shadow: 0 0 8px rgba(244, 63, 94, 0.7);
                     transition: all 0.2s ease;
                 }
 
                 .gt-hud-heart-block.lost {
-                    background: #334155;
+                    background: #27272a;
                     box-shadow: none;
                     opacity: 0.45;
                 }
 
                 .gt-hud-hp-num {
-                    color: #fda4af;
-                    font-size: 16px;
-                    font-weight: 800;
+                    color: #f4f4f5;
+                    font-size: 14.5px;
+                    font-weight: 700;
                     margin-left: 2px;
-                    font-family: 'JetBrains Mono', monospace;
+                    font-family: 'Jost', monospace;
                 }
 
-                /* B. BASE BUTTON STYLING */
+                /* B. BASE BUTTON STYLING (Projects Hub Style) */
                 .gt-hud-btn {
-                    height: 52px;
-                    background: rgba(15, 23, 42, 0.95);
-                    border-radius: 10px;
-                    color: #f8fafc;
+                    height: 44px;
+                    background: #181818;
+                    border: 1px solid #333333;
+                    border-radius: 8px;
+                    color: #f4f4f5;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     cursor: pointer;
                     outline: none;
-                    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
-                    backdrop-filter: blur(8px);
-                    -webkit-backdrop-filter: blur(8px);
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.03);
+                    backdrop-filter: blur(12px);
+                    -webkit-backdrop-filter: blur(12px);
                     transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
                     position: relative;
+                    font-family: 'Jost', sans-serif;
                 }
 
                 .gt-hud-btn:hover {
-                    transform: translateY(-2px) scale(1.04);
+                    background: #242424;
+                    border-color: #38bdf8;
+                    box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+                    transform: translateY(-1px);
                 }
 
                 .gt-hud-btn:active {
-                    transform: translateY(1px) scale(0.96);
+                    transform: translateY(1px);
                 }
 
                 /* QUEST BUTTON */
                 .gt-hud-btn-quest {
-                    padding: 0 24px;
-                    border: 2.5px solid #38bdf8;
-                    font-size: 16.5px;
-                    font-weight: 800;
-                    letter-spacing: 0.4px;
+                    padding: 0 20px;
+                    font-size: 15px;
+                    font-weight: 700;
+                    letter-spacing: 0.3px;
+                    color: #f4f4f5;
                 }
 
                 .gt-hud-btn-quest:hover {
-                    background: #1e293b;
-                    border-color: #60a5fa;
-                    box-shadow: 0 0 18px rgba(56, 189, 248, 0.55);
+                    background: #222226;
+                    border-color: #38bdf8;
                     color: #ffffff;
                 }
 
                 /* ZOOM BUTTON */
                 .gt-hud-btn-zoom {
                     padding: 0 14px;
-                    border: 2.5px solid #64748b;
-                    font-size: 14px;
-                    font-weight: 700;
-                    color: #cbd5e1;
+                    font-size: 13.5px;
+                    font-weight: 600;
+                    color: #a1a1aa;
                     gap: 6px;
                 }
 
                 .gt-hud-btn-zoom:hover {
                     border-color: #38bdf8;
                     color: #38bdf8;
-                    background: #1e293b;
+                    background: #222226;
                 }
 
                 /* INVENTORY / BAG BUTTON */
                 .gt-hud-btn-bag {
-                    width: 52px;
-                    height: 52px;
-                    border: 2.5px solid #64748b;
+                    width: 44px;
+                    height: 44px;
                     padding: 0;
                 }
 
                 .gt-hud-btn-bag:hover {
-                    background: #1e293b;
-                    border-color: #f59e0b;
-                    box-shadow: 0 0 18px rgba(245, 158, 11, 0.5);
+                    background: #222226;
+                    border-color: #38bdf8;
                 }
 
                 .gt-hud-btn-bag:hover svg {
-                    stroke: #fde047;
+                    stroke: #38bdf8;
                 }
 
                 .gt-hud-bag-svg {
-                    stroke: #f8fafc;
+                    stroke: #e4e4e7;
                     transition: stroke 0.15s ease;
                 }
 
                 .gt-hud-badge {
                     position: absolute;
-                    top: -7px;
-                    right: -7px;
-                    min-width: 22px;
-                    height: 22px;
-                    padding: 0 5px;
-                    background: #10b981;
+                    top: -6px;
+                    right: -6px;
+                    min-width: 20px;
+                    height: 20px;
+                    padding: 0 4px;
+                    background: #0284c7;
                     color: #ffffff;
-                    border: 2px solid #0f172a;
-                    border-radius: 12px;
-                    font-size: 12px;
-                    font-weight: 900;
+                    border: 2px solid #181818;
+                    border-radius: 10px;
+                    font-size: 11px;
+                    font-weight: 800;
+                    font-family: 'Jost', sans-serif;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+                    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
                     transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
                 }
 
                 .gt-hud-badge.bump {
-                    transform: scale(1.35);
+                    transform: scale(1.3);
                 }
 
                 /* MENU / SETTINGS BUTTON (HAMBURGER BAR) */
                 .gt-hud-btn-menu {
-                    width: 52px;
-                    height: 52px;
-                    border: 2.5px solid #64748b;
+                    width: 44px;
+                    height: 44px;
                     padding: 0;
-                    color: #f8fafc;
+                    color: #e4e4e7;
                 }
 
                 .gt-hud-btn-menu:hover {
-                    background: #1e293b;
+                    background: #222226;
                     border-color: #38bdf8;
                     color: #38bdf8;
-                    box-shadow: 0 0 18px rgba(56, 189, 248, 0.5);
                 }
 
                 .gt-hud-btn-menu:hover svg {
@@ -238,7 +239,7 @@ export class HTMLGameHUD {
                 }
 
                 .gt-hud-menu-svg {
-                    stroke: #f8fafc;
+                    stroke: #e4e4e7;
                     transition: stroke 0.15s ease;
                 }
             </style>
@@ -260,7 +261,7 @@ export class HTMLGameHUD {
             <div class="gt-hud-right">
                 <!-- Inventory Bag Button -->
                 <button class="gt-hud-btn gt-hud-btn-bag" id="gt-hud-btn-bag" title="Buka Tas / Inventaris">
-                    <svg class="gt-hud-bag-svg" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="gt-hud-bag-svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M9 6V4.5A2.5 2.5 0 0 1 15 4.5V6" stroke="currentColor"></path>
                         <rect x="4" y="6" width="16" height="15" rx="2.5" stroke="currentColor"></rect>
                         <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor"></line>
@@ -271,7 +272,7 @@ export class HTMLGameHUD {
 
                 <!-- Menu Button (Hamburger Bar) -->
                 <button class="gt-hud-btn gt-hud-btn-menu" id="gt-hud-btn-menu" title="Menu Pengaturan (ESC)">
-                    <svg class="gt-hud-menu-svg" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg class="gt-hud-menu-svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="4" y1="6" x2="20" y2="6"></line>
                         <line x1="4" y1="12" x2="20" y2="12"></line>
                         <line x1="4" y1="18" x2="20" y2="18"></line>

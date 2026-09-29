@@ -36,7 +36,7 @@ export class QuestModal {
 
         this.dom.innerHTML = `
             <style>
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800&display=swap');
 
                 .gt-quest-overlay {
                     position: fixed;
@@ -45,13 +45,13 @@ export class QuestModal {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    background: rgba(0, 0, 0, 0.65);
-                    backdrop-filter: blur(8px);
-                    -webkit-backdrop-filter: blur(8px);
+                    background: rgba(0, 0, 0, 0.85);
+                    backdrop-filter: blur(12px);
+                    -webkit-backdrop-filter: blur(12px);
                     opacity: 1;
                     visibility: visible;
                     transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s ease;
-                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                    font-family: 'Jost', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                     padding: 16px;
                     box-sizing: border-box;
                     user-select: none;
@@ -67,33 +67,43 @@ export class QuestModal {
                 .gt-quest-card {
                     position: relative;
                     width: min(460px, 94vw);
-                    background: rgba(11, 26, 50, 0.98);
-                    border: 2px solid #38bdf8;
-                    border-radius: 6px;
-                    padding: 28px 32px 24px 32px;
-                    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 28px rgba(56, 189, 248, 0.28);
+                    background: #181818;
+                    border: 1px solid #333333;
+                    border-radius: 12px;
+                    padding: 24px 28px 20px;
+                    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.05);
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     text-align: left;
                     transform: scale(1);
-                    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+                    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
                 }
 
                 .gt-quest-overlay.hidden .gt-quest-card {
-                    transform: scale(0.92);
+                    transform: scale(0.95);
+                    opacity: 0;
                 }
 
                 /* Header: ACTIVE QUEST */
                 .gt-quest-header {
                     color: #38bdf8;
-                    font-size: 15px;
+                    font-size: 13.5px;
                     font-weight: 800;
-                    letter-spacing: 1.2px;
+                    letter-spacing: 1px;
                     text-align: center;
-                    text-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
-                    margin-bottom: 22px;
+                    margin-bottom: 18px;
                     text-transform: uppercase;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                .gt-quest-header::before, .gt-quest-header::after {
+                    content: '';
+                    width: 24px;
+                    height: 1px;
+                    background: rgba(56, 189, 248, 0.3);
                 }
 
                 /* Content Box */
@@ -102,21 +112,26 @@ export class QuestModal {
                     display: flex;
                     flex-direction: column;
                     gap: 8px;
-                    margin-bottom: 26px;
+                    margin-bottom: 22px;
+                    background: #141414;
+                    border: 1px solid #282828;
+                    border-radius: 8px;
+                    padding: 16px;
+                    box-sizing: border-box;
                 }
 
                 .gt-quest-title {
-                    font-size: 14px;
+                    font-size: 14.5px;
                     font-weight: 700;
-                    color: #f8fafc;
+                    color: #f4f4f5;
                     line-height: 1.4;
                     letter-spacing: 0.2px;
                 }
 
                 .gt-quest-desc {
-                    font-size: 12.5px;
+                    font-size: 13px;
                     font-weight: 400;
-                    color: #cbd5e1;
+                    color: #a1a1aa;
                     line-height: 1.6;
                     letter-spacing: 0.15px;
                 }
@@ -124,27 +139,27 @@ export class QuestModal {
                 /* Tombol Close [Q] */
                 .gt-quest-close-btn {
                     padding: 7px 22px;
-                    background: #1e293b;
-                    border: 1.5px solid #64748b;
-                    border-radius: 5px;
-                    color: #ffffff;
-                    font-size: 12px;
-                    font-weight: 700;
+                    background: #27272a;
+                    border: 1px solid #3f3f46;
+                    border-radius: 6px;
+                    color: #f4f4f5;
+                    font-size: 12.5px;
+                    font-weight: 600;
                     cursor: pointer;
                     outline: none;
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
                     transition: all 0.15s ease;
                     display: inline-flex;
                     align-items: center;
                     justify-content: center;
-                    letter-spacing: 0.2px;
+                    letter-spacing: 0.3px;
+                    font-family: 'Jost', sans-serif;
                 }
 
                 .gt-quest-close-btn:hover {
-                    background: #273549;
-                    border-color: #38bdf8;
+                    background: #323238;
+                    border-color: #52525b;
                     color: #ffffff;
-                    box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
                     transform: translateY(-1px);
                 }
 
@@ -154,14 +169,14 @@ export class QuestModal {
             </style>
 
             <div class="gt-quest-card" id="gt-quest-card">
-                <div class="gt-quest-header" id="gt-quest-header">ACTIVE QUEST</div>
+                <div class="gt-quest-header" id="gt-quest-header">Active Quest</div>
                 <div class="gt-quest-body">
                     <div class="gt-quest-title" id="gt-quest-title">Misi Pertama: Menjelajahi Dunia</div>
                     <div class="gt-quest-desc" id="gt-quest-desc">
                         Lompati platform, ambil koin berharga, dan temukan gerbang portal untuk lanjut ke level berikutnya!
                     </div>
                 </div>
-                <button class="gt-quest-close-btn" id="gt-quest-close-btn">Close [Q]</button>
+                <button class="gt-quest-close-btn" id="gt-quest-close-btn">Close (Q)</button>
             </div>
         `;
 
