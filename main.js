@@ -5,6 +5,7 @@ import { TitleScene }   from './src/scenes/TitleScene.js';
 import { GameScene }    from './src/scenes/GameScene.js';
 import { HongKongScene } from './src/scenes/HongKongScene.js';
 import { Scene3 }        from './src/scenes/Scene3.js';
+import { CustomWorldScene } from './src/scenes/CustomWorldScene.js';
 import { AboutScene }    from './src/scenes/AboutScene.js';
 import { CommandConsole } from './src/utils/CommandConsole.js';
 
@@ -45,7 +46,7 @@ const config = {
             debug: false
         }
     },
-    scene: [BootScene, TitleScene, GameScene, HongKongScene, Scene3, AboutScene]
+    scene: [BootScene, TitleScene, GameScene, HongKongScene, Scene3, CustomWorldScene, AboutScene]
 };
 
 if (document.fonts && document.fonts.ready) {

@@ -346,6 +346,7 @@ export class EngineMenuBar {
                         File <span style="font-size: 9px;">▾</span>
                     </button>
                     <div class="gt-mb-menu-dropdown-content" id="gt-mb-dd-file">
+                        <div class="gt-mb-menu-item" id="mi-new-world" style="color: #38bdf8; font-weight: 700;">🌍 + Buat Dunia Baru (Studio)</div>
                         <div class="gt-mb-menu-item" id="mi-hub">📁 Buka Project Hub</div>
                         <div class="gt-mb-menu-item" id="mi-save">💾 Simpan Progres (AutoSave)</div>
                         <div class="gt-mb-divider"></div>
@@ -452,6 +453,16 @@ export class EngineMenuBar {
         });
 
         // Dropdown actions: File
+        const miNewWorld = this.bar.querySelector('#mi-new-world');
+        if (miNewWorld) {
+            miNewWorld.addEventListener('click', () => {
+                fileDd.classList.remove('show');
+                if (CommandConsole.instance) {
+                    CommandConsole.instance.openSceneBuilder();
+                }
+            });
+        }
+
         this.bar.querySelector('#mi-hub').addEventListener('click', () => {
             if (this.scene && this.scene.scene) {
                 AudioManager.playClick();
@@ -542,9 +553,8 @@ export class EngineMenuBar {
         });
 
         this.bar.querySelector('#gt-mb-btn-create').addEventListener('click', () => {
-            CommandConsole.show();
             if (CommandConsole.instance) {
-                CommandConsole.instance.runCommand('/create');
+                CommandConsole.instance.openSceneBuilder();
             }
         });
 

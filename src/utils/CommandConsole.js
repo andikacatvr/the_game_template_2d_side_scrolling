@@ -14,6 +14,7 @@
 import { CodeInspector } from './CodeInspector.js';
 import { SceneTemplates } from './SceneTemplates.js';
 import { CONFIG_SKELETON } from '../../cerita.js';
+import { SceneBuilderModal } from '../ui/SceneBuilderModal.js';
 
 export class CommandConsole {
     static instance = null;
@@ -45,6 +46,7 @@ export class CommandConsole {
         this.colorIdx = 0;
 
         this.playerName = (CONFIG_SKELETON && CONFIG_SKELETON.player && CONFIG_SKELETON.player.nama) || 'Player';
+        this.sceneBuilderModal = null;
 
         this.initDOM();
         this.setupKeyListeners();
@@ -686,7 +688,7 @@ export class CommandConsole {
         });
         this.container.querySelector('#gt-btn-quick-create').addEventListener('click', () => {
             if (this.isMinimized) this.toggleMinimize(false);
-            this.runCommand('/create');
+            this.openSceneBuilder();
         });
         this.container.querySelector('#gt-btn-quick-help').addEventListener('click', () => {
             if (this.isMinimized) this.toggleMinimize(false);
@@ -1306,6 +1308,16 @@ export class CommandConsole {
         return scenes && scenes.length > 0 ? scenes[0] : null;
     }
 
+    openSceneBuilder() {
+        const activeScene = this.getActiveScene();
+        if (!this.sceneBuilderModal) {
+            this.sceneBuilderModal = new SceneBuilderModal(activeScene);
+        } else if (activeScene) {
+            this.sceneBuilderModal.scene = activeScene;
+        }
+        this.sceneBuilderModal.show();
+    }
+
     // ===============================================================
     // COMMAND EXECUTOR
     // ===============================================================
@@ -1384,7 +1396,8 @@ export class CommandConsole {
     // ===============================================================
     cmdHelp() {
         this.logInfo('<b>--- DAFTAR PERINTAH GAME CONSOLE ---</b>');
-        this.logInfo('• <span class="gt-c-yellow">/create [elemen]</span> : Ambil template kode game (scene, tile, player, npc, dialogue, quest, obstacle, parallax, cutscene, portal).');
+        this.logInfo('• <span class="gt-c-yellow">/create</span> : Buka <b>Scene & World Builder Studio visual</b> dengan live preview & tombol teleport instan!');
+        this.logInfo('• <span class="gt-c-yellow">/create [elemen]</span> : Ambil template kode game spesifik (tile, player, npc, quest, dll).');
         this.logInfo('• <span class="gt-c-yellow">/inspect</span> : Melihat kode logika game (jalan/lompat) berjalan secara real-time!');
         this.logInfo('• <span class="gt-c-yellow">/learn [topik]</span> : Melihat kode logika game (jump, move, npc, coin, hazard, zoom, portal).');
         this.logInfo('• <span class="gt-c-yellow">/tp &lt;scene&gt;</span> : Teleport scene (GameScene, Scene2, Scene3, TitleScene, dll).');
@@ -1405,49 +1418,17 @@ export class CommandConsole {
     }
 
     cmdCreate(topic) {
-        if (!topic) {
-            // Tampilkan Menu Pilihan Interaktif Seluruh Template
-            const card = document.createElement('div');
-            card.className = 'gt-code-card';
-            card.innerHTML = `
-                <div class="gt-code-header" style="color: #38bdf8; font-size: 15px;">
-                    <span>🛠️ <b>WORLD &amp; SCENE BUILDER</b></span>
-                    <span style="font-size: 11px; background: rgba(56, 189, 248, 0.2); color: #7dd3fc; padding: 2px 6px; border-radius: 4px;">/create</span>
-                </div>
-                <div class="gt-code-desc" style="color: #e2e8f0; font-size: 13.5px; margin: 6px 0 10px 0;">
-                    Pilih elemen template yang ingin kamu bangun. Klik salah satu tombol di bawah atau ketik <code>/create &lt;nama&gt;</code>:
-                </div>
-                <div class="gt-builder-chips">
-                    <button class="gt-chip-btn" data-create="scene">🌍 1 File Scene</button>
-                    <button class="gt-chip-btn" data-create="tile">🧱 Tile / Lantai</button>
-                    <button class="gt-chip-btn" data-create="player">🏃 Sprite Player</button>
-                    <button class="gt-chip-btn" data-create="npc">🧙 Karakter NPC</button>
-                    <button class="gt-chip-btn" data-create="dialogue">💬 Dialog Multi-NPC</button>
-                    <button class="gt-chip-btn" data-create="quest">📋 Misi / Quest</button>
-                    <button class="gt-chip-btn" data-create="obstacle">⚠️ Duri / Rintangan</button>
-                    <button class="gt-chip-btn" data-create="parallax">🌄 Parallax Background</button>
-                    <button class="gt-chip-btn" data-create="cutscene">🎬 Cutscene Kamera</button>
-                    <button class="gt-chip-btn" data-create="portal">🌀 Portal Aman Hub</button>
-                </div>
-            `;
-
-            // Bind click event untuk setiap chip tombol
-            card.querySelectorAll('.gt-chip-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const target = btn.getAttribute('data-create');
-                    this.runCommand(`/create ${target}`);
-                });
-            });
-
-            this.appendLog(card);
+        if (!topic || topic === 'world' || topic === 'scene' || topic === 'studio') {
+            this.logInfo('🛠️ <b>SCENE & WORLD BUILDER STUDIO DIBUKA!</b>');
+            this.logInfo('Pilih biome (Dirt, Salju, Gurun, Gua), rintangan (Lava, Air, Slime, Duri), lalu klik <b>[🚀 Buat & Masuki Dunia]</b> untuk bermain langsung.');
+            this.openSceneBuilder();
             return;
         }
 
         const data = SceneTemplates.get(topic);
         if (!data) {
-            const catalog = SceneTemplates.getCatalog().map(c => `<b>${c.key}</b>`).join(', ');
-            this.logInfo(`Template "<b>${this.escapeHTML(topic)}</b>" tidak ditemukan.`);
-            this.logInfo(`Pilihan yang tersedia: ${catalog}`);
+            this.logInfo(`Template "<b>${this.escapeHTML(topic)}</b>" tidak ditemukan. Membuka World Builder...`);
+            this.openSceneBuilder();
             return;
         }
 

@@ -1,5 +1,6 @@
 import { AudioManager } from '../utils/AudioManager.js';
 import { ExportGameModal } from './ExportGameModal.js';
+import { SceneBuilderModal } from './SceneBuilderModal.js';
 
 export class ProjectHubModal {
     constructor(scene, options = {}) {
@@ -590,16 +591,12 @@ export class ProjectHubModal {
                             <span class="gt-uhub-nav-icon">📖</span>
                             <span>Tutorials</span>
                         </div>
-                        <div class="gt-uhub-nav-item" data-tab="learn">
-                            <span class="gt-uhub-nav-icon">⚡</span>
-                            <span>Console Commands</span>
-                        </div>
 
                         <div class="gt-uhub-sidebar-divider"></div>
 
                         <div class="gt-uhub-sidebar-footer">
                             <b>Tips Developer:</b><br/>
-                            Tekan tombol <b>+/create</b> di dalam game untuk memanggil mantra kode secara langsung.
+                            Buka <b>Sandbox World (Scene 3)</b> untuk mulai merancang dan membangun dunia game kamu.
                         </div>
                     </div>
 
@@ -644,12 +641,47 @@ export class ProjectHubModal {
             this.renderTemplatesTab(container);
         } else if (this.currentTab === 'tutorials') {
             this.renderTutorialsTab(container);
-        } else if (this.currentTab === 'learn') {
-            this.renderLearnTab(container);
         }
     }
 
     renderProjectsTab(container) {
+        let customWorlds = [];
+        try {
+            const raw = localStorage.getItem('gt_custom_worlds');
+            if (raw) customWorlds = JSON.parse(raw);
+        } catch (e) {}
+
+        const customRowsHTML = customWorlds.map((cw, idx) => {
+            const biomeIcons = {
+                desert: '🏜️ Gurun',
+                snow: '❄️ Salju',
+                dirt: '🌲 Hutan',
+                cave: '🌋 Gua'
+            };
+            const biomeLabel = biomeIcons[cw.biome] || '🌍 Kustom';
+            return `
+                <div class="gt-uhub-row" data-name="${(cw.name || '').toLowerCase()}">
+                    <div class="gt-uhub-col-name">
+                        <span class="gt-uhub-project-name">
+                            <span>🎮</span> ${cw.name || 'Dunia Kreasiku'}
+                        </span>
+                        <span class="gt-uhub-project-path">Custom World (${cw.worldWidth || 1800}px)</span>
+                    </div>
+                    <div>
+                        <span class="gt-uhub-badge-tag gt-tag-sandbox">${biomeLabel}</span>
+                    </div>
+                    <div class="gt-uhub-badge-platform">
+                        <span>● Kreator Visual</span>
+                    </div>
+                    <div class="gt-uhub-col-action">
+                        <button class="gt-uhub-btn-open btn-open-custom-world" data-index="${idx}">
+                            <span>▶</span> Mainkan
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
         container.innerHTML = `
             <div class="gt-uhub-content-header">
                 <h1 class="gt-uhub-content-title">Projects</h1>
@@ -671,6 +703,8 @@ export class ProjectHubModal {
                     <div>Modified</div>
                     <div style="text-align: right;">Action</div>
                 </div>
+
+                ${customRowsHTML}
 
                 <!-- Row 1: Sandbox World (Scene 3) -->
                 <div class="gt-uhub-row" data-name="sandbox world scene 3">
@@ -705,12 +739,30 @@ export class ProjectHubModal {
             });
         });
 
-        // Launch buttons
-        container.querySelector('#btn-open-scene3').addEventListener('click', () => {
-            this.launchScene('Scene3');
+        // Launch buttons for custom worlds
+        container.querySelectorAll('.btn-open-custom-world').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.getAttribute('data-index'), 10);
+                const targetWorld = customWorlds[idx];
+                if (targetWorld) {
+                    this.hide();
+                    AudioManager.playClick();
+                    if (this.scene && this.scene.scene) {
+                        this.scene.scene.start('CustomWorldScene', { worldData: targetWorld });
+                    }
+                }
+            });
         });
 
-        // New Project Wizard
+        // Launch buttons
+        const btnScene3 = container.querySelector('#btn-open-scene3');
+        if (btnScene3) {
+            btnScene3.addEventListener('click', () => {
+                this.launchScene('Scene3');
+            });
+        }
+
+        // New Project Wizard / Visual Builder
         container.querySelector('#gt-uhub-btn-new-project').addEventListener('click', () => {
             this.showNewProjectWizard();
         });
@@ -832,83 +884,12 @@ export class ProjectHubModal {
         container.querySelector('#btn-tut-2').addEventListener('click', () => this.launchScene('Scene2'));
     }
 
-    renderLearnTab(container) {
-        container.innerHTML = `
-            <div class="gt-uhub-content-header">
-                <h1 class="gt-uhub-content-title">In-Game Console Commands</h1>
-                <p style="font-size: 13px; color: #888; margin: 0;">Daftar perintah mantra ajaib yang bisa diketik di Chat Bar saat bermain.</p>
-            </div>
-
-            <div class="gt-uhub-table-container">
-                <div class="gt-uhub-table-header">
-                    <div>Perintah</div>
-                    <div>Deskripsi</div>
-                    <div>Fungsi Edukasi</div>
-                </div>
-
-                <div class="gt-uhub-row">
-                    <div><code style="color: #38bdf8; font-weight: bold;">/create [elemen]</code></div>
-                    <div>Mengambil kumpulan template kode siap pakai (tile, npc, dialogue, quest, dll).</div>
-                    <div><span class="gt-uhub-badge-tag gt-tag-sandbox">World Builder</span></div>
-                </div>
-
-                <div class="gt-uhub-row">
-                    <div><code style="color: #f59e0b; font-weight: bold;">/inspect</code></div>
-                    <div>Membuka slider live kecepatan, gravitasi, dan melacak baris kode secara real-time.</div>
-                    <div><span class="gt-uhub-badge-tag gt-tag-sample">Live Inspector</span></div>
-                </div>
-
-                <div class="gt-uhub-row">
-                    <div><code style="color: #34d399; font-weight: bold;">/tp &lt;scene&gt;</code></div>
-                    <div>Teleportasi instan antar scene (Scene1, Scene2, Scene3, Title).</div>
-                    <div><span class="gt-uhub-badge-tag gt-tag-tutorial">Navigation</span></div>
-                </div>
-
-                <div class="gt-uhub-row">
-                    <div><code style="color: #cbd5e1; font-weight: bold;">/speed &lt;angka&gt;</code></div>
-                    <div>Mengubah kecepatan lari karakter utama secara langsung.</div>
-                    <div><span class="gt-uhub-badge-tag" style="background:#262626; color:#aaa;">Variable</span></div>
-                </div>
-
-                <div class="gt-uhub-row">
-                    <div><code style="color: #cbd5e1; font-weight: bold;">/jump &lt;angka&gt;</code></div>
-                    <div>Mengubah daya lompat karakter utama secara langsung.</div>
-                    <div><span class="gt-uhub-badge-tag" style="background:#262626; color:#aaa;">Variable</span></div>
-                </div>
-            </div>
-        `;
-    }
 
     showNewProjectWizard() {
-        const wizard = document.createElement('div');
-        wizard.className = 'gt-uhub-wizard-overlay';
-        wizard.innerHTML = `
-            <div class="gt-uhub-wizard-card">
-                <h3 class="gt-uhub-wizard-title">➕ Buat Dunia / Scene Baru</h3>
-                <div class="gt-uhub-wizard-desc">
-                    Kamu bisa langsung membangun dunia baru di <b>Sandbox World (Scene 3)</b> menggunakan perintah <b>/create</b>, atau membuat file Scene terpisah.
-                    <br/><br/>
-                    <b>Pilihan Terbaik untuk Murid:</b>
-                    <ol style="margin: 8px 0 0 16px; padding: 0;">
-                        <li>Buka <b>Sandbox World (Scene 3)</b></li>
-                        <li>Ketik <b>/create tile</b> untuk buat lantai</li>
-                        <li>Ketik <b>/create npc</b> untuk tambah karakter</li>
-                    </ol>
-                </div>
-                <div class="gt-uhub-wizard-actions">
-                    <button class="gt-uhub-btn-cancel" id="btn-wizard-cancel">Tutup</button>
-                    <button class="gt-uhub-btn-primary" id="btn-wizard-go-sandbox">Buka Sandbox Sekarang ➔</button>
-                </div>
-            </div>
-        `;
-
-        this.overlay.querySelector('.gt-uhub-window').appendChild(wizard);
-
-        wizard.querySelector('#btn-wizard-cancel').addEventListener('click', () => wizard.remove());
-        wizard.querySelector('#btn-wizard-go-sandbox').addEventListener('click', () => {
-            wizard.remove();
-            this.launchScene('Scene3');
-        });
+        this.hide();
+        AudioManager.playClick();
+        const builder = new SceneBuilderModal(this.scene);
+        builder.show();
     }
 
     launchScene(sceneKey) {
