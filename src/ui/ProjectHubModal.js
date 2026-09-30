@@ -400,6 +400,15 @@ export class ProjectHubModal {
                     gap: 6px;
                 }
 
+                .gt-uhub-col-date {
+                    font-size: 12px;
+                    color: #94a3b8;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                }
+
                 .gt-uhub-badge-tag {
                     display: inline-block;
                     padding: 2px 8px;
@@ -732,6 +741,33 @@ export class ProjectHubModal {
     renderProjectsList(container) {
         const projects = ProjectManager.getProjects();
 
+        const formatDate = (proj) => {
+            let ts = proj.createdAt;
+            if (!ts && proj.id && proj.id.startsWith('proj_')) {
+                const parts = proj.id.split('_');
+                const parsed = parseInt(parts[1], 10);
+                if (!isNaN(parsed) && parsed > 1000000000000) {
+                    ts = parsed;
+                }
+            }
+            if (!ts) ts = Date.now();
+            try {
+                const d = new Date(ts);
+                const dateStr = d.toLocaleDateString('id-ID', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                });
+                const timeStr = d.toLocaleTimeString('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                return `${dateStr}, ${timeStr}`;
+            } catch {
+                return 'Hari ini';
+            }
+        };
+
         const projectRowsHTML = projects.map((proj) => {
             const scenesCount = (proj.scenes || []).length;
             const startScene = (proj.scenes || []).find(s => s.id === proj.startingSceneId) || (proj.scenes || [])[0];
@@ -745,8 +781,8 @@ export class ProjectHubModal {
                         </span>
                         <span class="gt-uhub-project-path">Start Level: ${startSceneName} • (${scenesCount} Scene)</span>
                     </div>
-                    <div class="gt-uhub-badge-platform">
-                        <span>● Project Game</span>
+                    <div class="gt-uhub-col-date">
+                        <span>📅</span> ${formatDate(proj)}
                     </div>
                     <div class="gt-uhub-col-action" style="display: flex; gap: 6px; justify-content: flex-end;">
                         <button class="gt-uhub-btn-open btn-open-project" data-id="${proj.id}" style="background: #1e293b; border-color: #0284c7; color: #38bdf8;">
@@ -783,7 +819,7 @@ export class ProjectHubModal {
             <div class="gt-uhub-table-container">
                 <div class="gt-uhub-table-header gt-uhub-cols-3">
                     <div>Project Name</div>
-                    <div>Status</div>
+                    <div>Date Created</div>
                     <div style="text-align: right;">Action</div>
                 </div>
 
@@ -797,8 +833,8 @@ export class ProjectHubModal {
                         </span>
                         <span class="gt-uhub-project-path">src/scenes/Scene3.js • Lab Koding Bebas</span>
                     </div>
-                    <div class="gt-uhub-badge-platform">
-                        <span>● Standalone</span>
+                    <div class="gt-uhub-col-date" style="color: #64748b;">
+                        <span>📦</span> Template Bawaan
                     </div>
                     <div class="gt-uhub-col-action">
                         <button class="gt-uhub-btn-open" id="btn-open-scene3">
