@@ -1080,7 +1080,7 @@ export class SceneBuilderModal {
             <div class="gt-sb-drawer">
                 <div class="gt-sb-drawer-header">
                     <div class="gt-sb-drawer-title">
-                        <span>🎒</span> <span>GROWTOPIA BACKPACK PALETTE</span>
+                        <span>🎒</span> <span>Object</span>
                         <span class="gt-sb-drawer-hint">Tarik item ke Kanvas / Hierarchy untuk meletakkannya!</span>
                     </div>
 
