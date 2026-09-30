@@ -55,8 +55,9 @@ export class CustomWorldScene extends Phaser.Scene {
         this.engineMenuBar.show(this);
 
         const worldWidth = this.worldData.worldWidth || 1800;
-        this.physics.world.setBounds(0, 0, worldWidth, 450);
-        this.cameras.main.setBounds(0, 0, worldWidth, 450);
+        const worldHeight = this.worldData.worldHeight || 850;
+        this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
+        this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
 
         // 2. Latar Belakang & Langit sesuai Biome
         this.setupSkyAndBackground(worldWidth);
@@ -207,12 +208,25 @@ export class CustomWorldScene extends Phaser.Scene {
             this.physics.add.existing(topTile, true);
             this.platforms.add(topTile);
 
-            // Bawah Tanah Solid
-            for (let dy = 32; groundY + dy <= 540; dy += 32) {
-                const subTile = this.add.rectangle(x, groundY + dy, 32, 32, subColor).setDepth(3);
+            // Bawah Tanah Solid: Subsoil Dirt -> Deep Cavern Stone -> Bedrock
+            const worldHeight = this.worldData.worldHeight || 850;
+            const maxSubY = worldHeight - 32;
+            for (let dy = 32; groundY + dy <= maxSubY; dy += 32) {
+                const curY = groundY + dy;
+                let tileColor = subColor;
+                if (curY > 650) {
+                    tileColor = 0x1e293b; // Deep slate stone
+                }
+                const subTile = this.add.rectangle(x, curY, 32, 32, tileColor).setDepth(3);
                 this.physics.add.existing(subTile, true);
                 this.platforms.add(subTile);
             }
+
+            // Bedrock Tak Tertembus di Dasar Dunia
+            const bedrockTile = this.add.rectangle(x, worldHeight - 16, 32, 32, 0x05070a).setDepth(4);
+            bedrockTile.setStrokeStyle(1.5, 0x1e293b);
+            this.physics.add.existing(bedrockTile, true);
+            this.platforms.add(bedrockTile);
         }
 
         // Rintangan Duri (Spikes) jika aktif (Snapped to 50px Grid)

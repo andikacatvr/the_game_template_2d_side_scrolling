@@ -28,7 +28,7 @@ export class SceneBuilderModal {
             hasCoins: true,
             hasPortal: true,
             worldWidth: 1800,
-            worldHeight: 450, // 9 rows of 50px: Row 0..8 is sky/air, Row 8 (y=400) is ground surface, Row 8..9 is subsoil
+            worldHeight: 850, // Expanded world height: Row 0..7 sky, Row 8 ground (400px), Rows 9..16 dirt, stone & bedrock
 
             // Entity Transforms (Snapped to 50px Grid)
             positions: {
@@ -473,9 +473,9 @@ export class SceneBuilderModal {
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    background: rgba(18, 18, 22, 0.75);
+                    background: rgba(18, 18, 22, 0.85);
                     backdrop-filter: blur(6px);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border: 1px solid rgba(255, 255, 255, 0.15);
                     padding: 3px 12px;
                     border-radius: 5px;
                     font-size: 9.5px;
@@ -721,7 +721,7 @@ export class SceneBuilderModal {
                     <button class="gt-sb-play-btn" id="gt-sb-btn-enter" title="Play &amp; Uji Level ini secara langsung!">
                         <span>▶ Play World</span>
                     </button>
-                    <button class="gt-sb-tool-toggle ${this.state.showGrid ? 'active' : ''}" id="gt-sb-btn-grid" title="Toggle Grid Miniatur Persegi 50px">
+                    <button class="gt-sb-tool-toggle ${this.state.showGrid ? 'active' : ''}" id="gt-sb-btn-grid" title="Toggle Grid Persegi 50px">
                         <span>⊞ Grid: ON</span>
                     </button>
                     <button class="gt-sb-tool-toggle ${this.state.showGizmos ? 'active' : ''}" id="gt-sb-btn-gizmo" title="Toggle Transform Gizmo">
@@ -768,18 +768,18 @@ export class SceneBuilderModal {
                     <!-- Top Left Badge -->
                     <div class="gt-sb-stage-badge-topleft">
                         <div class="gt-sb-live-dot"></div>
-                        <span class="gt-sb-stage-badge-title">SCENE VIEW (SQUARE 50px GRID)</span>
+                        <span class="gt-sb-stage-badge-title">SCENE VIEW (FULL VIEWPORT + BEDROCK)</span>
                     </div>
 
                     <!-- Top Right Badge -->
                     <div class="gt-sb-stage-badge-topright">
-                        <span id="gt-sb-grid-info">GRID: 50px PERSEGI | 36x9 TILES (1800x450)</span>
+                        <span id="gt-sb-grid-info">GRID: 50px PERSEGI | FULL DEPTH &amp; BEDROCK</span>
                     </div>
 
                     <!-- Bottom Scale Ruler Track -->
                     <div class="gt-sb-stage-ruler">
                         <div style="color: #38bdf8;"><span>🏁</span> <span>[x: 100, Col 2] SPAWN</span></div>
-                        <div style="color: #64748b;"><span>────── 50px SQUARE GRID TILE MAP (1800x450) ──────</span></div>
+                        <div style="color: #64748b;"><span>────── FULL VIEWPORT MAP (SKY ➔ GROUND ➔ BEDROCK) ──────</span></div>
                         <div style="color: #a855f7;"><span>🌀</span> <span>[x: 1700, Col 34] FINISH</span></div>
                     </div>
                 </div>
@@ -943,19 +943,19 @@ export class SceneBuilderModal {
                     <div class="gt-sb-card-title">🌐 WORLD SETTINGS</div>
                     <div class="gt-sb-prop-row">
                         <span class="gt-sb-prop-label">World Bounds</span>
-                        <span class="gt-sb-prop-val">1800 x 450 px</span>
-                    </div>
-                    <div class="gt-sb-prop-row">
-                        <span class="gt-sb-prop-label">Tile Grid Matrix</span>
-                        <span class="gt-sb-prop-val" style="color: #38bdf8;">36 Cols x 9 Rows</span>
+                        <span class="gt-sb-prop-val">1800 x ${this.state.worldHeight || 850} px</span>
                     </div>
                     <div class="gt-sb-prop-row">
                         <span class="gt-sb-prop-label">Grid Cell Type</span>
                         <span class="gt-sb-prop-val" style="color: #22c55e;">Square (50x50 px)</span>
                     </div>
                     <div class="gt-sb-prop-row">
-                        <span class="gt-sb-prop-label">Ground Baseline</span>
-                        <span class="gt-sb-prop-val">Row 8 (y: 400 px)</span>
+                        <span class="gt-sb-prop-label">Ground Surface</span>
+                        <span class="gt-sb-prop-val" style="color: #f59e0b;">Row 8 (y: 400 px)</span>
+                    </div>
+                    <div class="gt-sb-prop-row">
+                        <span class="gt-sb-prop-label">Bottom Layer</span>
+                        <span class="gt-sb-prop-val" style="color: #94a3b8;">⬛ BEDROCK (Indestructible)</span>
                     </div>
                     <div class="gt-sb-prop-row">
                         <span class="gt-sb-prop-label">Gravity Y</span>
@@ -1030,7 +1030,7 @@ export class SceneBuilderModal {
             inpY.addEventListener('input', (e) => {
                 const val = parseInt(e.target.value, 10);
                 if (!isNaN(val)) {
-                    obj.y = Math.max(50, Math.min(450, val));
+                    obj.y = Math.max(50, Math.min(850, val));
                     this.renderHierarchy();
                 }
             });
@@ -1179,23 +1179,26 @@ export class SceneBuilderModal {
                 const mouseY = e.clientY - rect.top;
 
                 const W = this.canvas.width;
-                const H = this.canvas.height;
                 const worldW = this.state.worldWidth || 1800;
-                const worldH = this.state.worldHeight || 450;
-                const scale = Math.min(W / worldW, (H - 24) / worldH);
-                const offsetX = Math.floor((W - worldW * scale) / 2);
-                const offsetY = Math.floor((H - worldH * scale) / 2);
+                const scale = W / worldW; // uniform 1:1 scale covering full width
 
-                const worldX = (mouseX - offsetX) / scale;
-                const worldY = (mouseY - offsetY) / scale;
+                const worldX = mouseX / scale;
+                const worldY = mouseY / scale;
 
-                if (worldX >= 0 && worldX <= worldW && worldY >= 0 && worldY <= worldH) {
-                    const col = Math.floor(worldX / 50);
-                    const row = Math.floor(worldY / 50);
+                const col = Math.floor(worldX / 50);
+                const row = Math.floor(worldY / 50);
+
+                if (col >= 0 && col < 36 && row >= 0) {
                     this.hoverTile = { col, row };
 
                     if (this.gridInfoEl) {
-                        this.gridInfoEl.textContent = `GRID: 50px SQUARE | TILE: [Col: ${col}, Row: ${row}] (${col * 50}, ${row * 50})`;
+                        let layerName = 'LANGIT (SKY)';
+                        if (row === 8) layerName = 'TANAH (SURFACE)';
+                        else if (row > 8 && row <= 11) layerName = 'SUBSOIL (DIRT)';
+                        else if (row > 11 && row < Math.floor(this.canvas.height / (50 * scale)) - 1) layerName = 'CAVERN (STONE)';
+                        else if (row >= Math.floor(this.canvas.height / (50 * scale)) - 1) layerName = 'BEDROCK';
+
+                        this.gridInfoEl.textContent = `GRID: 50px | TILE: [Col: ${col}, Row: ${row}] | LAYER: ${layerName}`;
                     }
                 } else {
                     this.hoverTile = null;
@@ -1205,7 +1208,7 @@ export class SceneBuilderModal {
             this.canvas.addEventListener('mouseleave', () => {
                 this.hoverTile = null;
                 if (this.gridInfoEl) {
-                    this.gridInfoEl.textContent = `GRID: 50px PERSEGI | 36x9 TILES (1800x450)`;
+                    this.gridInfoEl.textContent = `GRID: 50px PERSEGI | FULL DEPTH & BEDROCK`;
                 }
             });
 
@@ -1214,12 +1217,9 @@ export class SceneBuilderModal {
                 const rect = this.canvas.getBoundingClientRect();
                 const mouseX = e.clientX - rect.left;
                 const W = this.canvas.width;
-                const H = this.canvas.height;
                 const worldW = this.state.worldWidth || 1800;
-                const worldH = this.state.worldHeight || 450;
-                const scale = Math.min(W / worldW, (H - 24) / worldH);
-                const offsetX = Math.floor((W - worldW * scale) / 2);
-                const worldClickX = (mouseX - offsetX) / scale;
+                const scale = W / worldW;
+                const worldClickX = mouseX / scale;
 
                 // Cari objek terdekat
                 let closestId = null;
@@ -1273,8 +1273,8 @@ export class SceneBuilderModal {
     resizeCanvas() {
         if (!this.canvas || !this.viewport) return;
         const rect = this.viewport.getBoundingClientRect();
-        this.canvas.width = Math.max(600, Math.floor(rect.width));
-        this.canvas.height = Math.max(200, Math.floor(rect.height));
+        this.canvas.width = Math.max(800, Math.floor(rect.width));
+        this.canvas.height = Math.max(300, Math.floor(rect.height));
     }
 
     executeEnterWorld() {
@@ -1285,6 +1285,7 @@ export class SceneBuilderModal {
             biome: this.state.biome,
             timeOfDay: this.state.timeOfDay,
             worldWidth: this.state.worldWidth || 1800,
+            worldHeight: this.state.worldHeight || 850,
             hasLava: this.state.hasLava,
             hasWater: this.state.hasWater,
             hasSpikes: this.state.hasSpikes,
@@ -1318,7 +1319,7 @@ export class SceneBuilderModal {
     }
 
     // ===============================================================
-    // TRUE MINIATURE MAP ENGINE (1:1 SCALE WORLD REPRESENTATION)
+    // TRUE MINIATURE MAP ENGINE (FULL VIEWPORT DEPTH & BEDROCK)
     // ===============================================================
     startPreviewLoop() {
         if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
@@ -1339,31 +1340,32 @@ export class SceneBuilderModal {
         const H = this.canvas.height;
         const t = this.animTime;
 
-        // 1. UNIFORM SCALE UNTUK MEMASTIKAN GRID 100% PERSEGI (SQUARE 1:1)
+        // 1. UNIFORM SCALE SEHINGGA MENUTUPI PENUH TINGGI DAN LEBAR (NO VOID!)
         const worldW = this.state.worldWidth || 1800;
-        const worldH = this.state.worldHeight || 450;
-        // Skala tunggal uniform untuk X dan Y agar kotak persegi tidak melar/lonjong
-        const scale = Math.min(W / worldW, (H - 24) / worldH);
-        const offsetX = Math.floor((W - worldW * scale) / 2);
-        const offsetY = Math.floor((H - worldH * scale) / 2);
+        // Skala uniform berdasarkan lebar dunia:
+        const scale = W / worldW;
+        const cellSize = 50 * scale; // Ukuran kotak persegi 100% 1:1
+
+        // Jumlah baris vertikal yang menutupi seluruh tinggi kanvas H
+        const totalRows = Math.max(14, Math.ceil(H / cellSize));
+        this.state.worldHeight = totalRows * 50;
 
         // Helper fungsi pemetaan koordinat dunia ke kanvas
-        const toX = (wx) => offsetX + wx * scale;
-        const toY = (wy) => offsetY + wy * scale;
-        const cellSize = 50 * scale; // Ukuran kotak persegi
+        const toX = (wx) => wx * scale;
+        const toY = (wy) => wy * scale;
 
-        // Ground walking baseline tepat di Row 8 (y = 400px), lapisan tanah bawah hingga Row 9 (y = 450px)
+        // Ground walking baseline tepat di Row 8 (y = 400px)
+        const groundRow = 8;
         const groundY = toY(400);
-        const worldBottomY = toY(450);
+
+        // Bedrock di baris paling bawah yang mengisi dasar viewport kanvas
+        const bedrockRow = totalRows - 1;
+        const bedrockY = toY(bedrockRow * 50);
 
         ctx.clearRect(0, 0, W, H);
 
-        // Background Backdrop Luar Dunia
-        ctx.fillStyle = '#09090b';
-        ctx.fillRect(0, 0, W, H);
-
-        // 2. SKY GRADIENT BERDASARKAN BIOME (Dibatasi di dalam bounds world 1800x450)
-        let skyGradient = ctx.createLinearGradient(0, toY(0), 0, groundY);
+        // 2. SKY GRADIENT MEMBENTANG PENUH DARI ATAS (Row 0) SAMPAI GROUND (Row 8) (NO VOID AT TOP!)
+        let skyGradient = ctx.createLinearGradient(0, 0, 0, groundY);
         if (this.state.biome === 'snow') {
             skyGradient.addColorStop(0, '#0369a1');
             skyGradient.addColorStop(0.65, '#38bdf8');
@@ -1383,9 +1385,9 @@ export class SceneBuilderModal {
             skyGradient.addColorStop(1, '#7dd3fc');
         }
         ctx.fillStyle = skyGradient;
-        ctx.fillRect(toX(0), toY(0), worldW * scale, 450 * scale);
+        ctx.fillRect(0, 0, W, groundY);
 
-        // 3. CELESTIAL SUN / MOON (Lingkaran Sempurna berkat Uniform Scale)
+        // 3. CELESTIAL SUN / MOON (Lingkaran Sempurna)
         if (this.state.biome !== 'cave') {
             const sunX = toX(280);
             const sunY = toY(80);
@@ -1403,7 +1405,7 @@ export class SceneBuilderModal {
             ctx.stroke();
         }
 
-        // 4. PARALLAX SILHOUETTE MOUNTAINS (Proporsional sesuai Grid)
+        // 4. PARALLAX SILHOUETTE MOUNTAINS (Di atas garis tanah)
         ctx.fillStyle = this.state.biome === 'cave' ? '#111827' : (this.state.biome === 'desert' ? '#92400e' : '#1e293b');
         ctx.globalAlpha = 0.55;
         for (let x = 0; x < worldW + 200; x += 150) {
@@ -1416,19 +1418,23 @@ export class SceneBuilderModal {
         }
         ctx.globalAlpha = 1.0;
 
-        // 5. TERRAIN MEDAN (TANAH SOLID, JURANG AIR, JURANG LAVA)
-        let surfaceColor = '#15803d'; // Forest
-        let subColor = '#78350f';
+        // 5. PENENTUAN WARNA BIOME STRATA
+        let surfaceColor = '#15803d'; // Forest rumput
+        let dirtColor = '#78350f';    // Subsoil cokelat
+        let stoneColor = '#334155';   // Deep cavern slate stone
 
         if (this.state.biome === 'snow') {
             surfaceColor = '#f1f5f9';
-            subColor = '#334155';
+            dirtColor = '#475569';
+            stoneColor = '#1e293b';
         } else if (this.state.biome === 'desert') {
             surfaceColor = '#f59e0b';
-            subColor = '#b45309';
+            dirtColor = '#b45309';
+            stoneColor = '#292524';
         } else if (this.state.biome === 'cave') {
             surfaceColor = '#374151';
-            subColor = '#111827';
+            dirtColor = '#1f2937';
+            stoneColor = '#0f172a';
         }
 
         // Zona Bahaya Snap Presisi Grid 50px:
@@ -1439,52 +1445,131 @@ export class SceneBuilderModal {
         const lavaStart = 1000;
         const lavaEnd = 1150;
 
-        // Gambar Ground Baseline per 50px Tile
+        // Kedalaman Kolam Cairan (Menghujam ke dalam tanah sampai Row 11)
+        const poolDepthRow = Math.min(11, bedrockRow - 1);
+        const poolBottomY = toY(poolDepthRow * 50 + 50);
+
+        // 6. MENGGAMBAR LAPISAN BAWAH TANAH (STRATA GEOLOGI LENGKAP: DIRT ➔ STONE ➔ BEDROCK)
         for (let gx = 0; gx < worldW; gx += 50) {
+            const col = Math.floor(gx / 50);
             const rx = toX(gx);
-            const rw = cellSize + 0.5; // anti gap artifact
+            const rw = cellSize + 0.5;
+
             const inWater = this.state.hasWater && gx >= waterStart && gx < waterEnd;
             const inLava = this.state.hasLava && gx >= lavaStart && gx < lavaEnd;
 
-            if (inWater) {
-                // Kolam Air Miniatur
-                const waveY = groundY + Math.sin(t * 3 + gx * 0.05) * 3;
-                ctx.fillStyle = '#0284c7';
-                ctx.fillRect(rx, waveY, rw, worldBottomY - waveY);
-                // Busa ombak air
-                ctx.fillStyle = '#7dd3fc';
-                ctx.fillRect(rx, waveY, rw, 3);
-                continue;
+            // Gambar Strata dari Row 8 hingga totalRows
+            for (let r = groundRow; r < totalRows; r++) {
+                const ry = toY(r * 50);
+                const rh = cellSize + 0.5;
+
+                // A. KASUS JURANG CAIRAN (Row 8 s/d poolDepthRow)
+                if (r <= poolDepthRow) {
+                    if (inWater) {
+                        // Kolam Air Dalam
+                        const waveY = (r === groundRow) ? (groundY + Math.sin(t * 3 + gx * 0.05) * 3) : ry;
+                        ctx.fillStyle = '#0284c7';
+                        ctx.fillRect(rx, waveY, rw, rh + (ry - waveY));
+                        if (r === groundRow) {
+                            ctx.fillStyle = '#7dd3fc';
+                            ctx.fillRect(rx, waveY, rw, 3);
+                        }
+                        continue;
+                    }
+                    if (inLava) {
+                        // Kolam Lava Dalam
+                        const lavaWaveY = (r === groundRow) ? (groundY + Math.sin(t * 2 + gx * 0.08) * 2) : ry;
+                        ctx.fillStyle = '#ef4444';
+                        ctx.fillRect(rx, lavaWaveY, rw, rh + (ry - lavaWaveY));
+                        if (r === groundRow) {
+                            ctx.fillStyle = '#f97316';
+                            ctx.fillRect(rx, lavaWaveY, rw, 3);
+                            // Gelembung mini lava
+                            const bubbleY = lavaWaveY - Math.abs(Math.sin(t * 4 + gx)) * 8;
+                            ctx.fillStyle = '#fbbf24';
+                            ctx.beginPath();
+                            ctx.arc(rx + rw / 2, bubbleY, 3, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                        continue;
+                    }
+                }
+
+                // B. ROW PALING DASAR (Row bedrockRow): BEDROCK TAK TERTEMBUS
+                if (r === bedrockRow) {
+                    // Balok Obsidian Gelap Tak Tertembus
+                    ctx.fillStyle = '#05070a';
+                    ctx.fillRect(rx, ry, rw, rh);
+
+                    // Pola Tekstur Bedrock Klasik (Bongkahan Slate & Garis Retak Basalt)
+                    ctx.fillStyle = '#0f172a';
+                    ctx.fillRect(rx + 3 * scale, ry + 3 * scale, rw - 6 * scale, rh - 6 * scale);
+
+                    ctx.fillStyle = '#1e293b';
+                    ctx.fillRect(rx + 8 * scale, ry + 8 * scale, 14 * scale, 14 * scale);
+                    ctx.fillRect(rx + rw - 22 * scale, ry + rh - 22 * scale, 14 * scale, 14 * scale);
+
+                    // Garis silang diagonal Bedrock
+                    ctx.strokeStyle = 'rgba(2, 6, 23, 0.9)';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(rx, ry);
+                    ctx.lineTo(rx + rw, ry + rh);
+                    ctx.moveTo(rx + rw, ry);
+                    ctx.lineTo(rx, ry + rh);
+                    ctx.stroke();
+
+                    ctx.strokeStyle = '#334155';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(rx, ry, rw, rh);
+                    continue;
+                }
+
+                // C. ROW 8: PERMUKAAN TANAH (SURFACE TURF)
+                if (r === groundRow) {
+                    ctx.fillStyle = surfaceColor;
+                    ctx.fillRect(rx, ry, rw, 14 * scale);
+                    ctx.fillStyle = dirtColor;
+                    ctx.fillRect(rx, ry + 14 * scale, rw, rh - 14 * scale);
+                    continue;
+                }
+
+                // D. ROW 9..11: LAPISAN TANAH BAWAH (SUBSURFACE DIRT)
+                if (r <= 11) {
+                    ctx.fillStyle = dirtColor;
+                    ctx.fillRect(rx, ry, rw, rh);
+                    // Bintik kerikil tanah
+                    if ((col + r) % 3 === 0) {
+                        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+                        ctx.fillRect(rx + 12 * scale, ry + 14 * scale, 6 * scale, 4 * scale);
+                    }
+                    continue;
+                }
+
+                // E. ROW 12..bedrockRow-1: LAPISAN BATU GUA DALAM (CAVERN SLATE STONE)
+                ctx.fillStyle = stoneColor;
+                ctx.fillRect(rx, ry, rw, rh);
+
+                // Urat Mineral Kristal Terpendam di Dalam Batu
+                if ((col * 7 + r * 13) % 9 === 0) {
+                    ctx.fillStyle = '#38bdf8'; // Urat Kristal Safir
+                    ctx.beginPath();
+                    ctx.arc(rx + rw / 2, ry + rh / 2, 4 * scale, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if ((col * 3 + r * 11) % 8 === 0) {
+                    ctx.fillStyle = '#f59e0b'; // Urat Emas Tambang
+                    ctx.fillRect(rx + rw / 2 - 3 * scale, ry + rh / 2 - 3 * scale, 6 * scale, 6 * scale);
+                }
             }
-
-            if (inLava) {
-                // Kolam Lava Miniatur
-                const lavaWaveY = groundY + Math.sin(t * 2 + gx * 0.08) * 2;
-                ctx.fillStyle = '#ef4444';
-                ctx.fillRect(rx, lavaWaveY, rw, worldBottomY - lavaWaveY);
-                // Permukaan membara
-                ctx.fillStyle = '#f97316';
-                ctx.fillRect(rx, lavaWaveY, rw, 3);
-
-                // Gelembung mini lava
-                const bubbleY = lavaWaveY - Math.abs(Math.sin(t * 4 + gx)) * 8;
-                ctx.fillStyle = '#fbbf24';
-                ctx.beginPath();
-                ctx.arc(rx + rw / 2, bubbleY, 3, 0, Math.PI * 2);
-                ctx.fill();
-                continue;
-            }
-
-            // Lantai Padat (Permukaan Biome di Row 8)
-            ctx.fillStyle = surfaceColor;
-            ctx.fillRect(rx, groundY, rw, 12 * scale);
-
-            // Lapisan Bawah Tanah (Subsoil hingga Row 9)
-            ctx.fillStyle = subColor;
-            ctx.fillRect(rx, groundY + 12 * scale, rw, worldBottomY - (groundY + 12 * scale));
         }
 
-        // 6. PIJAKAN MELAYANG (FLOATING PLATFORMS 100% SNAPPED TO GRID LINES)
+        // Label Penanda Bedrock di Kiri Bawah
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = `bold ${Math.max(8, 10 * scale)}px 'JetBrains Mono'`;
+        ctx.textAlign = 'left';
+        ctx.fillText('⬛ BEDROCK (DASAR BUMI TAK TERTEMBUS)', toX(20), bedrockY + cellSize * 0.65);
+
+        // 7. PIJAKAN MELAYANG (FLOATING PLATFORMS TEPAT DI ATAS GRID LINES)
         if (this.state.hasPlatforms) {
             const platforms = [
                 { x: 400, y: 300, w: 100 }, // Cols 8-10, Row 6 (2 tiles)
@@ -1524,7 +1609,7 @@ export class SceneBuilderModal {
             });
         }
 
-        // 7. RINTANGAN DURI (SPIKES TEPAT 1 TILE 50px DI ATAS GROUND)
+        // 8. RINTANGAN DURI (SPIKES TEPAT 1 TILE 50px DI ATAS GROUND ROW 8)
         if (this.state.hasSpikes) {
             const spikeXList = [350, 800, 1300]; // Cols 7, 16, 26
             spikeXList.forEach(spX => {
@@ -1548,7 +1633,7 @@ export class SceneBuilderModal {
             });
         }
 
-        // 8. PETI HARTA (CHEST BERDIRI DI ATAS GROUND ROW 8)
+        // 9. PETI HARTA (CHEST BERDIRI DI ATAS GROUND ROW 8)
         if (this.state.hasChest) {
             const chestObj = this.state.positions.chest || { x: 750 };
             const cx = toX(chestObj.x);
@@ -1572,7 +1657,7 @@ export class SceneBuilderModal {
             ctx.fillText('CHEST', cx + cw / 2, cy - 4);
         }
 
-        // 9. KARAKTER NPC (PENJELAJAH ROH MENAPAK DI ATAS GROUND ROW 8)
+        // 10. KARAKTER NPC (PENJELAJAH ROH MENAPAK DI ATAS GROUND ROW 8)
         if (this.state.hasNpc) {
             const npcObj = this.state.positions.npc || { x: 300 };
             const npcX = toX(npcObj.x);
@@ -1604,7 +1689,7 @@ export class SceneBuilderModal {
             ctx.fillText('[E]', npcX, bubbleY - 1);
         }
 
-        // 10. MONSTER SLIME (PATROLI MELOMPAT TEPAT DI ATAS GROUND ROW 8)
+        // 11. MONSTER SLIME (PATROLI MELOMPAT TEPAT DI ATAS GROUND ROW 8)
         if (this.state.hasSlime) {
             const slimeObj = this.state.positions.slime || { x: 500 };
             const slimeBaseX = toX(slimeObj.x);
@@ -1628,7 +1713,7 @@ export class SceneBuilderModal {
             ctx.fillRect(smX + 2, smY - 3, 3, 4);
         }
 
-        // 11. MONSTER SKELETON (PATROLI BERJALAN TEPAT DI ATAS GROUND ROW 8)
+        // 12. MONSTER SKELETON (PATROLI BERJALAN TEPAT DI ATAS GROUND ROW 8)
         if (this.state.hasSkeleton) {
             const skelObj = this.state.positions.skeleton || { x: 1500 };
             const skelBaseX = toX(skelObj.x);
@@ -1650,7 +1735,7 @@ export class SceneBuilderModal {
             ctx.fillRect(skX + 2, skY + 6, 3, 3);
         }
 
-        // 12. PLAYER AVATAR (TITIK START SPAWN KAKI MENAPAK GROUND ROW 8)
+        // 13. PLAYER AVATAR (TITIK START SPAWN KAKI MENAPAK GROUND ROW 8)
         const playerObj = this.state.positions.player || { x: 100 };
         const playerX = toX(playerObj.x);
         const pw = Math.max(10, 24 * scale);
@@ -1675,7 +1760,7 @@ export class SceneBuilderModal {
         ctx.textAlign = 'center';
         ctx.fillText('SPAWN', playerX, playerY - 4);
 
-        // 13. FINISH EXIT PORTAL (PUSARAN PORTAL BERDIRI TEPAT DI ATAS GROUND ROW 8)
+        // 14. FINISH EXIT PORTAL (PUSARAN PORTAL BERDIRI TEPAT DI ATAS GROUND ROW 8)
         if (this.state.hasPortal) {
             const portalObj = this.state.positions.portal || { x: 1700 };
             const portalX = toX(portalObj.x);
@@ -1716,7 +1801,7 @@ export class SceneBuilderModal {
         }
 
         // ===============================================================
-        // 14. MINIATURE SQUARE GRID OVERLAY (100% KOTAK PERSEGI PRESISI)
+        // 15. MINIATURE SQUARE GRID OVERLAY (100% KOTAK PERSEGI PRESISI)
         // ===============================================================
         if (this.state.showGrid) {
             ctx.save();
@@ -1729,8 +1814,8 @@ export class SceneBuilderModal {
 
                 ctx.strokeStyle = isMajor ? 'rgba(56, 189, 248, 0.28)' : 'rgba(255, 255, 255, 0.08)';
                 ctx.beginPath();
-                ctx.moveTo(rx, toY(0));
-                ctx.lineTo(rx, worldBottomY);
+                ctx.moveTo(rx, 0);
+                ctx.lineTo(rx, H);
                 ctx.stroke();
 
                 // Indikator Kolom Grid pada Garis Utama
@@ -1738,18 +1823,23 @@ export class SceneBuilderModal {
                     ctx.fillStyle = 'rgba(56, 189, 248, 0.75)';
                     ctx.font = "8.5px 'JetBrains Mono'";
                     ctx.textAlign = 'center';
-                    ctx.fillText(`${gx}`, rx, toY(0) + 12);
+                    ctx.fillText(`${gx}`, rx, 14);
                 }
             }
 
-            // Garis Horizontal (Setiap 50px dari y = 0 hingga 450)
-            // Memastikan JARAK ANTARA GARIS HORIZONTAL == JARAK ANTARA GARIS VERTIKAL (PERSEGI!)
-            for (let gy = 0; gy <= worldH; gy += 50) {
-                const ry = toY(gy);
-                const isGroundLine = (gy === 400); // Garis lantai dasar (Row 8)
+            // Garis Horizontal (Setiap 50px dari Row 0 sampai totalRows)
+            for (let r = 0; r <= totalRows; r++) {
+                const ry = toY(r * 50);
+                if (ry > H) break;
+
+                const isGroundLine = (r === groundRow);
+                const isBedrockLine = (r === bedrockRow);
 
                 if (isGroundLine) {
-                    ctx.strokeStyle = 'rgba(34, 197, 94, 0.5)'; // Garis Hijau Penanda Lantai Utama
+                    ctx.strokeStyle = 'rgba(34, 197, 94, 0.65)'; // Hijau Lantai
+                    ctx.lineWidth = 1.5;
+                } else if (isBedrockLine) {
+                    ctx.strokeStyle = 'rgba(148, 163, 184, 0.5)'; // Abu-abu Bedrock
                     ctx.lineWidth = 1.5;
                 } else {
                     ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
@@ -1757,30 +1847,25 @@ export class SceneBuilderModal {
                 }
 
                 ctx.beginPath();
-                ctx.moveTo(toX(0), ry);
-                ctx.lineTo(toX(worldW), ry);
+                ctx.moveTo(0, ry);
+                ctx.lineTo(W, ry);
                 ctx.stroke();
 
-                // Indikator Baris
-                if (gy === 400) {
+                // Indikator Label Baris
+                if (isGroundLine) {
                     ctx.fillStyle = '#22c55e';
-                    ctx.font = "bold 8px 'JetBrains Mono'";
+                    ctx.font = "bold 8.5px 'JetBrains Mono'";
                     ctx.textAlign = 'left';
-                    ctx.fillText('GROUND (y:400)', toX(0) + 4, ry - 3);
+                    ctx.fillText('GROUND (Row 8: y=400)', 8, ry - 3);
                 }
             }
-
-            // Outline Batas Dunia 1800x450
-            ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
-            ctx.lineWidth = 1.5;
-            ctx.strokeRect(toX(0), toY(0), worldW * scale, worldH * scale);
 
             // Hover Cursor Tile Highlight (Kotak Persegi yang Sedang Disorot Mouse)
             if (this.hoverTile) {
                 const hx = toX(this.hoverTile.col * 50);
                 const hy = toY(this.hoverTile.row * 50);
 
-                ctx.fillStyle = 'rgba(56, 189, 248, 0.18)';
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
                 ctx.fillRect(hx, hy, cellSize, cellSize);
 
                 ctx.strokeStyle = '#38bdf8';
@@ -1794,7 +1879,7 @@ export class SceneBuilderModal {
         }
 
         // ===============================================================
-        // 15. UNITY TRANSFORM GIZMOS & SELECTION HIGHLIGHT
+        // 16. UNITY TRANSFORM GIZMOS & SELECTION HIGHLIGHT
         // ===============================================================
         if (this.state.showGizmos && this.state.selectedId) {
             const selId = this.state.selectedId;
