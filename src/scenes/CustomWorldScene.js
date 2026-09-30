@@ -104,6 +104,110 @@ export class CustomWorldScene extends Phaser.Scene {
     // 1. LATAR BELAKANG & LANGIT (100% IDENTIK DENGAN PREVIEW)
     // ===============================================================
     setupSkyAndBackground(worldWidth) {
+        if (this.worldData.biome === 'hongkong') {
+            this.cameras.main.setBackgroundColor('#070e1b');
+
+            const W = Math.max(3200, worldWidth + 1400);
+            const H = 500;
+
+            // LAYER 1: Langit Badai & Siluet Gunung Victoria Peak
+            this.layer1Sky = this.add.tileSprite(worldWidth / 2, 230, W, H, 'hk_layer_1_sky')
+                .setScrollFactor(0, 0)
+                .setDepth(-20);
+
+            // LAYER 2: Gedung Pencakar Langit Hong Kong
+            this.layer2City = this.add.tileSprite(worldWidth / 2, 230, W, H, 'hk_layer_2_city')
+                .setScrollFactor(0, 0)
+                .setDepth(-15);
+
+            // LAYER 3: Kapal Star Ferry yang Mengapung & Berlayar
+            const boatStartX = Math.min(1480, worldWidth - 200);
+            const boatStartY = 356;
+            this.boat = this.add.image(boatStartX, boatStartY, 'hk_layer_3_boat')
+                .setScrollFactor(0.40, 0)
+                .setDepth(-12);
+
+            // Animasi Ombak Naik-Turun
+            this.tweens.add({
+                targets: this.boat,
+                y: boatStartY - 5,
+                duration: 1600,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+
+            // Animasi Goyang Miring
+            this.tweens.add({
+                targets: this.boat,
+                angle: { from: -1.2, to: 1.2 },
+                duration: 2600,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+
+            // Animasi Berlayar Halus
+            this.tweens.add({
+                targets: this.boat,
+                x: boatStartX - 180,
+                duration: 28000,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Linear'
+            });
+
+            // LAYER 4: Ombak Laut Bergulung
+            this.layer4Waves = this.add.tileSprite(worldWidth / 2, 230, W, H, 'hk_layer_4_waves')
+                .setScrollFactor(0, 0)
+                .setDepth(-10);
+
+            // LAYER 5: Bebatuan Dermaga & Pijakan
+            this.layer5Pier = this.add.tileSprite(worldWidth / 2, 230, W, H, 'hk_layer_5_pier')
+                .setScrollFactor(1.0, 1.0)
+                .setDepth(-5);
+
+            // Efek Cuaca: Butir Hujan Diagonal
+            this.rainDrops = [];
+            const maxDrops = 75;
+            for (let i = 0; i < maxDrops; i++) {
+                const drop = this.add.image(
+                    Phaser.Math.Between(0, worldWidth),
+                    Phaser.Math.Between(-50, 450),
+                    'fx_rain_drop'
+                ).setDepth(18).setAlpha(Phaser.Math.FloatBetween(0.35, 0.75));
+                drop.speedY = Phaser.Math.Between(480, 680);
+                drop.speedX = Phaser.Math.Between(-120, -70);
+                this.rainDrops.push(drop);
+            }
+
+            // Kilat Petir Halus
+            this.lightningOverlay = this.add.rectangle(worldWidth / 2, 225, worldWidth + 2400, 600, 0xffffff, 0)
+                .setDepth(20)
+                .setScrollFactor(0);
+
+            const scheduleLightning = () => {
+                const delay = Phaser.Math.Between(12000, 20000);
+                this.time.delayedCall(delay, () => {
+                    if (!this.lightningOverlay || !this.scene.isActive()) return;
+                    this.lightningOverlay.setAlpha(0.28);
+                    this.time.delayedCall(60, () => {
+                        this.lightningOverlay.setAlpha(0.04);
+                        this.time.delayedCall(80, () => {
+                            this.lightningOverlay.setAlpha(0.42);
+                            this.time.delayedCall(90, () => {
+                                this.lightningOverlay.setAlpha(0);
+                                scheduleLightning();
+                            });
+                        });
+                    });
+                });
+            };
+            scheduleLightning();
+
+            return;
+        }
+
         let topColor = 0x0369a1;
         let midColor = 0x38bdf8;
         let botColor = 0x7dd3fc;
@@ -152,6 +256,14 @@ export class CustomWorldScene extends Phaser.Scene {
         skyGraphics.fillGradientStyle(topColor, topColor, botColor, botColor, 1);
         skyGraphics.fillRect(-1000, 0, worldWidth + 2000, 400);
 
+        // Lapisan Gunung Salju untuk Biome Snow (bg_scene1)
+        if (this.worldData.biome === 'snow') {
+            this.snowBg = this.add.tileSprite(worldWidth / 2, 225, worldWidth + 1000, 450, 'bg_scene1')
+                .setScrollFactor(0.15, 0)
+                .setDepth(0.5)
+                .setAlpha(0.85);
+        }
+
         // Matahari / Bulan dekoratif di langit (Posisi x=275, y=80 presisi dengan cincin aura bercahaya)
         if (this.worldData.biome !== 'cave') {
             const isNight = this.worldData.timeOfDay === 'night';
@@ -190,6 +302,10 @@ export class CustomWorldScene extends Phaser.Scene {
             surfaceColor = 0x374151; // Batuan obsidian
             dirtColor = 0x1f2937;
             stoneColor = 0x0f172a;
+        } else if (this.worldData.biome === 'hongkong') {
+            surfaceColor = 0x1e293b; // Batuan slate dermaga
+            dirtColor = 0x0f172a;    // Pondasi dermaga gelap
+            stoneColor = 0x020617;   // Dasar teluk
         }
 
         // Peta Petak 1x1 Spesifik untuk Air dan Lava
@@ -891,7 +1007,35 @@ export class CustomWorldScene extends Phaser.Scene {
         }, 3200);
     }
 
-    update() {
+    update(time, delta) {
+        // 1. Gerakan Parallax Hong Kong Mengikuti Kamera & Ombak Berayun Dinamis
+        const camX = this.cameras.main.scrollX;
+        if (this.layer1Sky) {
+            this.layer1Sky.tilePositionX = camX * 0.08;
+        }
+        if (this.layer2City) {
+            this.layer2City.tilePositionX = camX * 0.25;
+        }
+        if (this.layer4Waves) {
+            this.layer4Waves.tilePositionX = camX * 0.65 + Math.sin(((time || 0) * 0.0016)) * 8;
+        }
+
+        // 2. Simulasi Butir Hujan Jatuh Menukik Miring
+        if (this.rainDrops) {
+            const dt = (delta || 16) / 1000;
+            const wW = this.worldData.worldWidth || 1800;
+            for (let i = 0; i < this.rainDrops.length; i++) {
+                const drop = this.rainDrops[i];
+                drop.y += drop.speedY * dt;
+                drop.x += drop.speedX * dt;
+
+                if (drop.y > 450) {
+                    drop.y = Phaser.Math.Between(-30, -5);
+                    drop.x = Phaser.Math.Between(0, wW + 200);
+                }
+            }
+        }
+
         if (!this.player || !this.player.body || this.isGameOver) return;
 
         // Kontrol Gerak Karakter

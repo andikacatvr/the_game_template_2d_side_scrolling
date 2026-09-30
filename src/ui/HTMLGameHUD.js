@@ -1032,7 +1032,8 @@ export class HTMLGameHUD {
                 desert: '🏜️',
                 snow: '❄️',
                 dirt: '🌲',
-                cave: '🌋'
+                cave: '🌋',
+                hongkong: '🏙️'
             };
             return {
                 icon: biomeIcons[biome] || '🎮',

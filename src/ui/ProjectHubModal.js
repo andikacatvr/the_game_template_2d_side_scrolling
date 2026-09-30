@@ -897,7 +897,8 @@ export class ProjectHubModal {
             desert: '🏜️ Gurun',
             snow: '❄️ Salju',
             dirt: '🌲 Hutan',
-            cave: '🌋 Gua'
+            cave: '🌋 Gua',
+            hongkong: '🏙️ Hong Kong (Parallax)'
         };
 
         const sceneRowsHTML = (project.scenes || []).map((scene, idx) => {

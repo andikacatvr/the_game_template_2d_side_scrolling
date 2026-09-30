@@ -84,6 +84,24 @@ export class SceneBuilderModal {
         this.boxSelection = null; // { startCol, startRow, endCol, endRow }
         this.isBoxSelecting = false;
 
+        // Preload Aset Parallax Background untuk Live Canvas Preview 1:1
+        this.bgImages = {};
+        const bgAssets = {
+            snow_mountain: '/bg_scene1.png',
+            hk_sky: '/assets/hongkong/layer_1_sky_500.png',
+            hk_city: '/assets/hongkong/layer_2_city_500.png',
+            hk_boat: '/assets/hongkong/layer_3_boat_scaled.png',
+            hk_waves: '/assets/hongkong/layer_4_waves_500.png',
+            hk_pier: '/assets/hongkong/layer_5_pier_500.png'
+        };
+        Object.entries(bgAssets).forEach(([key, src]) => {
+            const img = new Image();
+            img.src = src;
+            img.onload = () => {
+                this.bgImages[key] = img;
+            };
+        });
+
         this.createDOM();
         this.preventAllOverlaps();
     }
@@ -996,6 +1014,9 @@ export class SceneBuilderModal {
                         </button>
                         <button class="gt-sb-biome-btn ${this.state.biome === 'cave' ? 'active' : ''}" data-biome="cave">
                             <span>🌋 Gua</span>
+                        </button>
+                        <button class="gt-sb-biome-btn ${this.state.biome === 'hongkong' ? 'active' : ''}" data-biome="hongkong">
+                            <span>🏙️ Hong Kong (Parallax)</span>
                         </button>
                     </div>
                     <button class="gt-sb-btn-close" id="gt-sb-close-btn" title="Tutup Studio (ESC)">✕</button>
@@ -2576,31 +2597,116 @@ export class SceneBuilderModal {
 
         ctx.clearRect(0, 0, W, H);
 
-        // 2. SKY GRADIENT BERSIH (MEMBENTANG PENUH DARI ROW 0 KE ROW 8)
-        let skyGradient = ctx.createLinearGradient(0, 0, 0, groundY);
-        if (this.state.biome === 'snow') {
-            skyGradient.addColorStop(0, '#0369a1');
-            skyGradient.addColorStop(0.65, '#38bdf8');
-            skyGradient.addColorStop(1, '#bae6fd');
-        } else if (this.state.biome === 'desert') {
-            skyGradient.addColorStop(0, '#78350f');
-            skyGradient.addColorStop(0.45, '#d97706');
-            skyGradient.addColorStop(1, '#fde68a');
-        } else if (this.state.biome === 'cave') {
-            skyGradient.addColorStop(0, '#090d16');
-            skyGradient.addColorStop(0.7, '#111827');
-            skyGradient.addColorStop(1, '#1e1b4b');
+        // 2. BACKGROUND & PARALLAX LAYERS (100% 1:1 DENGAN GAME ENGINE)
+        if (this.state.biome === 'hongkong') {
+            // Latar Belakang Gelap Victoria Harbour
+            ctx.fillStyle = '#070e1b';
+            ctx.fillRect(0, 0, W, H);
+
+            // LAYER 1: Langit Badai & Siluet Gunung Victoria Peak
+            if (this.bgImages.hk_sky && this.bgImages.hk_sky.complete) {
+                ctx.drawImage(this.bgImages.hk_sky, 0, 0, W, groundY + 120);
+            }
+
+            // LAYER 2: Gedung Pencakar Langit Hong Kong
+            if (this.bgImages.hk_city && this.bgImages.hk_city.complete) {
+                ctx.drawImage(this.bgImages.hk_city, 0, 0, W, groundY + 120);
+            }
+
+            // LAYER 3: Kapal Star Ferry (Mengapung & Berlayar Halus)
+            if (this.bgImages.hk_boat && this.bgImages.hk_boat.complete) {
+                ctx.save();
+                const boatBaseX = toX(Math.min(1480, (this.state.worldWidth || 1800) - 200));
+                const boatCruise = Math.sin(t * 0.15) * (15 * scale);
+                const boatBob = Math.sin(t * 1.8) * (3 * scale);
+                const boatTilt = Math.sin(t * 1.2) * 0.02;
+                const bx = boatBaseX - boatCruise;
+                const by = toY(356) + boatBob;
+                ctx.translate(bx, by);
+                ctx.rotate(boatTilt);
+                const bw = this.bgImages.hk_boat.width * scale;
+                const bh = this.bgImages.hk_boat.height * scale;
+                ctx.drawImage(this.bgImages.hk_boat, -bw / 2, -bh / 2, bw, bh);
+                ctx.restore();
+            }
+
+            // LAYER 4: Ombak Laut Bergulung
+            if (this.bgImages.hk_waves && this.bgImages.hk_waves.complete) {
+                const waveShiftY = Math.sin(t * 2.2) * (2 * scale);
+                ctx.drawImage(this.bgImages.hk_waves, 0, waveShiftY, W, groundY + 120);
+            }
+
+            // LAYER 5: Bebatuan Dermaga / Pier
+            if (this.bgImages.hk_pier && this.bgImages.hk_pier.complete) {
+                ctx.drawImage(this.bgImages.hk_pier, 0, 0, W, H);
+            }
+
+            // Efek Cuaca: Butir Rintik Hujan Menukik
+            ctx.save();
+            ctx.strokeStyle = 'rgba(125, 211, 252, 0.45)';
+            ctx.lineWidth = Math.max(1, 1.3 * scale);
+            for (let i = 0; i < 45; i++) {
+                const rx = (i * 47 + t * 280) % W;
+                const ry = (i * 31 + t * 650) % H;
+                ctx.beginPath();
+                ctx.moveTo(rx, ry);
+                ctx.lineTo(rx - 8 * scale, ry + 16 * scale);
+                ctx.stroke();
+            }
+            // Flash Kilat Petir Sesekali
+            const flashCycle = Math.sin(t * 0.55);
+            if (flashCycle > 0.985) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+                ctx.fillRect(0, 0, W, H);
+            }
+            ctx.restore();
         } else {
-            // dirt / forest
-            skyGradient.addColorStop(0, '#0369a1');
-            skyGradient.addColorStop(0.55, '#38bdf8');
-            skyGradient.addColorStop(1, '#7dd3fc');
+            // SKY GRADIENT BERSIH (MEMBENTANG PENUH DARI ROW 0 KE ROW 8)
+            let skyGradient = ctx.createLinearGradient(0, 0, 0, groundY);
+            if (this.state.biome === 'snow') {
+                skyGradient.addColorStop(0, '#0369a1');
+                skyGradient.addColorStop(0.65, '#38bdf8');
+                skyGradient.addColorStop(1, '#bae6fd');
+            } else if (this.state.biome === 'desert') {
+                skyGradient.addColorStop(0, '#78350f');
+                skyGradient.addColorStop(0.45, '#d97706');
+                skyGradient.addColorStop(1, '#fde68a');
+            } else if (this.state.biome === 'cave') {
+                skyGradient.addColorStop(0, '#090d16');
+                skyGradient.addColorStop(0.7, '#111827');
+                skyGradient.addColorStop(1, '#1e1b4b');
+            } else {
+                // dirt / forest
+                skyGradient.addColorStop(0, '#0369a1');
+                skyGradient.addColorStop(0.55, '#38bdf8');
+                skyGradient.addColorStop(1, '#7dd3fc');
+            }
+            ctx.fillStyle = skyGradient;
+            ctx.fillRect(0, 0, W, groundY);
+
+            // Lapisan Gunung Salju untuk Biome Snow (bg_scene1)
+            if (this.state.biome === 'snow' && this.bgImages.snow_mountain && this.bgImages.snow_mountain.complete) {
+                ctx.save();
+                ctx.globalAlpha = 0.85;
+                ctx.drawImage(this.bgImages.snow_mountain, 0, 0, W, groundY + 40);
+                ctx.restore();
+
+                // Efek Salju Melayang
+                ctx.save();
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+                for (let i = 0; i < 30; i++) {
+                    const sx = (i * 53 + Math.sin(t + i) * 15) % W;
+                    const sy = (i * 29 + t * 50) % H;
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, 1.8 * scale + (i % 2), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
         }
-        ctx.fillStyle = skyGradient;
-        ctx.fillRect(0, 0, W, groundY);
 
         // 3. CELESTIAL SUN / MOON (Lingkaran Sempurna)
-        if (this.state.biome !== 'cave') {
+        if (this.state.biome !== 'cave' && this.state.biome !== 'hongkong') {
             const sunX = toX(275);
             const sunY = toY(80);
             const sunR = Math.max(14, 26 * scale);
@@ -2634,6 +2740,10 @@ export class SceneBuilderModal {
             surfaceColor = '#374151';
             dirtColor = '#1f2937';
             stoneColor = '#0f172a';
+        } else if (this.state.biome === 'hongkong') {
+            surfaceColor = '#1e293b';
+            dirtColor = '#0f172a';
+            stoneColor = '#020617';
         }
 
         // Peta Petak 1x1 Spesifik [col, row] untuk Cairan (Water & Lava)
