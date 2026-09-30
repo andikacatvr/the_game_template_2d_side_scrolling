@@ -639,7 +639,6 @@ export class CommandConsole {
                     <div class="gt-header-actions">
                         <button class="gt-btn-tool" id="gt-btn-quick-create" style="background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%); font-weight: 800;" title="Buka World & Scene Builder">Create</button>
                         <button class="gt-btn-tool" id="gt-btn-quick-inspect" style="background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);">Inspect</button>
-                        <button class="gt-btn-tool" id="gt-btn-quick-learn">Learn</button>
                         <button class="gt-btn-tool" id="gt-btn-quick-help">Help</button>
                         <button class="gt-btn-tool" id="gt-btn-clear">Clear</button>
                         <button class="gt-btn-tool" id="gt-btn-minimize" title="Minimize / Perkecil chat box">−</button>
@@ -650,7 +649,7 @@ export class CommandConsole {
                 <div class="gt-console-logs" id="gt-logs"></div>
 
                 <div class="gt-console-input-bar">
-                    <input type="text" class="gt-input" id="gt-input-cmd" placeholder="Type a chat message or command (/inspect, /help, /learn, /tp, /god)..." autocomplete="off" />
+                    <input type="text" class="gt-input" id="gt-input-cmd" placeholder="Type a chat message or command (/create, /inspect, /help, /tp, /god)..." autocomplete="off" />
                     <button class="gt-btn-send" id="gt-btn-send">SEND ↵</button>
                 </div>
 
@@ -692,10 +691,6 @@ export class CommandConsole {
         this.container.querySelector('#gt-btn-quick-help').addEventListener('click', () => {
             if (this.isMinimized) this.toggleMinimize(false);
             this.runCommand('/help');
-        });
-        this.container.querySelector('#gt-btn-quick-learn').addEventListener('click', () => {
-            if (this.isMinimized) this.toggleMinimize(false);
-            this.runCommand('/learn');
         });
         this.container.querySelector('#gt-btn-send').addEventListener('click', () => this.handleSubmit());
         this.toggleBtn.addEventListener('click', () => this.close());
@@ -1298,7 +1293,7 @@ export class CommandConsole {
     }
 
     printWelcome() {
-        this.logPlayerChat('System', '\\9Ketik pesan biasa atau gunakan command (\\w/help\\9, \\w/learn\\9, \\w/tp\\9, \\w/god\\9).');
+        this.logPlayerChat('System', '\\9Ketik pesan biasa atau gunakan command (\\w/help\\9, \\w/inspect\\9, \\w/tp\\9, \\w/god\\9).');
     }
 
     getActiveScene() {
@@ -1398,7 +1393,6 @@ export class CommandConsole {
         this.logInfo('• <span class="gt-c-yellow">/create</span> : Buka <b>Scene & World Builder Studio visual</b> dengan live preview & tombol teleport instan!');
         this.logInfo('• <span class="gt-c-yellow">/create [elemen]</span> : Ambil template kode game spesifik (tile, player, npc, quest, dll).');
         this.logInfo('• <span class="gt-c-yellow">/inspect</span> : Melihat kode logika game (jalan/lompat) berjalan secara real-time!');
-        this.logInfo('• <span class="gt-c-yellow">/learn [topik]</span> : Melihat kode logika game (jump, move, npc, coin, hazard, zoom, portal).');
         this.logInfo('• <span class="gt-c-yellow">/tp &lt;scene&gt;</span> : Teleport scene (GameScene, Scene2, Scene3, TitleScene, dll).');
         this.logInfo('• <span class="gt-c-yellow">/speed &lt;angka&gt;</span> : Ubah kecepatan lari karakter secara live (contoh: /speed 350).');
         this.logInfo('• <span class="gt-c-yellow">/jump &lt;angka&gt;</span> : Ubah kekuatan lompat karakter secara live (contoh: /jump 450).');
@@ -1487,25 +1481,7 @@ export class CommandConsole {
     }
 
     cmdLearn(topic) {
-        const data = CodeInspector.get(topic);
-        if (!data) {
-            const list = CodeInspector.getAllTopics().join(', ');
-            this.logInfo(`Topik "<b>${this.escapeHTML(topic || '')}</b>" tidak ditemukan. Pilihan topik: <span class="gt-c-cyan">${list}</span>`);
-            return;
-        }
-
-        const card = document.createElement('div');
-        card.className = 'gt-code-card';
-        card.innerHTML = `
-            <div class="gt-code-header">
-                <span>${data.title}</span>
-                <span style="font-size: 11px; color: #94a3b8;">${data.file}</span>
-            </div>
-            <div class="gt-code-desc">${data.description}</div>
-            <pre class="gt-code-content"><code>${this.escapeHTML(data.code)}</code></pre>
-        `;
-
-        this.appendLog(card);
+        this.logInfo('💡 Pembelajaran logika kode kini tersedia interaktif melalui tombol <b>Inspect</b> (Live Code Realtime) dan <b>Projects Hub</b> (Tutorials).');
     }
 
     cmdTeleport(sceneName) {
