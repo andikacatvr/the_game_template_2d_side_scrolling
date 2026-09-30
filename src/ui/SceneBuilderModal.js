@@ -7,7 +7,7 @@ export class SceneBuilderModal {
         this._isOpen = false;
         this.animFrameId = null;
 
-        // Default State
+        // Default State (100% matched with CustomWorldScene)
         this.state = {
             name: 'Gurun Api Tengkorak',
             biome: 'desert', // 'dirt' | 'snow' | 'desert' | 'cave'
@@ -44,21 +44,20 @@ export class SceneBuilderModal {
                 .gt-sb-overlay {
                     position: fixed;
                     inset: 0;
+                    width: 100vw;
+                    height: 100vh;
                     z-index: 99998;
                     display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    background: rgba(0, 0, 0, 0.88);
-                    backdrop-filter: blur(14px);
-                    -webkit-backdrop-filter: blur(14px);
+                    flex-direction: column;
+                    background: #0f0f11;
                     opacity: 1;
                     visibility: visible;
-                    transition: opacity 0.2s ease, visibility 0.2s ease;
+                    transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s ease;
                     font-family: 'Jost', -apple-system, BlinkMacSystemFont, sans-serif;
-                    padding: 16px;
                     box-sizing: border-box;
                     user-select: none;
                     -webkit-user-select: none;
+                    overflow: hidden;
                 }
 
                 .gt-sb-overlay.hidden {
@@ -67,126 +66,195 @@ export class SceneBuilderModal {
                     pointer-events: none;
                 }
 
-                .gt-sb-card {
-                    position: relative;
-                    width: min(840px, 96vw);
-                    max-height: min(640px, 94vh);
-                    background: #181818;
-                    border: 1px solid #333333;
-                    border-radius: 12px;
-                    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.05);
-                    display: flex;
-                    flex-direction: column;
-                    overflow: hidden;
-                    animation: sbEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-                }
-
-                @keyframes sbEnter {
-                    0% { transform: scale(0.96); opacity: 0; }
-                    100% { transform: scale(1); opacity: 1; }
-                }
-
-                .gt-sb-overlay.hidden .gt-sb-card {
-                    transform: scale(0.96);
-                    opacity: 0;
-                }
-
-                /* Header */
-                .gt-sb-header {
-                    height: 48px;
-                    background: #1e1e1e;
-                    border-bottom: 1px solid #2d2d2d;
+                /* =============================================================== */
+                /* 1. TOP HEADER STUDIO TOOLBAR                                    */
+                /* =============================================================== */
+                .gt-sb-topbar {
+                    height: 54px;
+                    background: #16161a;
+                    border-bottom: 1px solid #27272a;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    padding: 0 20px;
+                    padding: 0 18px;
                     flex-shrink: 0;
+                    gap: 16px;
+                    z-index: 10;
+                    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
                 }
 
-                .gt-sb-header-left {
+                .gt-sb-topbar-left {
                     display: flex;
                     align-items: center;
-                    gap: 10px;
+                    gap: 12px;
+                    min-width: 280px;
                 }
 
-                .gt-sb-badge-icon {
-                    width: 24px;
-                    height: 24px;
+                .gt-sb-brand {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                .gt-sb-brand-icon {
+                    width: 28px;
+                    height: 28px;
                     background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
                     border-radius: 6px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 13px;
+                    font-size: 15px;
+                    color: #fff;
                     box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
                 }
 
-                .gt-sb-title {
-                    font-size: 14.5px;
-                    font-weight: 700;
+                .gt-sb-brand-title {
+                    font-size: 15px;
+                    font-weight: 800;
                     color: #ffffff;
                     letter-spacing: 0.3px;
                 }
 
-                .gt-sb-logo-tag {
-                    font-size: 10px;
-                    font-weight: 700;
-                    padding: 2px 7px;
-                    background: rgba(56, 189, 248, 0.15);
-                    color: #38bdf8;
-                    border: 1px solid rgba(56, 189, 248, 0.3);
-                    border-radius: 4px;
+                .gt-sb-input-wrap {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    background: #111113;
+                    border: 1px solid #2d2d32;
+                    border-radius: 6px;
+                    padding: 2px 4px 2px 10px;
                 }
 
-                .gt-sb-close-btn {
-                    width: 28px;
-                    height: 28px;
-                    border-radius: 6px;
+                .gt-sb-input-name {
                     background: transparent;
                     border: none;
-                    color: #9e9e9e;
+                    outline: none;
+                    color: #f4f4f5;
+                    font-size: 12.5px;
+                    font-weight: 600;
+                    width: 170px;
+                    font-family: inherit;
+                }
+
+                .gt-sb-btn-random {
+                    background: #242429;
+                    border: 1px solid #38383e;
+                    color: #e4e4e7;
+                    font-size: 11px;
+                    font-weight: 700;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    transition: all 0.12s ease;
+                }
+
+                .gt-sb-btn-random:hover {
+                    background: #323238;
+                    color: #ffffff;
+                }
+
+                /* Biome Selector Toolbar */
+                .gt-sb-topbar-center {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    background: #111113;
+                    padding: 4px 6px;
+                    border-radius: 8px;
+                    border: 1px solid #27272a;
+                }
+
+                .gt-sb-biome-btn {
+                    padding: 5px 12px;
+                    border-radius: 5px;
+                    border: 1px solid transparent;
+                    background: transparent;
+                    color: #a1a1aa;
+                    font-size: 12px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    transition: all 0.15s ease;
+                    font-family: inherit;
+                }
+
+                .gt-sb-biome-btn:hover {
+                    background: #1e1e24;
+                    color: #f4f4f5;
+                }
+
+                .gt-sb-biome-btn.active {
+                    background: #172554;
+                    border-color: #38bdf8;
+                    color: #38bdf8;
+                    box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+                }
+
+                .gt-sb-topbar-right {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+
+                .gt-sb-btn-enter {
+                    background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #0284c7 100%);
+                    border: 1px solid #38bdf8;
+                    color: #ffffff;
+                    padding: 7px 18px;
+                    border-radius: 6px;
+                    font-size: 12.5px;
+                    font-weight: 800;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.15s ease;
+                    box-shadow: 0 4px 16px rgba(2, 132, 199, 0.45);
+                    font-family: inherit;
+                }
+
+                .gt-sb-btn-enter:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.6);
+                    filter: brightness(1.1);
+                }
+
+                .gt-sb-btn-close {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 6px;
+                    background: #1f1f23;
+                    border: 1px solid #2d2d32;
+                    color: #a1a1aa;
                     font-size: 15px;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    transition: all 0.15s ease;
+                    transition: all 0.12s ease;
                 }
 
-                .gt-sb-close-btn:hover {
+                .gt-sb-btn-close:hover {
                     background: #e11d48;
+                    border-color: #f43f5e;
                     color: #ffffff;
                 }
 
-                /* Body Studio */
-                .gt-sb-body {
-                    padding: 18px 20px;
-                    overflow-y: auto;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 16px;
-                    background: #141414;
+                /* =============================================================== */
+                /* 2. MINIATURE MAP VIEWPORT (THE CENTRAL STAGE)                    */
+                /* =============================================================== */
+                .gt-sb-stage-viewport {
                     flex: 1;
-                }
-
-                .gt-sb-body::-webkit-scrollbar {
-                    width: 6px;
-                }
-                .gt-sb-body::-webkit-scrollbar-thumb {
-                    background: #282828;
-                    border-radius: 3px;
-                }
-
-                /* Live Canvas Preview */
-                .gt-sb-preview-wrap {
                     position: relative;
-                    width: 100%;
-                    height: 185px;
-                    background: #0f172a;
-                    border: 1px solid #333333;
-                    border-radius: 10px;
+                    background: #09090b;
                     overflow: hidden;
-                    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-bottom: 1px solid #27272a;
                 }
 
                 #gt-sb-canvas {
@@ -195,153 +263,132 @@ export class SceneBuilderModal {
                     display: block;
                 }
 
-                .gt-sb-preview-badge {
+                /* HUD Overlay Badges on Top of Miniature Map */
+                .gt-sb-stage-badge-topleft {
                     position: absolute;
-                    top: 10px;
-                    left: 12px;
-                    padding: 3px 8px;
-                    background: rgba(0, 0, 0, 0.65);
-                    border: 1px solid rgba(255, 255, 255, 0.15);
-                    border-radius: 4px;
-                    font-size: 10px;
-                    font-weight: 700;
-                    color: #38bdf8;
-                    letter-spacing: 0.5px;
+                    top: 14px;
+                    left: 18px;
                     display: flex;
                     align-items: center;
-                    gap: 5px;
-                    backdrop-filter: blur(4px);
+                    gap: 8px;
+                    background: rgba(15, 15, 18, 0.85);
+                    backdrop-filter: blur(8px);
+                    border: 1px solid rgba(255, 255, 255, 0.15);
+                    padding: 5px 12px;
+                    border-radius: 6px;
+                    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+                    pointer-events: none;
                 }
 
-                .gt-sb-preview-badge::before {
-                    content: '';
-                    width: 6px;
-                    height: 6px;
+                .gt-sb-live-dot {
+                    width: 7px;
+                    height: 7px;
                     border-radius: 50%;
                     background: #22c55e;
-                    box-shadow: 0 0 6px #22c55e;
+                    box-shadow: 0 0 8px #22c55e;
+                    animation: pulseLive 1.4s infinite;
                 }
 
-                /* Settings Row */
-                .gt-sb-row {
-                    display: grid;
-                    grid-template-columns: 1.1fr 1.4fr;
-                    gap: 14px;
+                @keyframes pulseLive {
+                    0%, 100% { opacity: 1; transform: scale(1); }
+                    50% { opacity: 0.4; transform: scale(0.85); }
                 }
 
-                @media (max-width: 680px) {
-                    .gt-sb-row {
-                        grid-template-columns: 1fr;
-                    }
+                .gt-sb-stage-badge-title {
+                    font-size: 11px;
+                    font-weight: 800;
+                    color: #ffffff;
+                    letter-spacing: 0.4px;
+                    font-family: 'JetBrains Mono', monospace;
                 }
 
-                .gt-sb-section {
-                    background: #18181b;
-                    border: 1px solid #27272a;
-                    border-radius: 8px;
-                    padding: 12px 14px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
-                }
-
-                .gt-sb-section-title {
+                .gt-sb-stage-badge-topright {
+                    position: absolute;
+                    top: 14px;
+                    right: 18px;
+                    background: rgba(15, 15, 18, 0.85);
+                    backdrop-filter: blur(8px);
+                    border: 1px solid rgba(255, 255, 255, 0.15);
+                    padding: 5px 12px;
+                    border-radius: 6px;
                     font-size: 11px;
                     font-weight: 700;
-                    color: #94a3b8;
-                    letter-spacing: 0.8px;
-                    text-transform: uppercase;
+                    color: #38bdf8;
+                    font-family: 'JetBrains Mono', monospace;
+                    pointer-events: none;
+                }
+
+                /* Scale Ruler / Map Progress Track */
+                .gt-sb-stage-ruler {
+                    position: absolute;
+                    bottom: 12px;
+                    left: 18px;
+                    right: 18px;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
+                    background: rgba(15, 15, 18, 0.7);
+                    backdrop-filter: blur(6px);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    padding: 4px 14px;
+                    border-radius: 6px;
+                    font-size: 10px;
+                    font-family: 'JetBrains Mono', monospace;
+                    color: #94a3b8;
+                    pointer-events: none;
                 }
 
-                .gt-sb-input-wrap {
+                .gt-sb-ruler-tag {
                     display: flex;
-                    gap: 8px;
+                    align-items: center;
+                    gap: 5px;
                 }
 
-                .gt-sb-input {
-                    flex: 1;
-                    background: #121214;
-                    border: 1px solid #333338;
-                    border-radius: 6px;
-                    padding: 6px 10px;
-                    color: #f4f4f5;
-                    font-size: 13px;
-                    font-family: 'Jost', sans-serif;
-                    outline: none;
-                }
-
-                .gt-sb-input:focus {
-                    border-color: #38bdf8;
-                }
-
-                .gt-sb-btn-random {
-                    background: #27272a;
-                    border: 1px solid #3f3f46;
-                    color: #f4f4f5;
-                    padding: 6px 12px;
-                    border-radius: 6px;
-                    font-size: 12px;
-                    cursor: pointer;
-                    transition: all 0.15s ease;
-                }
-
-                .gt-sb-btn-random:hover {
-                    background: #323238;
-                    border-color: #52525b;
-                }
-
-                /* Biome Selector Grid */
-                .gt-sb-biomes {
-                    display: grid;
-                    grid-template-columns: repeat(4, 1fr);
-                    gap: 6px;
-                }
-
-                .gt-sb-biome-btn {
-                    background: #121214;
-                    border: 1px solid #2e2e33;
-                    border-radius: 6px;
-                    padding: 8px 4px;
-                    color: #a1a1aa;
-                    font-size: 11px;
-                    font-weight: 600;
-                    cursor: pointer;
+                /* =============================================================== */
+                /* 3. DOCKED GROWTOPIA BACKPACK DRAWER (BOTTOM)                     */
+                /* =============================================================== */
+                .gt-sb-drawer {
+                    height: 200px;
+                    background: #141416;
+                    border-top: 1px solid #27272a;
                     display: flex;
                     flex-direction: column;
+                    padding: 12px 20px;
+                    box-sizing: border-box;
+                    flex-shrink: 0;
+                    gap: 10px;
+                    z-index: 10;
+                }
+
+                .gt-sb-drawer-header {
+                    display: flex;
                     align-items: center;
-                    gap: 4px;
-                    transition: all 0.15s ease;
+                    justify-content: space-between;
+                    flex-shrink: 0;
                 }
 
-                .gt-sb-biome-btn:hover {
-                    background: #1f1f23;
-                    border-color: #3f3f46;
+                .gt-sb-drawer-title {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    font-size: 13px;
+                    font-weight: 800;
                     color: #ffffff;
+                    letter-spacing: 0.3px;
                 }
 
-                .gt-sb-biome-btn.active {
-                    background: #172554;
-                    border-color: #38bdf8;
-                    color: #38bdf8;
-                    box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
-                /* Backpack Categories Navigation (Growtopia Style) */
+                /* Backpack Category Tabs */
                 .gt-sb-category-bar {
                     display: flex;
                     align-items: center;
                     gap: 6px;
-                    margin-bottom: 10px;
-                    overflow-x: auto;
-                    padding-bottom: 2px;
                 }
 
                 .gt-sb-cat-btn {
                     padding: 5px 12px;
                     border-radius: 6px;
-                    background: #18181b;
-                    border: 1px solid #27272a;
+                    background: #1a1a1e;
+                    border: 1px solid #2c2c32;
                     color: #a1a1aa;
                     font-size: 11.5px;
                     font-weight: 700;
@@ -350,25 +397,24 @@ export class SceneBuilderModal {
                     align-items: center;
                     gap: 6px;
                     transition: all 0.15s ease;
-                    white-space: nowrap;
                     font-family: inherit;
                 }
 
                 .gt-sb-cat-btn:hover {
-                    background: #202024;
+                    background: #24242a;
                     color: #ffffff;
                     border-color: #3f3f46;
                 }
 
                 .gt-sb-cat-btn.active {
-                    background: #1e293b;
+                    background: #172554;
                     color: #38bdf8;
                     border-color: #38bdf8;
-                    box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+                    box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
                 }
 
                 .gt-sb-cat-count {
-                    font-size: 10px;
+                    font-size: 9.5px;
                     font-family: 'JetBrains Mono', monospace;
                     padding: 1px 5px;
                     border-radius: 4px;
@@ -383,54 +429,70 @@ export class SceneBuilderModal {
                     border-color: rgba(56, 189, 248, 0.3);
                 }
 
-                /* Palette Component Chips */
+                /* Backpack Slots Grid */
                 .gt-sb-palette-grid {
                     display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
                     gap: 8px;
+                    overflow-y: auto;
+                    flex: 1;
+                    padding-right: 4px;
+                }
+
+                .gt-sb-palette-grid::-webkit-scrollbar {
+                    width: 5px;
+                }
+                .gt-sb-palette-grid::-webkit-scrollbar-thumb {
+                    background: #27272a;
+                    border-radius: 3px;
                 }
 
                 .gt-sb-chip {
-                    background: #18181b;
-                    border: 1px solid #27272a;
+                    background: #1a1a1e;
+                    border: 1px solid #2a2a30;
                     border-radius: 7px;
-                    padding: 7px 10px;
+                    padding: 8px 12px;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
                     cursor: pointer;
                     transition: all 0.15s ease;
+                    height: 38px;
+                    box-sizing: border-box;
                 }
 
                 .gt-sb-chip:hover {
-                    background: #202024;
-                    border-color: #38383e;
+                    background: #24242a;
+                    border-color: #3f3f46;
+                    transform: translateY(-1px);
                 }
 
                 .gt-sb-chip.active {
-                    background: #13271d;
+                    background: #11261b;
                     border-color: #22c55e;
+                    box-shadow: 0 0 10px rgba(34, 197, 94, 0.15);
                 }
 
                 .gt-sb-chip-left {
                     display: flex;
                     align-items: center;
-                    gap: 7px;
+                    gap: 8px;
                     font-size: 12px;
-                    font-weight: 600;
+                    font-weight: 700;
                     color: #e4e4e7;
                 }
 
                 .gt-sb-chip-check {
-                    width: 14px;
-                    height: 14px;
-                    border-radius: 3px;
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 4px;
                     border: 1.5px solid #52525b;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 10px;
+                    font-size: 11px;
                     color: transparent;
+                    transition: all 0.12s ease;
                 }
 
                 .gt-sb-chip.active .gt-sb-chip-check {
@@ -438,183 +500,145 @@ export class SceneBuilderModal {
                     border-color: #22c55e;
                     color: #ffffff;
                 }
-
-                /* Footer */
-                .gt-sb-footer {
-                    padding: 12px 20px;
-                    background: #181818;
-                    border-top: 1px solid #282828;
-                    display: flex;
-                    align-items: center;
-                    justify-content: flex-end;
-                    gap: 12px;
-                    flex-shrink: 0;
-                }
-
-                .gt-sb-btn-enter {
-                    background: linear-gradient(135deg, #0284c7 0%, #0284c7 50%, #38bdf8 100%);
-                    border: 1px solid #38bdf8;
-                    color: #ffffff;
-                    padding: 8px 22px;
-                    border-radius: 6px;
-                    font-size: 13px;
-                    font-weight: 700;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    transition: all 0.15s ease;
-                    box-shadow: 0 4px 16px rgba(2, 132, 199, 0.4);
-                }
-
-                .gt-sb-btn-enter:hover {
-                    transform: translateY(-1px);
-                    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.55);
-                    filter: brightness(1.1);
-                }
             </style>
 
-            <div class="gt-sb-card" id="gt-sb-card">
-                <!-- Header -->
-                <div class="gt-sb-header">
-                    <div class="gt-sb-header-left">
-                        <span class="gt-sb-badge-icon">🛠️</span>
-                        <span class="gt-sb-title">Scene &amp; World Creator Studio</span>
-                        <span class="gt-sb-logo-tag">Visual Builder</span>
+            <!-- 1. Top Studio Toolbar -->
+            <div class="gt-sb-topbar">
+                <div class="gt-sb-topbar-left">
+                    <div class="gt-sb-brand">
+                        <div class="gt-sb-brand-icon">🛠️</div>
+                        <span class="gt-sb-brand-title">WORLD STUDIO</span>
                     </div>
-                    <button class="gt-sb-close-btn" id="gt-sb-close-btn" title="Close (ESC)">✕</button>
-                </div>
-
-                <!-- Body -->
-                <div class="gt-sb-body">
-                    <!-- Live Preview Viewport -->
-                    <div class="gt-sb-preview-wrap">
-                        <canvas id="gt-sb-canvas" width="760" height="200"></canvas>
-                        <div class="gt-sb-preview-badge">LIVE STAGE PREVIEW</div>
-                    </div>
-
-                    <!-- Row 1: Setting & Biome -->
-                    <div class="gt-sb-row">
-                        <!-- Left: Nama Level -->
-                        <div class="gt-sb-section">
-                            <div class="gt-sb-section-title">
-                                <span>🏷️ Nama Dunia / Level</span>
-                            </div>
-                            <div class="gt-sb-input-wrap">
-                                <input type="text" class="gt-sb-input" id="gt-sb-input-name" value="${this.state.name}" placeholder="Beri nama dunia kamu..." />
-                                <button class="gt-sb-btn-random" id="gt-sb-btn-random" title="Pilih nama acak keren">🎲 Acak</button>
-                            </div>
-                        </div>
-
-                        <!-- Right: Tema Lantai / Biome -->
-                        <div class="gt-sb-section">
-                            <div class="gt-sb-section-title">
-                                <span>🌍 Tema Medan &amp; Lantai</span>
-                            </div>
-                            <div class="gt-sb-biomes">
-                                <button class="gt-sb-biome-btn ${this.state.biome === 'desert' ? 'active' : ''}" data-biome="desert">
-                                    <span style="font-size: 15px;">🏜️</span>
-                                    <span>Gurun Pasir</span>
-                                </button>
-                                <button class="gt-sb-biome-btn ${this.state.biome === 'snow' ? 'active' : ''}" data-biome="snow">
-                                    <span style="font-size: 15px;">❄️</span>
-                                    <span>Puncak Salju</span>
-                                </button>
-                                <button class="gt-sb-biome-btn ${this.state.biome === 'dirt' ? 'active' : ''}" data-biome="dirt">
-                                    <span style="font-size: 15px;">🌲</span>
-                                    <span>Hutan Dirt</span>
-                                </button>
-                                <button class="gt-sb-biome-btn ${this.state.biome === 'cave' ? 'active' : ''}" data-biome="cave">
-                                    <span style="font-size: 15px;">🌋</span>
-                                    <span>Gua Obsidian</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Row 2: Backpack Komponen (Growtopia Style with Categories) -->
-                    <div class="gt-sb-section">
-                        <div class="gt-sb-section-title">
-                            <span>🎒 Backpack Komponen Dunia (Pilih &amp; Pasang)</span>
-                        </div>
-
-                        <!-- Growtopia Category Tabs -->
-                        <div class="gt-sb-category-bar">
-                            <button class="gt-sb-cat-btn active" data-cat="all">
-                                <span>🎒</span>
-                                <span>Semua</span>
-                                <span class="gt-sb-cat-count" id="count-all">9/9</span>
-                            </button>
-                            <button class="gt-sb-cat-btn" data-cat="solid">
-                                <span>🧱</span>
-                                <span>Objek Padat</span>
-                                <span class="gt-sb-cat-count" id="count-solid">4/4</span>
-                            </button>
-                            <button class="gt-sb-cat-btn" data-cat="creature">
-                                <span>👥</span>
-                                <span>Karakter &amp; Makhluk</span>
-                                <span class="gt-sb-cat-count" id="count-creature">3/3</span>
-                            </button>
-                            <button class="gt-sb-cat-btn" data-cat="fluid">
-                                <span>🌊</span>
-                                <span>Cairan Bahaya</span>
-                                <span class="gt-sb-cat-count" id="count-fluid">2/2</span>
-                            </button>
-                        </div>
-
-                        <!-- Slots Grid -->
-                        <div class="gt-sb-palette-grid">
-                            <!-- Kategori: Objek Padat & Rintangan -->
-                            <div class="gt-sb-chip ${this.state.hasPlatforms ? 'active' : ''}" data-prop="hasPlatforms" data-cat="solid">
-                                <div class="gt-sb-chip-left"><span>🧱</span><span>Pijakan Melayang</span></div>
-                                <div class="gt-sb-chip-check">✓</div>
-                            </div>
-                            <div class="gt-sb-chip ${this.state.hasSpikes ? 'active' : ''}" data-prop="hasSpikes" data-cat="solid">
-                                <div class="gt-sb-chip-left"><span>⚠️</span><span>Rintangan Duri</span></div>
-                                <div class="gt-sb-chip-check">✓</div>
-                            </div>
-                            <div class="gt-sb-chip ${this.state.hasChest ? 'active' : ''}" data-prop="hasChest" data-cat="solid">
-                                <div class="gt-sb-chip-left"><span>🪙</span><span>Koin &amp; Peti Harta</span></div>
-                                <div class="gt-sb-chip-check">✓</div>
-                            </div>
-                            <div class="gt-sb-chip ${this.state.hasPortal ? 'active' : ''}" data-prop="hasPortal" data-cat="solid">
-                                <div class="gt-sb-chip-left"><span>🌀</span><span>Portal Finish</span></div>
-                                <div class="gt-sb-chip-check">✓</div>
-                            </div>
-
-                            <!-- Kategori: Karakter & Makhluk Hidup -->
-                            <div class="gt-sb-chip ${this.state.hasNpc ? 'active' : ''}" data-prop="hasNpc" data-cat="creature">
-                                <div class="gt-sb-chip-left"><span>🧙</span><span>Karakter NPC</span></div>
-                                <div class="gt-sb-chip-check">✓</div>
-                            </div>
-                            <div class="gt-sb-chip ${this.state.hasSlime ? 'active' : ''}" data-prop="hasSlime" data-cat="creature">
-                                <div class="gt-sb-chip-left"><span>🟢</span><span>Monster Slime</span></div>
-                                <div class="gt-sb-chip-check">✓</div>
-                            </div>
-                            <div class="gt-sb-chip ${this.state.hasSkeleton ? 'active' : ''}" data-prop="hasSkeleton" data-cat="creature">
-                                <div class="gt-sb-chip-left"><span>💀</span><span>Monster Skeleton</span></div>
-                                <div class="gt-sb-chip-check">✓</div>
-                            </div>
-
-                            <!-- Kategori: Cairan Lingkungan & Bahaya -->
-                            <div class="gt-sb-chip ${this.state.hasLava ? 'active' : ''}" data-prop="hasLava" data-cat="fluid">
-                                <div class="gt-sb-chip-left"><span>🌋</span><span>Kolam Lava</span></div>
-                                <div class="gt-sb-chip-check">✓</div>
-                            </div>
-                            <div class="gt-sb-chip ${this.state.hasWater ? 'active' : ''}" data-prop="hasWater" data-cat="fluid">
-                                <div class="gt-sb-chip-left"><span>🌊</span><span>Kolam Air</span></div>
-                                <div class="gt-sb-chip-check">✓</div>
-                            </div>
-                        </div>
+                    <div class="gt-sb-input-wrap">
+                        <input type="text" class="gt-sb-input-name" id="gt-sb-input-name" value="${this.state.name}" placeholder="Nama Dunia..." />
+                        <button class="gt-sb-btn-random" id="gt-sb-btn-random" title="Pilih nama acak keren">🎲 Acak</button>
                     </div>
                 </div>
 
-                <!-- Footer Action Bar -->
-                <div class="gt-sb-footer">
-                    <button class="gt-sb-btn-enter" id="gt-sb-btn-enter">
+                <div class="gt-sb-topbar-center">
+                    <button class="gt-sb-biome-btn ${this.state.biome === 'desert' ? 'active' : ''}" data-biome="desert">
+                        <span>🏜️</span> <span>Gurun Pasir</span>
+                    </button>
+                    <button class="gt-sb-biome-btn ${this.state.biome === 'snow' ? 'active' : ''}" data-biome="snow">
+                        <span>❄️</span> <span>Puncak Salju</span>
+                    </button>
+                    <button class="gt-sb-biome-btn ${this.state.biome === 'dirt' ? 'active' : ''}" data-biome="dirt">
+                        <span>🌲</span> <span>Hutan Dirt</span>
+                    </button>
+                    <button class="gt-sb-biome-btn ${this.state.biome === 'cave' ? 'active' : ''}" data-biome="cave">
+                        <span>🌋</span> <span>Gua Obsidian</span>
+                    </button>
+                </div>
+
+                <div class="gt-sb-topbar-right">
+                    <button class="gt-sb-btn-enter" id="gt-sb-btn-enter" title="Langsung masuk dan mainkan level ini!">
                         <span>🚀 Buat &amp; Masuki Dunia (Enter World)</span>
                         <span>➔</span>
                     </button>
+                    <button class="gt-sb-btn-close" id="gt-sb-close-btn" title="Kembali ke Game (ESC)">✕</button>
+                </div>
+            </div>
+
+            <!-- 2. Central Miniature Map Viewport -->
+            <div class="gt-sb-stage-viewport" id="gt-sb-viewport">
+                <canvas id="gt-sb-canvas"></canvas>
+
+                <!-- Top Left Badge -->
+                <div class="gt-sb-stage-badge-topleft">
+                    <div class="gt-sb-live-dot"></div>
+                    <span class="gt-sb-stage-badge-title">MINIATURE MAP STAGE (1:1 WORLD OVERVIEW)</span>
+                </div>
+
+                <!-- Top Right Badge -->
+                <div class="gt-sb-stage-badge-topright">
+                    <span id="gt-sb-world-width-tag">WORLD WIDTH: 1800px</span>
+                </div>
+
+                <!-- Bottom Scale Track / Ruler -->
+                <div class="gt-sb-stage-ruler">
+                    <div class="gt-sb-ruler-tag" style="color: #38bdf8;">
+                        <span>🏁</span> <span>[x: 100] SPAWN START</span>
+                    </div>
+                    <div class="gt-sb-ruler-tag" style="color: #64748b;">
+                        <span>─────── 1:1 MAP SCALE OVERVIEW ───────</span>
+                    </div>
+                    <div class="gt-sb-ruler-tag" style="color: #a855f7;">
+                        <span>🌀</span> <span>[x: 1700] PORTAL GOAL</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Docked Growtopia Backpack Drawer -->
+            <div class="gt-sb-drawer">
+                <div class="gt-sb-drawer-header">
+                    <div class="gt-sb-drawer-title">
+                        <span>🎒</span> <span>BACKPACK KOMPONEN DUNIA</span>
+                    </div>
+
+                    <!-- Growtopia Category Tabs -->
+                    <div class="gt-sb-category-bar">
+                        <button class="gt-sb-cat-btn active" data-cat="all">
+                            <span>🎒</span> <span>Semua</span>
+                            <span class="gt-sb-cat-count" id="count-all">9/9</span>
+                        </button>
+                        <button class="gt-sb-cat-btn" data-cat="solid">
+                            <span>🧱</span> <span>Objek Padat</span>
+                            <span class="gt-sb-cat-count" id="count-solid">4/4</span>
+                        </button>
+                        <button class="gt-sb-cat-btn" data-cat="creature">
+                            <span>👥</span> <span>Karakter &amp; Makhluk</span>
+                            <span class="gt-sb-cat-count" id="count-creature">3/3</span>
+                        </button>
+                        <button class="gt-sb-cat-btn" data-cat="fluid">
+                            <span>🌊</span> <span>Cairan Bahaya</span>
+                            <span class="gt-sb-cat-count" id="count-fluid">2/2</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Slots Grid -->
+                <div class="gt-sb-palette-grid">
+                    <!-- Kategori: Objek Padat & Rintangan -->
+                    <div class="gt-sb-chip ${this.state.hasPlatforms ? 'active' : ''}" data-prop="hasPlatforms" data-cat="solid">
+                        <div class="gt-sb-chip-left"><span>🧱</span><span>Pijakan Melayang</span></div>
+                        <div class="gt-sb-chip-check">✓</div>
+                    </div>
+                    <div class="gt-sb-chip ${this.state.hasSpikes ? 'active' : ''}" data-prop="hasSpikes" data-cat="solid">
+                        <div class="gt-sb-chip-left"><span>⚠️</span><span>Rintangan Duri</span></div>
+                        <div class="gt-sb-chip-check">✓</div>
+                    </div>
+                    <div class="gt-sb-chip ${this.state.hasChest ? 'active' : ''}" data-prop="hasChest" data-cat="solid">
+                        <div class="gt-sb-chip-left"><span>🪙</span><span>Koin &amp; Peti Harta</span></div>
+                        <div class="gt-sb-chip-check">✓</div>
+                    </div>
+                    <div class="gt-sb-chip ${this.state.hasPortal ? 'active' : ''}" data-prop="hasPortal" data-cat="solid">
+                        <div class="gt-sb-chip-left"><span>🌀</span><span>Portal Finish</span></div>
+                        <div class="gt-sb-chip-check">✓</div>
+                    </div>
+
+                    <!-- Kategori: Karakter & Makhluk Hidup -->
+                    <div class="gt-sb-chip ${this.state.hasNpc ? 'active' : ''}" data-prop="hasNpc" data-cat="creature">
+                        <div class="gt-sb-chip-left"><span>🧙</span><span>Karakter NPC</span></div>
+                        <div class="gt-sb-chip-check">✓</div>
+                    </div>
+                    <div class="gt-sb-chip ${this.state.hasSlime ? 'active' : ''}" data-prop="hasSlime" data-cat="creature">
+                        <div class="gt-sb-chip-left"><span>🟢</span><span>Monster Slime</span></div>
+                        <div class="gt-sb-chip-check">✓</div>
+                    </div>
+                    <div class="gt-sb-chip ${this.state.hasSkeleton ? 'active' : ''}" data-prop="hasSkeleton" data-cat="creature">
+                        <div class="gt-sb-chip-left"><span>💀</span><span>Monster Skeleton</span></div>
+                        <div class="gt-sb-chip-check">✓</div>
+                    </div>
+
+                    <!-- Kategori: Cairan Lingkungan & Bahaya -->
+                    <div class="gt-sb-chip ${this.state.hasLava ? 'active' : ''}" data-prop="hasLava" data-cat="fluid">
+                        <div class="gt-sb-chip-left"><span>🌋</span><span>Kolam Lava</span></div>
+                        <div class="gt-sb-chip-check">✓</div>
+                    </div>
+                    <div class="gt-sb-chip ${this.state.hasWater ? 'active' : ''}" data-prop="hasWater" data-cat="fluid">
+                        <div class="gt-sb-chip-left"><span>🌊</span><span>Kolam Air</span></div>
+                        <div class="gt-sb-chip-check">✓</div>
+                    </div>
                 </div>
             </div>
         `;
@@ -622,6 +646,7 @@ export class SceneBuilderModal {
         document.body.appendChild(this.overlay);
         this.canvas = this.overlay.querySelector('#gt-sb-canvas');
         this.ctx = this.canvas ? this.canvas.getContext('2d') : null;
+        this.viewport = this.overlay.querySelector('#gt-sb-viewport');
 
         this.bindEvents();
     }
@@ -735,19 +760,17 @@ export class SceneBuilderModal {
             });
         }
 
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-                AudioManager.playClick();
-                this.hide();
-            }
-        });
-
         // Tombol Eksekusi "🚀 Buat & Masuki Dunia"
         if (enterBtn) {
             enterBtn.addEventListener('click', () => {
                 this.executeEnterWorld();
             });
         }
+
+        // Resize Canvas Observer
+        window.addEventListener('resize', () => {
+            if (this._isOpen) this.resizeCanvas();
+        });
 
         // Keyboard ESC
         this._escHandler = (e) => {
@@ -757,6 +780,13 @@ export class SceneBuilderModal {
             }
         };
         window.addEventListener('keydown', this._escHandler);
+    }
+
+    resizeCanvas() {
+        if (!this.canvas || !this.viewport) return;
+        const rect = this.viewport.getBoundingClientRect();
+        this.canvas.width = Math.max(800, Math.floor(rect.width));
+        this.canvas.height = Math.max(260, Math.floor(rect.height));
     }
 
     executeEnterWorld() {
@@ -800,236 +830,383 @@ export class SceneBuilderModal {
     }
 
     // ===============================================================
-    // LIVE INTERACTIVE CANVAS PREVIEW (THE UNITY SCENE VIEW)
+    // TRUE MINIATURE MAP ENGINE (1:1 SCALE WORLD REPRESENTATION)
     // ===============================================================
     startPreviewLoop() {
         if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
 
         const render = () => {
             if (!this._isOpen) return;
-            this.animTime += 0.05;
-            this.drawPreview();
+            this.animTime += 0.04;
+            this.drawMiniatureMap();
             this.animFrameId = requestAnimationFrame(render);
         };
         this.animFrameId = requestAnimationFrame(render);
     }
 
-    drawPreview() {
+    drawMiniatureMap() {
         if (!this.ctx || !this.canvas) return;
         const ctx = this.ctx;
-        const w = this.canvas.width;
-        const h = this.canvas.height;
+        const W = this.canvas.width;
+        const H = this.canvas.height;
         const t = this.animTime;
 
-        ctx.clearRect(0, 0, w, h);
+        // Skala koordinat dunia 1800 x 450 ke ukuran layar canvas saat ini
+        const worldW = this.state.worldWidth || 1800;
+        const worldH = 450;
+        const sx = W / worldW;
+        const sy = H / worldH;
+        const groundY = 416 * sy;
 
-        // 1. Sky Gradient berdasarkan Biome
-        let skyTop = '#0284c7';
-        let skyBottom = '#38bdf8';
-        let groundSurface = '#15803d'; // Forest
-        let groundSub = '#78350f';
+        ctx.clearRect(0, 0, W, H);
 
+        // 1. SKY GRADIENT BERDASARKAN BIOME
+        let skyGradient = ctx.createLinearGradient(0, 0, 0, H);
         if (this.state.biome === 'snow') {
-            skyTop = '#1e293b';
-            skyBottom = '#60a5fa';
-            groundSurface = '#f1f5f9';
-            groundSub = '#334155';
+            skyGradient.addColorStop(0, '#0369a1');
+            skyGradient.addColorStop(0.65, '#38bdf8');
+            skyGradient.addColorStop(1, '#bae6fd');
         } else if (this.state.biome === 'desert') {
-            skyTop = '#b45309';
-            skyBottom = '#f59e0b';
-            groundSurface = '#f59e0b';
-            groundSub = '#92400e';
+            skyGradient.addColorStop(0, '#78350f');
+            skyGradient.addColorStop(0.45, '#d97706');
+            skyGradient.addColorStop(1, '#fde68a');
         } else if (this.state.biome === 'cave') {
-            skyTop = '#090d16';
-            skyBottom = '#1e1b4b';
-            groundSurface = '#374151';
-            groundSub = '#111827';
+            skyGradient.addColorStop(0, '#090d16');
+            skyGradient.addColorStop(0.7, '#111827');
+            skyGradient.addColorStop(1, '#1e1b4b');
+        } else {
+            // dirt / forest
+            skyGradient.addColorStop(0, '#0369a1');
+            skyGradient.addColorStop(0.55, '#38bdf8');
+            skyGradient.addColorStop(1, '#7dd3fc');
         }
+        ctx.fillStyle = skyGradient;
+        ctx.fillRect(0, 0, W, H);
 
-        const grad = ctx.createLinearGradient(0, 0, 0, h - 50);
-        grad.addColorStop(0, skyTop);
-        grad.addColorStop(1, skyBottom);
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, w, h);
+        // 2. CELESTIAL SUN / MOON
+        if (this.state.biome !== 'cave') {
+            const sunX = 280 * sx;
+            const sunY = 80 * sy;
+            const sunR = Math.max(12, 28 * sy);
 
-        // 2. Parallax Mountain Silhouettes
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
-        ctx.beginPath();
-        ctx.moveTo(0, h - 50);
-        for (let x = 0; x <= w; x += 60) {
-            const my = (h - 90) + Math.sin(x * 0.02 + 1) * 20;
-            ctx.lineTo(x, my);
-        }
-        ctx.lineTo(w, h - 50);
-        ctx.closePath();
-        ctx.fill();
-
-        // 3. Ground & Underground
-        const groundY = h - 45;
-
-        // Base ground fill
-        ctx.fillStyle = groundSub;
-        ctx.fillRect(0, groundY, w, 45);
-
-        // Surface grass / snow / sand layer
-        ctx.fillStyle = groundSurface;
-        ctx.fillRect(0, groundY, w, 10);
-
-        // 4. Water Pool
-        if (this.state.hasWater) {
-            const wx = 180;
-            const ww = 80;
-            ctx.fillStyle = '#0284c7';
-            ctx.fillRect(wx, groundY + 2, ww, 43);
-            // Water ripples
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-            const rip = Math.sin(t * 2) * 2;
-            ctx.fillRect(wx + 10, groundY + 6 + rip, 30, 2);
-            ctx.fillRect(wx + 45, groundY + 14 - rip, 25, 2);
-        }
-
-        // 5. Lava Pool
-        if (this.state.hasLava) {
-            const lx = 370;
-            const lw = 90;
-            ctx.fillStyle = '#dc2626';
-            ctx.fillRect(lx, groundY + 2, lw, 43);
-            ctx.fillStyle = '#f97316';
-            ctx.fillRect(lx, groundY + 2, lw, 5);
-
-            // Lava bubbles
-            const bY1 = groundY + 20 - ((t * 20) % 25);
-            ctx.fillStyle = '#fde047';
+            ctx.fillStyle = this.state.biome === 'snow' ? '#f8fafc' : '#fef08a';
             ctx.beginPath();
-            ctx.arc(lx + 25, bY1, 3, 0, Math.PI * 2);
-            ctx.arc(lx + 65, bY1 - 5, 2.5, 0, Math.PI * 2);
+            ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
             ctx.fill();
+
+            ctx.strokeStyle = this.state.biome === 'snow' ? 'rgba(255,255,255,0.4)' : 'rgba(253, 224, 71, 0.4)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(sunX, sunY, sunR + 4, 0, Math.PI * 2);
+            ctx.stroke();
         }
 
-        // 6. Spikes
-        if (this.state.hasSpikes) {
-            const sx = 300;
-            ctx.fillStyle = '#ef4444';
+        // 3. PARALLAX SILHOUETTE MOUNTAINS (Identik dengan CustomWorldScene)
+        ctx.fillStyle = this.state.biome === 'cave' ? '#111827' : (this.state.biome === 'desert' ? '#92400e' : '#1e293b');
+        ctx.globalAlpha = 0.55;
+        for (let x = 0; x < worldW + 200; x += 160) {
             ctx.beginPath();
-            ctx.moveTo(sx, groundY);
-            ctx.lineTo(sx + 8, groundY - 14);
-            ctx.lineTo(sx + 16, groundY);
-            ctx.moveTo(sx + 16, groundY);
-            ctx.lineTo(sx + 24, groundY - 14);
-            ctx.lineTo(sx + 32, groundY);
+            ctx.moveTo(x * sx, groundY);
+            ctx.lineTo((x + 80) * sx, (240 + (x % 50)) * sy);
+            ctx.lineTo((x + 160) * sx, groundY);
             ctx.closePath();
             ctx.fill();
         }
+        ctx.globalAlpha = 1.0;
 
-        // 7. Floating Platforms
-        if (this.state.hasPlatforms) {
-            // Plat 1 di atas kolam air
-            ctx.fillStyle = '#1e293b';
-            ctx.fillRect(195, groundY - 50, 50, 10);
-            ctx.fillStyle = groundSurface;
-            ctx.fillRect(195, groundY - 50, 50, 3);
+        // 4. TERRAIN MEDAN (TANAH SOLID, JURANG AIR, JURANG LAVA)
+        let surfaceColor = '#15803d'; // Forest
+        let subColor = '#78350f';
 
-            // Plat 2 di atas kolam lava
-            ctx.fillStyle = '#1e293b';
-            ctx.fillRect(390, groundY - 55, 55, 10);
-            ctx.fillStyle = groundSurface;
-            ctx.fillRect(390, groundY - 55, 55, 3);
+        if (this.state.biome === 'snow') {
+            surfaceColor = '#f1f5f9';
+            subColor = '#334155';
+        } else if (this.state.biome === 'desert') {
+            surfaceColor = '#f59e0b';
+            subColor = '#b45309';
+        } else if (this.state.biome === 'cave') {
+            surfaceColor = '#374151';
+            subColor = '#111827';
+        }
 
-            // Floating Coins
-            if (this.state.hasCoins) {
-                const coinBob = Math.sin(t * 3) * 3;
-                ctx.fillStyle = '#f59e0b';
-                ctx.beginPath();
-                ctx.arc(220, groundY - 65 + coinBob, 5, 0, Math.PI * 2);
-                ctx.arc(418, groundY - 70 + coinBob, 5, 0, Math.PI * 2);
-                ctx.fill();
+        // Zona Bahaya Koordinat Asli:
+        // Water: 560..700
+        // Lava: 1000..1160
+        const waterStart = 560;
+        const waterEnd = 700;
+        const lavaStart = 1000;
+        const lavaEnd = 1160;
+
+        // Gambar Ground Baseline
+        const tileW = 16 * sx; // mini tile
+        for (let x = 0; x < worldW; x += 16) {
+            const inWater = this.state.hasWater && x >= waterStart && x <= waterEnd;
+            const inLava = this.state.hasLava && x >= lavaStart && x <= lavaEnd;
+
+            const rx = x * sx;
+            const rw = tileW + 0.5; // anti gap artifact
+
+            if (inWater) {
+                // Kolam Air Miniatur
+                const waveY = groundY + Math.sin(t * 3 + x * 0.05) * 2;
+                ctx.fillStyle = '#0284c7';
+                ctx.fillRect(rx, waveY, rw, H - waveY);
+                // Busa ombak air
+                ctx.fillStyle = '#7dd3fc';
+                ctx.fillRect(rx, waveY, rw, 2);
+                continue;
             }
+
+            if (inLava) {
+                // Kolam Lava Miniatur
+                const lavaWaveY = groundY + Math.sin(t * 2 + x * 0.08) * 1.5;
+                ctx.fillStyle = '#ef4444';
+                ctx.fillRect(rx, lavaWaveY, rw, H - lavaWaveY);
+                // Permukaan membara
+                ctx.fillStyle = '#f97316';
+                ctx.fillRect(rx, lavaWaveY, rw, 2.5);
+
+                // Gelembung mini lava
+                if ((x % 32) === 0) {
+                    const bubbleY = lavaWaveY - Math.abs(Math.sin(t * 4 + x)) * 6;
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.beginPath();
+                    ctx.arc(rx + rw / 2, bubbleY, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                continue;
+            }
+
+            // Lantai Padat (Permukaan Biome)
+            ctx.fillStyle = surfaceColor;
+            ctx.fillRect(rx, groundY, rw, 10 * sy);
+
+            // Lapisan Bawah Tanah (Subsoil)
+            ctx.fillStyle = subColor;
+            ctx.fillRect(rx, groundY + 10 * sy, rw, H - (groundY + 10 * sy));
         }
 
-        // 8. Player Hero (Start Point)
-        const px = 50;
-        const py = groundY - 26;
-        ctx.fillStyle = '#38bdf8';
-        ctx.fillRect(px, py, 18, 26);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(px + 4, py + 6, 4, 4);
-        ctx.fillRect(px + 11, py + 6, 4, 4);
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(px + 6, py + 8, 2, 2);
-        ctx.fillRect(px + 13, py + 8, 2, 2);
+        // 5. PIJAKAN MELAYANG (FLOATING PLATFORMS & KOIN)
+        if (this.state.hasPlatforms) {
+            const platforms = [
+                { x: 420, y: 320, w: 100 },
+                { x: 630, y: 280, w: 120 }, // Jembatan di atas kolam air
+                { x: 920, y: 310, w: 90 },
+                { x: 1080, y: 270, w: 130 }, // Jembatan di atas kolam lava
+                { x: 1380, y: 300, w: 110 }
+            ];
 
-        // 9. Friendly NPC
-        if (this.state.hasNpc) {
-            const nx = 120;
-            const ny = groundY - 26;
-            ctx.fillStyle = '#a855f7';
-            ctx.fillRect(nx, ny, 18, 26);
+            platforms.forEach((p, idx) => {
+                const px = p.x * sx;
+                const py = p.y * sy;
+                const pw = p.w * sx;
+                const ph = Math.max(5, 14 * sy);
+
+                // Pijakan Balok
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(px, py, pw, ph);
+                ctx.strokeStyle = surfaceColor;
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(px, py, pw, ph);
+
+                // Koin Emas Berputar di Atas Pijakan
+                if (this.state.hasCoins) {
+                    const coinX = px + pw / 2;
+                    const coinY = py - 10 * sy;
+                    const coinW = Math.max(3, Math.abs(Math.sin(t * 3 + idx)) * (6 * sy));
+
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.beginPath();
+                    ctx.ellipse(coinX, coinY, coinW, 6 * sy, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#fde047';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            });
+        }
+
+        // 6. RINTANGAN DURI (SPIKES)
+        if (this.state.hasSpikes) {
+            const spikeXList = [380, 850, 1340];
+            spikeXList.forEach(spX => {
+                const px = spX * sx;
+                const py = groundY;
+                const sw = Math.max(6, 16 * sx);
+                const sh = Math.max(8, 20 * sy);
+
+                ctx.fillStyle = '#dc2626';
+                ctx.beginPath();
+                ctx.moveTo(px, py);
+                ctx.lineTo(px + sw / 2, py - sh);
+                ctx.lineTo(px + sw, py);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = '#fca5a5';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            });
+        }
+
+        // 7. PETI HARTA (CHEST)
+        if (this.state.hasChest) {
+            const cx = 800 * sx;
+            const cy = groundY - 14 * sy;
+            const cw = Math.max(10, 24 * sx);
+            const ch = Math.max(8, 16 * sy);
+
+            ctx.fillStyle = '#b45309';
+            ctx.fillRect(cx, cy, cw, ch);
+            ctx.strokeStyle = '#fde047';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(cx, cy, cw, ch);
+            // Kunci emas tengah
             ctx.fillStyle = '#fde047';
-            ctx.fillRect(nx + 4, ny + 6, 3, 3);
-            ctx.fillRect(nx + 11, ny + 6, 3, 3);
+            ctx.fillRect(cx + cw / 2 - 2, cy + ch / 2 - 2, 4, 4);
 
-            // Dialogue bubble
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(nx - 4, ny - 16, 26, 12);
-            ctx.fillStyle = '#000000';
-            ctx.font = '8px sans-serif';
-            ctx.fillText('[E]', nx + 4, ny - 7);
+            // Label mini "CHEST"
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = `bold ${Math.max(8, 9 * sy)}px 'JetBrains Mono'`;
+            ctx.textAlign = 'center';
+            ctx.fillText('CHEST', cx + cw / 2, cy - 4);
         }
 
-        // 10. Monster Slime
+        // 8. KARAKTER NPC (PENJELAJAH ROH)
+        if (this.state.hasNpc) {
+            const npcX = 300 * sx;
+            const npcY = groundY - 26 * sy;
+            const nw = Math.max(8, 18 * sx);
+            const nh = Math.max(12, 26 * sy);
+
+            // Badan Ungu NPC
+            ctx.fillStyle = '#a855f7';
+            ctx.fillRect(npcX - nw / 2, npcY, nw, nh);
+            ctx.strokeStyle = '#d8b4fe';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(npcX - nw / 2, npcY, nw, nh);
+
+            // Mata Kuning
+            ctx.fillStyle = '#fde047';
+            ctx.fillRect(npcX - 3, npcY + 4, 2, 2);
+            ctx.fillRect(npcX + 2, npcY + 4, 2, 2);
+
+            // Balon Interaksi [E]
+            const bubbleY = npcY - 8 * sy + Math.sin(t * 4) * 2;
+            ctx.fillStyle = '#1e1b4b';
+            ctx.fillRect(npcX - 9, bubbleY - 8, 18, 10);
+            ctx.strokeStyle = '#c084fc';
+            ctx.strokeRect(npcX - 9, bubbleY - 8, 18, 10);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = "bold 8px 'JetBrains Mono'";
+            ctx.textAlign = 'center';
+            ctx.fillText('[E]', npcX, bubbleY);
+        }
+
+        // 9. MONSTER SLIME (PATROLI MELOMPAT MINI)
         if (this.state.hasSlime) {
-            const slimeHop = Math.abs(Math.sin(t * 3)) * 12;
-            const slx = 510;
-            const sly = groundY - 14 - slimeHop;
+            const slimeBaseX = 520 * sx;
+            const patrolOffset = Math.sin(t * 1.5) * (40 * sx);
+            const jumpOffset = Math.abs(Math.sin(t * 3)) * (14 * sy);
+            const smX = slimeBaseX + patrolOffset;
+            const smY = groundY - 10 * sy - jumpOffset;
+            const smR = Math.max(5, 10 * sy);
+
             ctx.fillStyle = '#22c55e';
             ctx.beginPath();
-            ctx.arc(slx + 10, sly + 6, 10, 0, Math.PI * 2);
+            ctx.arc(smX, smY, smR, 0, Math.PI * 2);
             ctx.fill();
+            ctx.strokeStyle = '#86efac';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+
+            // Mata Slime
             ctx.fillStyle = '#ffffff';
-            ctx.fillRect(slx + 5, sly + 2, 3, 3);
-            ctx.fillRect(slx + 11, sly + 2, 3, 3);
+            ctx.fillRect(smX - 3, smY - 3, 2, 3);
+            ctx.fillRect(smX + 1, smY - 3, 2, 3);
         }
 
-        // 11. Monster Skeleton
+        // 10. MONSTER SKELETON (PATROLI BERJALAN MINI)
         if (this.state.hasSkeleton) {
-            const skx = 580;
-            const sky = groundY - 24;
-            ctx.fillStyle = '#7f1d1d';
-            ctx.fillRect(skx, sky, 16, 24);
+            const skelBaseX = 1450 * sx;
+            const patrolOffset = Math.sin(t * 1.2) * (50 * sx);
+            const skX = skelBaseX + patrolOffset;
+            const skY = groundY - 24 * sy;
+            const skW = Math.max(7, 16 * sx);
+            const skH = Math.max(12, 24 * sy);
+
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fillRect(skX - skW / 2, skY, skW, skH);
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 1.2;
+            ctx.strokeRect(skX - skW / 2, skY, skW, skH);
+
+            // Mata Merah Skeleton
             ctx.fillStyle = '#ef4444';
-            ctx.fillRect(skx + 4, sky + 5, 3, 3);
-            ctx.fillRect(skx + 9, sky + 5, 3, 3);
+            ctx.fillRect(skX - 3, skY + 4, 2, 2);
+            ctx.fillRect(skX + 1, skY + 4, 2, 2);
         }
 
-        // 12. Chest
-        if (this.state.hasChest) {
-            const cx = 650;
-            const cy = groundY - 14;
-            ctx.fillStyle = '#b45309';
-            ctx.fillRect(cx, cy, 18, 14);
-            ctx.fillStyle = '#fde047';
-            ctx.fillRect(cx + 7, cy + 5, 4, 4);
-        }
+        // 11. PLAYER AVATAR (TITIK START SPAWN)
+        const playerX = 100 * sx;
+        const playerY = groundY - 24 * sy;
+        const pw = Math.max(8, 18 * sx);
+        const ph = Math.max(12, 24 * sy);
 
-        // 13. Portal Finish
+        // Badan Player (Cyan Kotak)
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(playerX - pw / 2, playerY, pw, ph);
+        ctx.strokeStyle = '#bae6fd';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(playerX - pw / 2, playerY, pw, ph);
+
+        // Mata Putih
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(playerX - 2, playerY + 4, 3, 3);
+        ctx.fillRect(playerX + 3, playerY + 4, 3, 3);
+
+        // Tag Spawn
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = `bold ${Math.max(8, 9 * sy)}px 'JetBrains Mono'`;
+        ctx.textAlign = 'center';
+        ctx.fillText('SPAWN', playerX, playerY - 4);
+
+        // 12. FINISH EXIT PORTAL (PUSARAN PORTAL BERPUTAR)
         if (this.state.hasPortal) {
-            const ptx = w - 40;
-            const pty = groundY - 22;
-            const rot = t * 2;
+            const portalX = (worldW - 100) * sx;
+            const portalY = (416 - 36) * sy;
+            const portalR = Math.max(10, 20 * sy);
+
             ctx.save();
-            ctx.translate(ptx, pty);
-            ctx.rotate(rot);
+            ctx.translate(portalX, portalY);
+            ctx.rotate(t * 3);
+
+            // Cincin Luar
             ctx.strokeStyle = '#38bdf8';
             ctx.lineWidth = 2.5;
             ctx.beginPath();
-            ctx.arc(0, 0, 16, 0, Math.PI * 1.5);
+            ctx.arc(0, 0, portalR, 0, Math.PI * 1.6);
             ctx.stroke();
+
+            // Cincin Dalam
+            ctx.strokeStyle = '#a855f7';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(0, 0, portalR * 0.6, 0, Math.PI * 1.4);
+            ctx.stroke();
+
             ctx.restore();
 
-            ctx.fillStyle = '#38bdf8';
+            // Inti Cahaya
+            ctx.fillStyle = '#e0f2fe';
             ctx.beginPath();
-            ctx.arc(ptx, pty, 6, 0, Math.PI * 2);
+            ctx.arc(portalX, portalY, 4, 0, Math.PI * 2);
             ctx.fill();
+
+            // Label "GOAL"
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = `bold ${Math.max(8, 9 * sy)}px 'JetBrains Mono'`;
+            ctx.textAlign = 'center';
+            ctx.fillText('GOAL', portalX, portalY - portalR - 3);
         }
     }
 
@@ -1037,7 +1214,12 @@ export class SceneBuilderModal {
         if (!this.overlay) return;
         this._isOpen = true;
         this.overlay.classList.remove('hidden');
-        this.startPreviewLoop();
+
+        // Pastikan ukuran canvas langsung cocok dengan layar penuh
+        setTimeout(() => {
+            this.resizeCanvas();
+            this.startPreviewLoop();
+        }, 30);
 
         if (this.scene) {
             if (this.scene.player && this.scene.player.body) {
