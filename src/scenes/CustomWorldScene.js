@@ -159,10 +159,10 @@ export class CustomWorldScene extends Phaser.Scene {
         // Zona Bahaya: Kolam Air dan Kolam Lava
         const hasWater = !!this.worldData.hasWater;
         const hasLava = !!this.worldData.hasLava;
-        const waterStart = 560;
+        const waterStart = 550;
         const waterEnd = 700;
         const lavaStart = 1000;
-        const lavaEnd = 1160;
+        const lavaEnd = 1150;
 
         for (let i = 0; i < tileCount; i++) {
             const x = -64 + i * 32 + 16;
@@ -215,27 +215,27 @@ export class CustomWorldScene extends Phaser.Scene {
             }
         }
 
-        // Rintangan Duri (Spikes) jika aktif
+        // Rintangan Duri (Spikes) jika aktif (Snapped to 50px Grid)
         if (this.worldData.hasSpikes) {
-            const spikePositions = [380, 850, 1340];
+            const spikePositions = [375, 825, 1325]; // Center of Cols 7, 16, 26
             spikePositions.forEach(spX => {
                 if (spX < worldWidth - 160) {
-                    const spike = this.add.triangle(spX, groundY - 12, 0, 24, 12, 0, 24, 24, 0xdc2626).setDepth(6);
-                    spike.setStrokeStyle(1, 0xfca5a5);
+                    const spike = this.add.triangle(spX, groundY - 14, 0, 28, 14, 0, 28, 28, 0xdc2626).setDepth(6);
+                    spike.setStrokeStyle(1.5, 0xfca5a5);
                     this.physics.add.existing(spike, true);
                     this.hazards.add(spike);
                 }
             });
         }
 
-        // Pijakan Melayang (Floating Platforms) jika aktif
+        // Pijakan Melayang (Floating Platforms) jika aktif (Snapped to 50px Grid Lines)
         if (this.worldData.hasPlatforms) {
             const platPositions = [
-                { x: 420, y: 320, w: 100 },
-                { x: 630, y: 280, w: 120 }, // Melewati kolam air
-                { x: 920, y: 310, w: 90 },
-                { x: 1080, y: 270, w: 130 }, // Melewati kolam lava
-                { x: 1380, y: 300, w: 110 }
+                { x: 450, y: 300, w: 100 },  // Spans x: 400..500 (Cols 8-10, Row 6)
+                { x: 650, y: 250, w: 100 },  // Spans x: 600..700 (Cols 12-14, Row 5, jembatan air)
+                { x: 900, y: 300, w: 100 },  // Spans x: 850..950 (Cols 17-19, Row 6)
+                { x: 1100, y: 250, w: 100 }, // Spans x: 1050..1150 (Cols 21-23, Row 5, jembatan lava)
+                { x: 1400, y: 300, w: 100 }  // Spans x: 1350..1450 (Cols 27-29, Row 6)
             ];
 
             platPositions.forEach(p => {
@@ -300,9 +300,9 @@ export class CustomWorldScene extends Phaser.Scene {
     // 4. PEMBUATAN MONSTER (SLIME & SKELETON)
     // ===============================================================
     buildMonsters() {
-        // Monster Slime Melompat
+        // Monster Slime Melompat (Col 10: x=500)
         if (this.worldData.hasSlime) {
-            const slimeX = 480;
+            const slimeX = 500;
             const slime = this.physics.add.sprite(slimeX, 390, null).setDepth(8);
             const sG = this.add.graphics();
             sG.fillStyle(0x22c55e, 1);
@@ -340,9 +340,9 @@ export class CustomWorldScene extends Phaser.Scene {
             this.physics.add.overlap(this.player, slimeVisual, () => this.handleHazardDamage());
         }
 
-        // Monster Skeleton Berpatroli
+        // Monster Skeleton Berpatroli (Col 30: x=1500)
         if (this.worldData.hasSkeleton) {
-            const skelX = 1260;
+            const skelX = 1500;
             const skelVisual = this.add.rectangle(skelX, 390, 26, 38, 0x7f1d1d).setDepth(8);
             skelVisual.setStrokeStyle(1.5, 0xfca5a5);
             this.physics.add.existing(skelVisual);
@@ -381,7 +381,7 @@ export class CustomWorldScene extends Phaser.Scene {
         }
 
         if (this.worldData.hasChest) {
-            const chestX = 800;
+            const chestX = 750; // Col 15
             this.chest = this.add.rectangle(chestX, 400, 26, 20, 0xb45309).setDepth(7);
             this.chest.setStrokeStyle(1.5, 0xfde047);
             this.physics.add.existing(this.chest, true);

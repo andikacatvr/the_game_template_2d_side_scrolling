@@ -28,24 +28,26 @@ export class SceneBuilderModal {
             hasCoins: true,
             hasPortal: true,
             worldWidth: 1800,
+            worldHeight: 450, // 9 rows of 50px: Row 0..8 is sky/air, Row 8 (y=400) is ground surface, Row 8..9 is subsoil
 
-            // Entity Transforms (Editable in Inspector)
+            // Entity Transforms (Snapped to 50px Grid)
             positions: {
-                player: { x: 100, y: 416, label: 'Player Spawn', cat: 'creature', icon: '👤' },
-                npc: { x: 300, y: 416, label: 'NPC Guide', cat: 'creature', icon: '🧙' },
-                water: { x: 630, y: 416, label: 'Kolam Air (560-700)', cat: 'fluid', icon: '🌊' },
-                platforms: { x: 630, y: 280, label: 'Pijakan Melayang (x5)', cat: 'solid', icon: '🧱' },
-                coins: { x: 630, y: 240, label: 'Koin Emas (x5)', cat: 'solid', icon: '🪙' },
-                slime: { x: 520, y: 416, label: 'Monster Slime', cat: 'creature', icon: '🟢' },
-                spikes: { x: 850, y: 416, label: 'Rintangan Duri (x3)', cat: 'solid', icon: '⚠️' },
-                chest: { x: 800, y: 416, label: 'Peti Harta Karun', cat: 'solid', icon: '📦' },
-                lava: { x: 1080, y: 416, label: 'Kolam Lava (1000-1160)', cat: 'fluid', icon: '🌋' },
-                skeleton: { x: 1450, y: 416, label: 'Monster Skeleton', cat: 'creature', icon: '💀' },
-                portal: { x: 1700, y: 416, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀' }
+                player: { x: 100, y: 400, label: 'Player Spawn (Col 2)', cat: 'creature', icon: '👤' },
+                npc: { x: 300, y: 400, label: 'NPC Guide (Col 6)', cat: 'creature', icon: '🧙' },
+                water: { x: 625, y: 400, label: 'Kolam Air (550-700)', cat: 'fluid', icon: '🌊' },
+                platforms: { x: 650, y: 250, label: 'Pijakan Melayang (x5)', cat: 'solid', icon: '🧱' },
+                coins: { x: 650, y: 200, label: 'Koin Emas (x5)', cat: 'solid', icon: '🪙' },
+                slime: { x: 500, y: 400, label: 'Monster Slime (Col 10)', cat: 'creature', icon: '🟢' },
+                spikes: { x: 375, y: 400, label: 'Rintangan Duri (x3)', cat: 'solid', icon: '⚠️' },
+                chest: { x: 750, y: 400, label: 'Peti Harta Karun (Col 15)', cat: 'solid', icon: '📦' },
+                lava: { x: 1075, y: 400, label: 'Kolam Lava (1000-1150)', cat: 'fluid', icon: '🌋' },
+                skeleton: { x: 1500, y: 400, label: 'Monster Skeleton (Col 30)', cat: 'creature', icon: '💀' },
+                portal: { x: 1700, y: 400, label: 'Goal Portal (Col 34)', cat: 'solid', icon: '🌀' }
             }
         };
 
         this.animTime = 0;
+        this.hoverTile = null; // { col, row }
         this.createDOM();
     }
 
@@ -397,6 +399,7 @@ export class SceneBuilderModal {
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    cursor: crosshair;
                 }
 
                 #gt-sb-canvas {
@@ -718,7 +721,7 @@ export class SceneBuilderModal {
                     <button class="gt-sb-play-btn" id="gt-sb-btn-enter" title="Play &amp; Uji Level ini secara langsung!">
                         <span>▶ Play World</span>
                     </button>
-                    <button class="gt-sb-tool-toggle ${this.state.showGrid ? 'active' : ''}" id="gt-sb-btn-grid" title="Toggle Grid Miniatur 50px">
+                    <button class="gt-sb-tool-toggle ${this.state.showGrid ? 'active' : ''}" id="gt-sb-btn-grid" title="Toggle Grid Miniatur Persegi 50px">
                         <span>⊞ Grid: ON</span>
                     </button>
                     <button class="gt-sb-tool-toggle ${this.state.showGizmos ? 'active' : ''}" id="gt-sb-btn-gizmo" title="Toggle Transform Gizmo">
@@ -765,19 +768,19 @@ export class SceneBuilderModal {
                     <!-- Top Left Badge -->
                     <div class="gt-sb-stage-badge-topleft">
                         <div class="gt-sb-live-dot"></div>
-                        <span class="gt-sb-stage-badge-title">SCENE VIEW (1:1 MINIATURE MAP)</span>
+                        <span class="gt-sb-stage-badge-title">SCENE VIEW (SQUARE 50px GRID)</span>
                     </div>
 
                     <!-- Top Right Badge -->
                     <div class="gt-sb-stage-badge-topright">
-                        <span id="gt-sb-grid-info">GRID: 50px MINIATUR | WORLD: 1800x450</span>
+                        <span id="gt-sb-grid-info">GRID: 50px PERSEGI | 36x9 TILES (1800x450)</span>
                     </div>
 
                     <!-- Bottom Scale Ruler Track -->
                     <div class="gt-sb-stage-ruler">
-                        <div style="color: #38bdf8;"><span>🏁</span> <span>[x: 100] SPAWN</span></div>
-                        <div style="color: #64748b;"><span>────── 50px TILE GRID MINIATUR (1800px) ──────</span></div>
-                        <div style="color: #a855f7;"><span>🌀</span> <span>[x: 1700] FINISH</span></div>
+                        <div style="color: #38bdf8;"><span>🏁</span> <span>[x: 100, Col 2] SPAWN</span></div>
+                        <div style="color: #64748b;"><span>────── 50px SQUARE GRID TILE MAP (1800x450) ──────</span></div>
+                        <div style="color: #a855f7;"><span>🌀</span> <span>[x: 1700, Col 34] FINISH</span></div>
                     </div>
                 </div>
 
@@ -874,6 +877,7 @@ export class SceneBuilderModal {
         this.viewport = this.overlay.querySelector('#gt-sb-viewport');
         this.hierarchyList = this.overlay.querySelector('#gt-sb-hierarchy-list');
         this.inspectorContent = this.overlay.querySelector('#gt-sb-inspector-content');
+        this.gridInfoEl = this.overlay.querySelector('#gt-sb-grid-info');
 
         this.bindEvents();
         this.renderHierarchy();
@@ -902,13 +906,14 @@ export class SceneBuilderModal {
             if (!isVisible) continue;
 
             const isSelected = this.state.selectedId === key;
+            const col = Math.round(obj.x / 50);
             html += `
                 <div class="gt-sb-tree-item ${isSelected ? 'active' : ''}" data-id="${key}">
                     <div class="gt-sb-tree-left">
                         <span>${obj.icon}</span>
                         <span>${obj.label}</span>
                     </div>
-                    <span class="gt-sb-tree-coord">${obj.x}px</span>
+                    <span class="gt-sb-tree-coord">Col ${col}</span>
                 </div>
             `;
         }
@@ -937,20 +942,20 @@ export class SceneBuilderModal {
                 <div class="gt-sb-inspector-card">
                     <div class="gt-sb-card-title">🌐 WORLD SETTINGS</div>
                     <div class="gt-sb-prop-row">
-                        <span class="gt-sb-prop-label">World Width</span>
-                        <span class="gt-sb-prop-val">1800 px</span>
+                        <span class="gt-sb-prop-label">World Bounds</span>
+                        <span class="gt-sb-prop-val">1800 x 450 px</span>
                     </div>
                     <div class="gt-sb-prop-row">
-                        <span class="gt-sb-prop-label">World Height</span>
-                        <span class="gt-sb-prop-val">450 px</span>
+                        <span class="gt-sb-prop-label">Tile Grid Matrix</span>
+                        <span class="gt-sb-prop-val" style="color: #38bdf8;">36 Cols x 9 Rows</span>
                     </div>
                     <div class="gt-sb-prop-row">
-                        <span class="gt-sb-prop-label">Grid Tile Size</span>
-                        <span class="gt-sb-prop-val" style="color: #38bdf8;">50 px</span>
+                        <span class="gt-sb-prop-label">Grid Cell Type</span>
+                        <span class="gt-sb-prop-val" style="color: #22c55e;">Square (50x50 px)</span>
                     </div>
                     <div class="gt-sb-prop-row">
                         <span class="gt-sb-prop-label">Ground Baseline</span>
-                        <span class="gt-sb-prop-val">416 px</span>
+                        <span class="gt-sb-prop-val">Row 8 (y: 400 px)</span>
                     </div>
                     <div class="gt-sb-prop-row">
                         <span class="gt-sb-prop-label">Gravity Y</span>
@@ -960,6 +965,9 @@ export class SceneBuilderModal {
             `;
             return;
         }
+
+        const col = Math.round(obj.x / 50);
+        const row = Math.round(obj.y / 50);
 
         this.inspectorContent.innerHTML = `
             <div class="gt-sb-inspector-card">
@@ -972,16 +980,20 @@ export class SceneBuilderModal {
                     <span class="gt-sb-prop-val" style="color: #a855f7;">${obj.cat.toUpperCase()}</span>
                 </div>
                 <div class="gt-sb-prop-row">
+                    <span class="gt-sb-prop-label">Grid Tile (Col, Row)</span>
+                    <span class="gt-sb-prop-val" style="color: #38bdf8;">[Col: ${col}, Row: ${row}]</span>
+                </div>
+                <div class="gt-sb-prop-row">
                     <span class="gt-sb-prop-label">Transform X</span>
-                    <input type="number" class="gt-sb-prop-input" id="gt-sb-inp-x" value="${obj.x}" step="10" />
+                    <input type="number" class="gt-sb-prop-input" id="gt-sb-inp-x" value="${obj.x}" step="50" />
                 </div>
                 <div class="gt-sb-prop-row">
                     <span class="gt-sb-prop-label">Transform Y</span>
-                    <input type="number" class="gt-sb-prop-input" id="gt-sb-inp-y" value="${obj.y}" step="10" />
+                    <input type="number" class="gt-sb-prop-input" id="gt-sb-inp-y" value="${obj.y}" step="50" />
                 </div>
                 <div class="gt-sb-prop-row">
                     <span class="gt-sb-prop-label">Grid Snap (50px)</span>
-                    <span class="gt-sb-prop-val" style="color: #22c55e;">Enabled</span>
+                    <span class="gt-sb-prop-val" style="color: #22c55e;">Enabled (Square)</span>
                 </div>
             </div>
 
@@ -992,8 +1004,8 @@ export class SceneBuilderModal {
                     <span class="gt-sb-prop-val" style="color: #22c55e;">● Active</span>
                 </div>
                 <div class="gt-sb-prop-row">
-                    <span class="gt-sb-prop-label">Physics Body</span>
-                    <span class="gt-sb-prop-val">Arcade 2D</span>
+                    <span class="gt-sb-prop-label">Ground Alignment</span>
+                    <span class="gt-sb-prop-val" style="color: #f59e0b;">Row 8 (Ground Y: 400)</span>
                 </div>
                 <div class="gt-sb-prop-row">
                     <span class="gt-sb-prop-label">Collision Layer</span>
@@ -1159,18 +1171,59 @@ export class SceneBuilderModal {
             });
         });
 
-        // Canvas Click for raycasting selection
+        // Canvas Mouse Hover for Tile Position Tracker
         if (this.canvas) {
+            this.canvas.addEventListener('mousemove', (e) => {
+                const rect = this.canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                const W = this.canvas.width;
+                const H = this.canvas.height;
+                const worldW = this.state.worldWidth || 1800;
+                const worldH = this.state.worldHeight || 450;
+                const scale = Math.min(W / worldW, (H - 24) / worldH);
+                const offsetX = Math.floor((W - worldW * scale) / 2);
+                const offsetY = Math.floor((H - worldH * scale) / 2);
+
+                const worldX = (mouseX - offsetX) / scale;
+                const worldY = (mouseY - offsetY) / scale;
+
+                if (worldX >= 0 && worldX <= worldW && worldY >= 0 && worldY <= worldH) {
+                    const col = Math.floor(worldX / 50);
+                    const row = Math.floor(worldY / 50);
+                    this.hoverTile = { col, row };
+
+                    if (this.gridInfoEl) {
+                        this.gridInfoEl.textContent = `GRID: 50px SQUARE | TILE: [Col: ${col}, Row: ${row}] (${col * 50}, ${row * 50})`;
+                    }
+                } else {
+                    this.hoverTile = null;
+                }
+            });
+
+            this.canvas.addEventListener('mouseleave', () => {
+                this.hoverTile = null;
+                if (this.gridInfoEl) {
+                    this.gridInfoEl.textContent = `GRID: 50px PERSEGI | 36x9 TILES (1800x450)`;
+                }
+            });
+
+            // Canvas Click for raycasting selection
             this.canvas.addEventListener('click', (e) => {
                 const rect = this.canvas.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
+                const mouseX = e.clientX - rect.left;
                 const W = this.canvas.width;
-                const sx = W / (this.state.worldWidth || 1800);
-                const worldClickX = clickX / sx;
+                const H = this.canvas.height;
+                const worldW = this.state.worldWidth || 1800;
+                const worldH = this.state.worldHeight || 450;
+                const scale = Math.min(W / worldW, (H - 24) / worldH);
+                const offsetX = Math.floor((W - worldW * scale) / 2);
+                const worldClickX = (mouseX - offsetX) / scale;
 
                 // Cari objek terdekat
                 let closestId = null;
-                let minDist = 120; // threshold
+                let minDist = 100; // threshold
                 for (const [k, obj] of Object.entries(this.state.positions)) {
                     const dist = Math.abs(obj.x - worldClickX);
                     if (dist < minDist) {
@@ -1286,17 +1339,31 @@ export class SceneBuilderModal {
         const H = this.canvas.height;
         const t = this.animTime;
 
-        // Skala koordinat dunia 1800 x 450 ke ukuran layar canvas saat ini
+        // 1. UNIFORM SCALE UNTUK MEMASTIKAN GRID 100% PERSEGI (SQUARE 1:1)
         const worldW = this.state.worldWidth || 1800;
-        const worldH = 450;
-        const sx = W / worldW;
-        const sy = H / worldH;
-        const groundY = 416 * sy;
+        const worldH = this.state.worldHeight || 450;
+        // Skala tunggal uniform untuk X dan Y agar kotak persegi tidak melar/lonjong
+        const scale = Math.min(W / worldW, (H - 24) / worldH);
+        const offsetX = Math.floor((W - worldW * scale) / 2);
+        const offsetY = Math.floor((H - worldH * scale) / 2);
+
+        // Helper fungsi pemetaan koordinat dunia ke kanvas
+        const toX = (wx) => offsetX + wx * scale;
+        const toY = (wy) => offsetY + wy * scale;
+        const cellSize = 50 * scale; // Ukuran kotak persegi
+
+        // Ground walking baseline tepat di Row 8 (y = 400px), lapisan tanah bawah hingga Row 9 (y = 450px)
+        const groundY = toY(400);
+        const worldBottomY = toY(450);
 
         ctx.clearRect(0, 0, W, H);
 
-        // 1. SKY GRADIENT BERDASARKAN BIOME
-        let skyGradient = ctx.createLinearGradient(0, 0, 0, H);
+        // Background Backdrop Luar Dunia
+        ctx.fillStyle = '#09090b';
+        ctx.fillRect(0, 0, W, H);
+
+        // 2. SKY GRADIENT BERDASARKAN BIOME (Dibatasi di dalam bounds world 1800x450)
+        let skyGradient = ctx.createLinearGradient(0, toY(0), 0, groundY);
         if (this.state.biome === 'snow') {
             skyGradient.addColorStop(0, '#0369a1');
             skyGradient.addColorStop(0.65, '#38bdf8');
@@ -1316,13 +1383,13 @@ export class SceneBuilderModal {
             skyGradient.addColorStop(1, '#7dd3fc');
         }
         ctx.fillStyle = skyGradient;
-        ctx.fillRect(0, 0, W, H);
+        ctx.fillRect(toX(0), toY(0), worldW * scale, 450 * scale);
 
-        // 2. CELESTIAL SUN / MOON
+        // 3. CELESTIAL SUN / MOON (Lingkaran Sempurna berkat Uniform Scale)
         if (this.state.biome !== 'cave') {
-            const sunX = 280 * sx;
-            const sunY = 80 * sy;
-            const sunR = Math.max(12, 28 * sy);
+            const sunX = toX(280);
+            const sunY = toY(80);
+            const sunR = Math.max(14, 28 * scale);
 
             ctx.fillStyle = this.state.biome === 'snow' ? '#f8fafc' : '#fef08a';
             ctx.beginPath();
@@ -1336,20 +1403,20 @@ export class SceneBuilderModal {
             ctx.stroke();
         }
 
-        // 3. PARALLAX SILHOUETTE MOUNTAINS (Identik dengan CustomWorldScene)
+        // 4. PARALLAX SILHOUETTE MOUNTAINS (Proporsional sesuai Grid)
         ctx.fillStyle = this.state.biome === 'cave' ? '#111827' : (this.state.biome === 'desert' ? '#92400e' : '#1e293b');
         ctx.globalAlpha = 0.55;
-        for (let x = 0; x < worldW + 200; x += 160) {
+        for (let x = 0; x < worldW + 200; x += 150) {
             ctx.beginPath();
-            ctx.moveTo(x * sx, groundY);
-            ctx.lineTo((x + 80) * sx, (240 + (x % 50)) * sy);
-            ctx.lineTo((x + 160) * sx, groundY);
+            ctx.moveTo(toX(x), groundY);
+            ctx.lineTo(toX(x + 75), toY(220 + (x % 50)));
+            ctx.lineTo(toX(x + 150), groundY);
             ctx.closePath();
             ctx.fill();
         }
         ctx.globalAlpha = 1.0;
 
-        // 4. TERRAIN MEDAN (TANAH SOLID, JURANG AIR, JURANG LAVA)
+        // 5. TERRAIN MEDAN (TANAH SOLID, JURANG AIR, JURANG LAVA)
         let surfaceColor = '#15803d'; // Forest
         let subColor = '#78350f';
 
@@ -1364,132 +1431,130 @@ export class SceneBuilderModal {
             subColor = '#111827';
         }
 
-        // Zona Bahaya Koordinat Asli:
-        // Water: 560..700
-        // Lava: 1000..1160
-        const waterStart = 560;
+        // Zona Bahaya Snap Presisi Grid 50px:
+        // Water: 550..700 (Cols 11, 12, 13 = 3 kotak penuh)
+        // Lava: 1000..1150 (Cols 20, 21, 22 = 3 kotak penuh)
+        const waterStart = 550;
         const waterEnd = 700;
         const lavaStart = 1000;
-        const lavaEnd = 1160;
+        const lavaEnd = 1150;
 
-        // Gambar Ground Baseline
-        const tileW = 16 * sx; // mini tile
-        for (let x = 0; x < worldW; x += 16) {
-            const inWater = this.state.hasWater && x >= waterStart && x <= waterEnd;
-            const inLava = this.state.hasLava && x >= lavaStart && x <= lavaEnd;
-
-            const rx = x * sx;
-            const rw = tileW + 0.5; // anti gap artifact
+        // Gambar Ground Baseline per 50px Tile
+        for (let gx = 0; gx < worldW; gx += 50) {
+            const rx = toX(gx);
+            const rw = cellSize + 0.5; // anti gap artifact
+            const inWater = this.state.hasWater && gx >= waterStart && gx < waterEnd;
+            const inLava = this.state.hasLava && gx >= lavaStart && gx < lavaEnd;
 
             if (inWater) {
                 // Kolam Air Miniatur
-                const waveY = groundY + Math.sin(t * 3 + x * 0.05) * 2;
+                const waveY = groundY + Math.sin(t * 3 + gx * 0.05) * 3;
                 ctx.fillStyle = '#0284c7';
-                ctx.fillRect(rx, waveY, rw, H - waveY);
+                ctx.fillRect(rx, waveY, rw, worldBottomY - waveY);
                 // Busa ombak air
                 ctx.fillStyle = '#7dd3fc';
-                ctx.fillRect(rx, waveY, rw, 2);
+                ctx.fillRect(rx, waveY, rw, 3);
                 continue;
             }
 
             if (inLava) {
                 // Kolam Lava Miniatur
-                const lavaWaveY = groundY + Math.sin(t * 2 + x * 0.08) * 1.5;
+                const lavaWaveY = groundY + Math.sin(t * 2 + gx * 0.08) * 2;
                 ctx.fillStyle = '#ef4444';
-                ctx.fillRect(rx, lavaWaveY, rw, H - lavaWaveY);
+                ctx.fillRect(rx, lavaWaveY, rw, worldBottomY - lavaWaveY);
                 // Permukaan membara
                 ctx.fillStyle = '#f97316';
-                ctx.fillRect(rx, lavaWaveY, rw, 2.5);
+                ctx.fillRect(rx, lavaWaveY, rw, 3);
 
                 // Gelembung mini lava
-                if ((x % 32) === 0) {
-                    const bubbleY = lavaWaveY - Math.abs(Math.sin(t * 4 + x)) * 6;
-                    ctx.fillStyle = '#fbbf24';
-                    ctx.beginPath();
-                    ctx.arc(rx + rw / 2, bubbleY, 2, 0, Math.PI * 2);
-                    ctx.fill();
-                }
+                const bubbleY = lavaWaveY - Math.abs(Math.sin(t * 4 + gx)) * 8;
+                ctx.fillStyle = '#fbbf24';
+                ctx.beginPath();
+                ctx.arc(rx + rw / 2, bubbleY, 3, 0, Math.PI * 2);
+                ctx.fill();
                 continue;
             }
 
-            // Lantai Padat (Permukaan Biome)
+            // Lantai Padat (Permukaan Biome di Row 8)
             ctx.fillStyle = surfaceColor;
-            ctx.fillRect(rx, groundY, rw, 10 * sy);
+            ctx.fillRect(rx, groundY, rw, 12 * scale);
 
-            // Lapisan Bawah Tanah (Subsoil)
+            // Lapisan Bawah Tanah (Subsoil hingga Row 9)
             ctx.fillStyle = subColor;
-            ctx.fillRect(rx, groundY + 10 * sy, rw, H - (groundY + 10 * sy));
+            ctx.fillRect(rx, groundY + 12 * scale, rw, worldBottomY - (groundY + 12 * scale));
         }
 
-        // 5. PIJAKAN MELAYANG (FLOATING PLATFORMS & KOIN)
+        // 6. PIJAKAN MELAYANG (FLOATING PLATFORMS 100% SNAPPED TO GRID LINES)
         if (this.state.hasPlatforms) {
             const platforms = [
-                { x: 420, y: 320, w: 100 },
-                { x: 630, y: 280, w: 120 }, // Jembatan di atas kolam air
-                { x: 920, y: 310, w: 90 },
-                { x: 1080, y: 270, w: 130 }, // Jembatan di atas kolam lava
-                { x: 1380, y: 300, w: 110 }
+                { x: 400, y: 300, w: 100 }, // Cols 8-10, Row 6 (2 tiles)
+                { x: 600, y: 250, w: 100 }, // Cols 12-14, Row 5 (Jembatan air)
+                { x: 850, y: 300, w: 100 }, // Cols 17-19, Row 6 (2 tiles)
+                { x: 1050, y: 250, w: 100 }, // Cols 21-23, Row 5 (Jembatan lava)
+                { x: 1350, y: 300, w: 100 }  // Cols 27-29, Row 6 (2 tiles)
             ];
 
             platforms.forEach((p, idx) => {
-                const px = p.x * sx;
-                const py = p.y * sy;
-                const pw = p.w * sx;
-                const ph = Math.max(5, 14 * sy);
+                const px = toX(p.x);
+                const py = toY(p.y);
+                const pw = p.w * scale; // exactly 2 grid cells wide
+                const ph = Math.max(6, 16 * scale);
 
-                // Pijakan Balok
+                // Pijakan Balok Sempurna Menempel Garis Grid
                 ctx.fillStyle = '#1e293b';
                 ctx.fillRect(px, py, pw, ph);
                 ctx.strokeStyle = surfaceColor;
-                ctx.lineWidth = 1.5;
+                ctx.lineWidth = 2;
                 ctx.strokeRect(px, py, pw, ph);
 
                 // Koin Emas Berputar di Atas Pijakan
                 if (this.state.hasCoins) {
                     const coinX = px + pw / 2;
-                    const coinY = py - 10 * sy;
-                    const coinW = Math.max(3, Math.abs(Math.sin(t * 3 + idx)) * (6 * sy));
+                    const coinY = py - 15 * scale;
+                    const coinW = Math.max(4, Math.abs(Math.sin(t * 3 + idx)) * (8 * scale));
 
                     ctx.fillStyle = '#f59e0b';
                     ctx.beginPath();
-                    ctx.ellipse(coinX, coinY, coinW, 6 * sy, 0, 0, Math.PI * 2);
+                    ctx.ellipse(coinX, coinY, coinW, 8 * scale, 0, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.strokeStyle = '#fde047';
-                    ctx.lineWidth = 1;
+                    ctx.lineWidth = 1.5;
                     ctx.stroke();
                 }
             });
         }
 
-        // 6. RINTANGAN DURI (SPIKES)
+        // 7. RINTANGAN DURI (SPIKES TEPAT 1 TILE 50px DI ATAS GROUND)
         if (this.state.hasSpikes) {
-            const spikeXList = [380, 850, 1340];
+            const spikeXList = [350, 800, 1300]; // Cols 7, 16, 26
             spikeXList.forEach(spX => {
-                const px = spX * sx;
+                const px = toX(spX);
                 const py = groundY;
-                const sw = Math.max(6, 16 * sx);
-                const sh = Math.max(8, 20 * sy);
+                const sw = cellSize; // 1 full tile wide
+                const sh = Math.max(10, 32 * scale);
 
                 ctx.fillStyle = '#dc2626';
                 ctx.beginPath();
                 ctx.moveTo(px, py);
-                ctx.lineTo(px + sw / 2, py - sh);
+                ctx.lineTo(px + sw * 0.25, py - sh);
+                ctx.lineTo(px + sw * 0.5, py);
+                ctx.lineTo(px + sw * 0.75, py - sh);
                 ctx.lineTo(px + sw, py);
                 ctx.closePath();
                 ctx.fill();
                 ctx.strokeStyle = '#fca5a5';
-                ctx.lineWidth = 1;
+                ctx.lineWidth = 1.2;
                 ctx.stroke();
             });
         }
 
-        // 7. PETI HARTA (CHEST)
+        // 8. PETI HARTA (CHEST BERDIRI DI ATAS GROUND ROW 8)
         if (this.state.hasChest) {
-            const chestObj = this.state.positions.chest || { x: 800 };
-            const cx = chestObj.x * sx;
-            const cy = groundY - 14 * sy;
-            const cw = Math.max(10, 24 * sx);
-            const ch = Math.max(8, 16 * sy);
+            const chestObj = this.state.positions.chest || { x: 750 };
+            const cx = toX(chestObj.x);
+            const cw = Math.max(12, 32 * scale);
+            const ch = Math.max(10, 24 * scale);
+            const cy = groundY - ch;
 
             ctx.fillStyle = '#b45309';
             ctx.fillRect(cx, cy, cw, ch);
@@ -1502,18 +1567,18 @@ export class SceneBuilderModal {
 
             // Label mini "CHEST"
             ctx.fillStyle = '#fbbf24';
-            ctx.font = `bold ${Math.max(8, 9 * sy)}px 'JetBrains Mono'`;
+            ctx.font = `bold ${Math.max(8, 9 * scale)}px 'JetBrains Mono'`;
             ctx.textAlign = 'center';
             ctx.fillText('CHEST', cx + cw / 2, cy - 4);
         }
 
-        // 8. KARAKTER NPC (PENJELAJAH ROH)
+        // 9. KARAKTER NPC (PENJELAJAH ROH MENAPAK DI ATAS GROUND ROW 8)
         if (this.state.hasNpc) {
             const npcObj = this.state.positions.npc || { x: 300 };
-            const npcX = npcObj.x * sx;
-            const npcY = groundY - 26 * sy;
-            const nw = Math.max(8, 18 * sx);
-            const nh = Math.max(12, 26 * sy);
+            const npcX = toX(npcObj.x);
+            const nw = Math.max(10, 24 * scale);
+            const nh = Math.max(14, 38 * scale);
+            const npcY = groundY - nh;
 
             // Badan Ungu NPC
             ctx.fillStyle = '#a855f7';
@@ -1524,73 +1589,73 @@ export class SceneBuilderModal {
 
             // Mata Kuning
             ctx.fillStyle = '#fde047';
-            ctx.fillRect(npcX - 3, npcY + 4, 2, 2);
-            ctx.fillRect(npcX + 2, npcY + 4, 2, 2);
+            ctx.fillRect(npcX - 4, npcY + 6, 3, 3);
+            ctx.fillRect(npcX + 2, npcY + 6, 3, 3);
 
             // Balon Interaksi [E]
-            const bubbleY = npcY - 8 * sy + Math.sin(t * 4) * 2;
+            const bubbleY = npcY - 10 * scale + Math.sin(t * 4) * 2;
             ctx.fillStyle = '#1e1b4b';
-            ctx.fillRect(npcX - 9, bubbleY - 8, 18, 10);
+            ctx.fillRect(npcX - 10, bubbleY - 10, 20, 12);
             ctx.strokeStyle = '#c084fc';
-            ctx.strokeRect(npcX - 9, bubbleY - 8, 18, 10);
+            ctx.strokeRect(npcX - 10, bubbleY - 10, 20, 12);
             ctx.fillStyle = '#ffffff';
-            ctx.font = "bold 8px 'JetBrains Mono'";
+            ctx.font = "bold 9px 'JetBrains Mono'";
             ctx.textAlign = 'center';
-            ctx.fillText('[E]', npcX, bubbleY);
+            ctx.fillText('[E]', npcX, bubbleY - 1);
         }
 
-        // 9. MONSTER SLIME (PATROLI MELOMPAT MINI)
+        // 10. MONSTER SLIME (PATROLI MELOMPAT TEPAT DI ATAS GROUND ROW 8)
         if (this.state.hasSlime) {
-            const slimeObj = this.state.positions.slime || { x: 520 };
-            const slimeBaseX = slimeObj.x * sx;
-            const patrolOffset = Math.sin(t * 1.5) * (40 * sx);
-            const jumpOffset = Math.abs(Math.sin(t * 3)) * (14 * sy);
+            const slimeObj = this.state.positions.slime || { x: 500 };
+            const slimeBaseX = toX(slimeObj.x);
+            const patrolOffset = Math.sin(t * 1.5) * (30 * scale);
+            const jumpOffset = Math.abs(Math.sin(t * 3)) * (20 * scale);
             const smX = slimeBaseX + patrolOffset;
-            const smY = groundY - 10 * sy - jumpOffset;
-            const smR = Math.max(5, 10 * sy);
+            const smR = Math.max(7, 14 * scale);
+            const smY = groundY - smR - jumpOffset;
 
             ctx.fillStyle = '#22c55e';
             ctx.beginPath();
             ctx.arc(smX, smY, smR, 0, Math.PI * 2);
             ctx.fill();
             ctx.strokeStyle = '#86efac';
-            ctx.lineWidth = 1.2;
+            ctx.lineWidth = 1.5;
             ctx.stroke();
 
             // Mata Slime
             ctx.fillStyle = '#ffffff';
-            ctx.fillRect(smX - 3, smY - 3, 2, 3);
-            ctx.fillRect(smX + 1, smY - 3, 2, 3);
+            ctx.fillRect(smX - 4, smY - 3, 3, 4);
+            ctx.fillRect(smX + 2, smY - 3, 3, 4);
         }
 
-        // 10. MONSTER SKELETON (PATROLI BERJALAN MINI)
+        // 11. MONSTER SKELETON (PATROLI BERJALAN TEPAT DI ATAS GROUND ROW 8)
         if (this.state.hasSkeleton) {
-            const skelObj = this.state.positions.skeleton || { x: 1450 };
-            const skelBaseX = skelObj.x * sx;
-            const patrolOffset = Math.sin(t * 1.2) * (50 * sx);
+            const skelObj = this.state.positions.skeleton || { x: 1500 };
+            const skelBaseX = toX(skelObj.x);
+            const patrolOffset = Math.sin(t * 1.2) * (40 * scale);
             const skX = skelBaseX + patrolOffset;
-            const skY = groundY - 24 * sy;
-            const skW = Math.max(7, 16 * sx);
-            const skH = Math.max(12, 24 * sy);
+            const skW = Math.max(9, 22 * scale);
+            const skH = Math.max(14, 38 * scale);
+            const skY = groundY - skH;
 
             ctx.fillStyle = '#e2e8f0';
             ctx.fillRect(skX - skW / 2, skY, skW, skH);
             ctx.strokeStyle = '#94a3b8';
-            ctx.lineWidth = 1.2;
+            ctx.lineWidth = 1.5;
             ctx.strokeRect(skX - skW / 2, skY, skW, skH);
 
             // Mata Merah Skeleton
             ctx.fillStyle = '#ef4444';
-            ctx.fillRect(skX - 3, skY + 4, 2, 2);
-            ctx.fillRect(skX + 1, skY + 4, 2, 2);
+            ctx.fillRect(skX - 4, skY + 6, 3, 3);
+            ctx.fillRect(skX + 2, skY + 6, 3, 3);
         }
 
-        // 11. PLAYER AVATAR (TITIK START SPAWN)
+        // 12. PLAYER AVATAR (TITIK START SPAWN KAKI MENAPAK GROUND ROW 8)
         const playerObj = this.state.positions.player || { x: 100 };
-        const playerX = playerObj.x * sx;
-        const playerY = groundY - 24 * sy;
-        const pw = Math.max(8, 18 * sx);
-        const ph = Math.max(12, 24 * sy);
+        const playerX = toX(playerObj.x);
+        const pw = Math.max(10, 24 * scale);
+        const ph = Math.max(14, 38 * scale);
+        const playerY = groundY - ph;
 
         // Badan Player (Cyan Kotak)
         ctx.fillStyle = '#38bdf8';
@@ -1601,21 +1666,21 @@ export class SceneBuilderModal {
 
         // Mata Putih
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(playerX - 2, playerY + 4, 3, 3);
-        ctx.fillRect(playerX + 3, playerY + 4, 3, 3);
+        ctx.fillRect(playerX - 3, playerY + 6, 3, 4);
+        ctx.fillRect(playerX + 3, playerY + 6, 3, 4);
 
         // Tag Spawn
         ctx.fillStyle = '#38bdf8';
-        ctx.font = `bold ${Math.max(8, 9 * sy)}px 'JetBrains Mono'`;
+        ctx.font = `bold ${Math.max(8, 9 * scale)}px 'JetBrains Mono'`;
         ctx.textAlign = 'center';
         ctx.fillText('SPAWN', playerX, playerY - 4);
 
-        // 12. FINISH EXIT PORTAL (PUSARAN PORTAL BERPUTAR)
+        // 13. FINISH EXIT PORTAL (PUSARAN PORTAL BERDIRI TEPAT DI ATAS GROUND ROW 8)
         if (this.state.hasPortal) {
             const portalObj = this.state.positions.portal || { x: 1700 };
-            const portalX = portalObj.x * sx;
-            const portalY = (416 - 36) * sy;
-            const portalR = Math.max(10, 20 * sy);
+            const portalX = toX(portalObj.x);
+            const portalR = Math.max(14, 26 * scale);
+            const portalY = groundY - portalR - 6;
 
             ctx.save();
             ctx.translate(portalX, portalY);
@@ -1640,100 +1705,135 @@ export class SceneBuilderModal {
             // Inti Cahaya
             ctx.fillStyle = '#e0f2fe';
             ctx.beginPath();
-            ctx.arc(portalX, portalY, 4, 0, Math.PI * 2);
+            ctx.arc(portalX, portalY, 5, 0, Math.PI * 2);
             ctx.fill();
 
             // Label "GOAL"
             ctx.fillStyle = '#38bdf8';
-            ctx.font = `bold ${Math.max(8, 9 * sy)}px 'JetBrains Mono'`;
+            ctx.font = `bold ${Math.max(8, 9 * scale)}px 'JetBrains Mono'`;
             ctx.textAlign = 'center';
-            ctx.fillText('GOAL', portalX, portalY - portalR - 3);
+            ctx.fillText('GOAL', portalX, portalY - portalR - 4);
         }
 
         // ===============================================================
-        // 13. MINIATURE GRID OVERLAY (50px GAME GRID SCALED DOWN PROPORTIONALLY)
+        // 14. MINIATURE SQUARE GRID OVERLAY (100% KOTAK PERSEGI PRESISI)
         // ===============================================================
         if (this.state.showGrid) {
             ctx.save();
             ctx.lineWidth = 1;
 
-            // Real game tile is 50px. Miniature grid step is: 50 * sx and 50 * sy
-            const gridStepX = 50 * sx;
-            const gridStepY = 50 * sy;
-
-            // Draw Vertical Grid Lines
+            // Garis Vertikal (Setiap 50px dari x = 0 hingga 1800)
             for (let gx = 0; gx <= worldW; gx += 50) {
-                const rx = gx * sx;
+                const rx = toX(gx);
                 const isMajor = (gx % 250) === 0;
 
-                ctx.strokeStyle = isMajor ? 'rgba(56, 189, 248, 0.22)' : 'rgba(255, 255, 255, 0.08)';
+                ctx.strokeStyle = isMajor ? 'rgba(56, 189, 248, 0.28)' : 'rgba(255, 255, 255, 0.08)';
                 ctx.beginPath();
-                ctx.moveTo(rx, 0);
-                ctx.lineTo(rx, H);
+                ctx.moveTo(rx, toY(0));
+                ctx.lineTo(rx, worldBottomY);
                 ctx.stroke();
 
-                // Draw coordinate text for major lines
-                if (isMajor && gx > 0 && gx < worldW) {
-                    ctx.fillStyle = 'rgba(56, 189, 248, 0.6)';
-                    ctx.font = "8px 'JetBrains Mono'";
+                // Indikator Kolom Grid pada Garis Utama
+                if (isMajor && gx >= 0 && gx <= worldW) {
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.75)';
+                    ctx.font = "8.5px 'JetBrains Mono'";
                     ctx.textAlign = 'center';
-                    ctx.fillText(`${gx}`, rx, 14);
+                    ctx.fillText(`${gx}`, rx, toY(0) + 12);
                 }
             }
 
-            // Draw Horizontal Grid Lines
+            // Garis Horizontal (Setiap 50px dari y = 0 hingga 450)
+            // Memastikan JARAK ANTARA GARIS HORIZONTAL == JARAK ANTARA GARIS VERTIKAL (PERSEGI!)
             for (let gy = 0; gy <= worldH; gy += 50) {
-                const ry = gy * sy;
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
+                const ry = toY(gy);
+                const isGroundLine = (gy === 400); // Garis lantai dasar (Row 8)
+
+                if (isGroundLine) {
+                    ctx.strokeStyle = 'rgba(34, 197, 94, 0.5)'; // Garis Hijau Penanda Lantai Utama
+                    ctx.lineWidth = 1.5;
+                } else {
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                    ctx.lineWidth = 1;
+                }
+
                 ctx.beginPath();
-                ctx.moveTo(0, ry);
-                ctx.lineTo(W, ry);
+                ctx.moveTo(toX(0), ry);
+                ctx.lineTo(toX(worldW), ry);
                 ctx.stroke();
+
+                // Indikator Baris
+                if (gy === 400) {
+                    ctx.fillStyle = '#22c55e';
+                    ctx.font = "bold 8px 'JetBrains Mono'";
+                    ctx.textAlign = 'left';
+                    ctx.fillText('GROUND (y:400)', toX(0) + 4, ry - 3);
+                }
+            }
+
+            // Outline Batas Dunia 1800x450
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(toX(0), toY(0), worldW * scale, worldH * scale);
+
+            // Hover Cursor Tile Highlight (Kotak Persegi yang Sedang Disorot Mouse)
+            if (this.hoverTile) {
+                const hx = toX(this.hoverTile.col * 50);
+                const hy = toY(this.hoverTile.row * 50);
+
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.18)';
+                ctx.fillRect(hx, hy, cellSize, cellSize);
+
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([3, 3]);
+                ctx.strokeRect(hx, hy, cellSize, cellSize);
+                ctx.setLineDash([]);
             }
 
             ctx.restore();
         }
 
         // ===============================================================
-        // 14. UNITY TRANSFORM GIZMOS & SELECTION HIGHLIGHT
+        // 15. UNITY TRANSFORM GIZMOS & SELECTION HIGHLIGHT
         // ===============================================================
         if (this.state.showGizmos && this.state.selectedId) {
             const selId = this.state.selectedId;
             const selObj = this.state.positions[selId];
             if (selObj) {
-                const ox = selObj.x * sx;
-                const oy = groundY - 20 * sy;
+                const ox = toX(selObj.x);
+                const oy = groundY - 20 * scale;
 
                 ctx.save();
                 // Bounding selection box
                 ctx.strokeStyle = '#38bdf8';
                 ctx.lineWidth = 2;
                 ctx.setLineDash([4, 4]);
-                ctx.strokeRect(ox - 18 * sx, oy - 18 * sy, 36 * sx, 36 * sy);
+                ctx.strokeRect(ox - cellSize / 2, oy - cellSize / 2, cellSize, cellSize);
                 ctx.setLineDash([]);
 
                 // Transform handles (Corner squares)
                 ctx.fillStyle = '#ffffff';
                 const corners = [
-                    [ox - 18 * sx, oy - 18 * sy],
-                    [ox + 18 * sx, oy - 18 * sy],
-                    [ox - 18 * sx, oy + 18 * sy],
-                    [ox + 18 * sx, oy + 18 * sy]
+                    [ox - cellSize / 2, oy - cellSize / 2],
+                    [ox + cellSize / 2, oy - cellSize / 2],
+                    [ox - cellSize / 2, oy + cellSize / 2],
+                    [ox + cellSize / 2, oy + cellSize / 2]
                 ];
                 corners.forEach(([cx, cy]) => {
                     ctx.fillRect(cx - 3, cy - 3, 6, 6);
                 });
 
                 // Coordinate Tag Badge
+                const col = Math.round(selObj.x / 50);
                 ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
-                ctx.fillRect(ox - 30, oy - 30 * sy, 60, 16);
+                ctx.fillRect(ox - 32, oy - cellSize / 2 - 18, 64, 16);
                 ctx.strokeStyle = '#38bdf8';
-                ctx.strokeRect(ox - 30, oy - 30 * sy, 60, 16);
+                ctx.strokeRect(ox - 32, oy - cellSize / 2 - 18, 64, 16);
 
                 ctx.fillStyle = '#38bdf8';
                 ctx.font = "bold 9px 'JetBrains Mono'";
                 ctx.textAlign = 'center';
-                ctx.fillText(`x: ${Math.round(selObj.x)}`, ox, oy - 30 * sy + 11);
+                ctx.fillText(`Col ${col} (${Math.round(selObj.x)})`, ox, oy - cellSize / 2 - 6);
 
                 ctx.restore();
             }
