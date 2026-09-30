@@ -735,7 +735,7 @@ export class ProjectHubModal {
                         <span class="gt-uhub-project-name">
                             <span>📁</span> ${proj.name || 'Project Tanpa Judul'}
                         </span>
-                        <span class="gt-uhub-project-path">${proj.desc || 'Game Multi-Scene'} • Start: ${startSceneName}</span>
+                        <span class="gt-uhub-project-path">Start Level: ${startSceneName}</span>
                     </div>
                     <div>
                         <span class="gt-badge-count">📦 ${scenesCount} Scenes</span>
@@ -939,7 +939,7 @@ export class ProjectHubModal {
                             <span>📁</span> ${project.name}
                         </h1>
                         <p style="font-size: 12px; color: #94a3b8; margin: 4px 0 0 0;">
-                            ${project.desc || 'Game Multi-Scene'} • <b>${(project.scenes || []).length} Scene</b> terhubung otomatis via portal finish
+                            <b>${(project.scenes || []).length} Scene</b> terhubung otomatis via portal finish
                         </p>
                     </div>
                 </div>

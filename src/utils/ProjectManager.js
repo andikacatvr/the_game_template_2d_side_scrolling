@@ -262,7 +262,7 @@ export class ProjectManager {
             projects.push({
                 id: 'proj_kreasiku_default',
                 name: 'Project Kreasiku',
-                desc: 'Kumpulan scene kreasimu yang telah dibuat sebelumnya',
+                desc: '',
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
                 startingSceneId: scenes[0].id,
