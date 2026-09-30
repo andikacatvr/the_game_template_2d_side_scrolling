@@ -1971,6 +1971,9 @@ export class SceneBuilderModal {
         }
 
         // Peta Petak 1x1 Spesifik [col, row] untuk Cairan (Water & Lava)
+        const waterEntities = this.state.entities.filter(e => e.type === 'water');
+        const lavaEntities = this.state.entities.filter(e => e.type === 'lava');
+
         const waterTileMap = new Set();
         waterEntities.forEach(e => {
             const w = e.wTiles || 1;
