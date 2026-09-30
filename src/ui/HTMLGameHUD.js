@@ -12,6 +12,7 @@
 import { AudioManager } from '../utils/AudioManager.js';
 import { ProjectHubModal } from './ProjectHubModal.js';
 import { CommandConsole } from '../utils/CommandConsole.js';
+import { WorldMapModal } from './WorldMapModal.js';
 
 export class HTMLGameHUD {
     constructor(scene, options = {}) {
@@ -288,14 +289,20 @@ export class HTMLGameHUD {
                     height: 100px;
                 }
 
-                /* Mode 3: Minimized (Diperkecil / Capsule Pill) */
+                /* Mode 3: Minimized (Diperkecil / Capsule Pill Map) */
                 .gt-hud-radar-strip.is-minimized {
                     width: 250px;
-                    height: 32px;
+                    height: 34px;
                     padding: 0 12px;
                     justify-content: center;
                     border-radius: 20px;
                     cursor: pointer;
+                    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+                .gt-hud-radar-strip.is-minimized:hover {
+                    border-color: #38bdf8;
+                    box-shadow: 0 0 16px rgba(56, 189, 248, 0.5);
+                    transform: translateY(-2px);
                 }
                 .gt-hud-radar-strip.is-minimized .gt-hud-strip-canvas-wrap,
                 .gt-hud-radar-strip.is-minimized .gt-hud-strip-bar-track,
@@ -565,7 +572,7 @@ export class HTMLGameHUD {
             <div class="gt-hud-radar-bottom" id="gt-hud-radar-bottom">
                 <div class="gt-hud-radar-strip is-normal" id="gt-hud-radar-strip">
                     <div class="gt-hud-strip-top">
-                        <div class="gt-hud-strip-title" id="gt-strip-title-btn" title="Klik untuk perkecil / perbesar">
+                        <div class="gt-hud-strip-title" id="gt-strip-title-btn" title="🗺️ Buka World Map (Peta Seluruh Scene) & Quick Travel">
                             <span id="gt-strip-icon">❄️</span>
                             <span id="gt-strip-name">Lv. 1 • Lembah Salju</span>
                         </div>
@@ -735,38 +742,36 @@ export class HTMLGameHUD {
             });
         }
 
-        // Strip Radar Modal Button Click
+        // Strip Radar Modal Button Click (Buka World Map)
         if (this.btnStripModal) {
             this.btnStripModal.addEventListener('click', (e) => {
                 e.stopPropagation();
                 AudioManager.playClick();
-                this.showLevelInfoModal();
+                WorldMapModal.show(this.scene);
             });
         }
 
-        // Klik judul saat minimized untuk membuka kembali
+        // Klik judul pil level: Langsung buka World Map
         if (this.stripTitleBtn) {
             this.stripTitleBtn.addEventListener('click', (e) => {
-                if (this.radarMode === 'minimized') {
-                    e.stopPropagation();
-                    AudioManager.playClick();
-                    this.setRadarMode('normal');
-                }
+                e.stopPropagation();
+                AudioManager.playClick();
+                WorldMapModal.show(this.scene);
             });
         }
 
-        // Strip Radar Body Click (jika sedang minimized, klik bar memulihkan ke normal)
+        // Strip Radar Body Click (jika sedang minimized, klik bar langsung buka World Map)
         if (this.radarStrip) {
             this.radarStrip.addEventListener('click', (e) => {
                 if (this.radarMode === 'minimized') {
                     e.stopPropagation();
                     AudioManager.playClick();
-                    this.setRadarMode('normal');
+                    WorldMapModal.show(this.scene);
                 }
             });
         }
 
-        // Double Click pada canvas wrap untuk toggle ukuran cepat, Single Click untuk buka modal
+        // Double Click pada canvas wrap untuk toggle ukuran cepat, Single Click untuk buka World Map
         if (this.stripCanvasWrap) {
             this.stripCanvasWrap.addEventListener('dblclick', (e) => {
                 e.stopPropagation();
@@ -776,27 +781,27 @@ export class HTMLGameHUD {
             this.stripCanvasWrap.addEventListener('click', (e) => {
                 e.stopPropagation();
                 AudioManager.playClick();
-                this.showLevelInfoModal();
+                WorldMapModal.show(this.scene);
             });
         }
 
-        // Level / Location Button Click (Antara Bag & Menu)
+        // Level / Location Button Click di Atas (Antara Bag & Menu)
         if (this.btnLevel) {
             this.btnLevel.addEventListener('click', (e) => {
                 e.stopPropagation();
                 AudioManager.playClick();
-                this.showLevelInfoModal();
+                WorldMapModal.show(this.scene);
             });
         }
 
-        // Shortcut Keyboard [M] untuk Buka/Tutup Radar Peta
+        // Shortcut Keyboard [M] untuk Buka/Tutup World Map
         if (this.scene && this.scene.input && this.scene.input.keyboard) {
             this.scene.input.keyboard.on('keydown-M', () => {
-                const existing = document.getElementById('gt-hud-level-modal');
+                const existing = document.getElementById('gt-worldmap-modal');
                 if (existing) {
-                    existing.remove();
+                    WorldMapModal.close();
                 } else {
-                    this.showLevelInfoModal();
+                    WorldMapModal.show(this.scene);
                 }
             });
         }
