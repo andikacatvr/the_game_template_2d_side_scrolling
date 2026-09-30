@@ -99,33 +99,44 @@ export class CustomWorldScene extends Phaser.Scene {
     setupSkyAndBackground(worldWidth) {
         let topColor = 0x0284c7;
         let botColor = 0x38bdf8;
+        let skyHex = '#0284c7';
+
+        if (this.worldData.biome === 'snow') {
+            topColor = 0x0284c7;
+            botColor = 0xbae6fd;
+            skyHex = '#0284c7';
+        } else if (this.worldData.biome === 'desert') {
+            topColor = 0xd97706;
+            botColor = 0xfef08a;
+            skyHex = '#d97706';
+        } else if (this.worldData.biome === 'cave') {
+            topColor = 0x090d16;
+            botColor = 0x1e293b;
+            skyHex = '#090d16';
+        }
 
         if (this.worldData.timeOfDay === 'sunset') {
             topColor = 0xc2410c;
             botColor = 0xfb923c;
+            skyHex = '#c2410c';
         } else if (this.worldData.timeOfDay === 'night') {
             topColor = 0x050b14;
             botColor = 0x0f172a;
-        } else if (this.worldData.biome === 'snow') {
-            topColor = 0x0284c7;
-            botColor = 0xbae6fd;
-        } else if (this.worldData.biome === 'desert') {
-            topColor = 0xd97706;
-            botColor = 0xfef08a;
-        } else if (this.worldData.biome === 'cave') {
-            topColor = 0x090d16;
-            botColor = 0x1e293b;
+            skyHex = '#050b14';
         }
 
-        // Latar Belakang Gradien Langit (Sesuai Preview SceneBuilder)
-        const bgGraphics = this.add.graphics().setDepth(0).setScrollFactor(0);
-        bgGraphics.fillGradientStyle(topColor, topColor, botColor, botColor, 1);
-        bgGraphics.fillRect(0, 0, 1920, 1080);
+        // 1. Warna Latar Belakang Kamera Utama (Mencegah area hitam saat zoom out atau di tepi dunia)
+        this.cameras.main.setBackgroundColor(skyHex);
 
-        // Matahari / Bulan dekoratif di langit
+        // 2. Latar Belakang Gradien Langit di World Space (Membentang luas dari x = -1000 ke worldWidth + 1000)
+        const bgGraphics = this.add.graphics().setDepth(0);
+        bgGraphics.fillGradientStyle(topColor, topColor, botColor, botColor, 1);
+        bgGraphics.fillRect(-1000, -600, worldWidth + 2000, 1000);
+
+        // 3. Matahari / Bulan dekoratif di langit (Posisi x=275, y=80 presisi sesuai preview SceneBuilder)
         if (this.worldData.biome !== 'cave') {
             const isNight = this.worldData.timeOfDay === 'night';
-            const sun = this.add.circle(320, 80, 26, isNight ? 0xf8fafc : 0xfef08a, 0.9).setScrollFactor(0.05).setDepth(1);
+            const sun = this.add.circle(275, 80, 26, isNight ? 0xf8fafc : 0xfef08a, 0.95).setDepth(1);
             sun.setStrokeStyle(3, isNight ? 0xe2e8f0 : 0xfde047, 0.7);
         }
     }
@@ -201,10 +212,10 @@ export class CustomWorldScene extends Phaser.Scene {
                 this.waterBodies.add(waterBlock);
 
                 // Efek ombak air di permukaan
-                const wave = this.add.rectangle(cx, groundY + 3, 50, 6, 0x7dd3fc, 0.9).setDepth(6);
+                const wave = this.add.rectangle(cx, groundY + 2, 50, 4, 0x7dd3fc, 0.9).setDepth(6);
                 this.tweens.add({
                     targets: wave,
-                    y: groundY + 5,
+                    y: groundY + 4,
                     duration: 700 + (col % 3) * 150,
                     yoyo: true,
                     repeat: -1,
@@ -218,7 +229,7 @@ export class CustomWorldScene extends Phaser.Scene {
                 this.hazards.add(lavaBlock);
 
                 // Permukaan api lava
-                this.add.rectangle(cx, groundY + 3, 50, 6, 0xf97316, 0.9).setDepth(6);
+                this.add.rectangle(cx, groundY + 2, 50, 4, 0xf97316, 0.9).setDepth(6);
 
                 // Gelembung lava berkilau
                 const bubble = this.add.circle(cx, groundY + 12, 3.5, 0xfbbf24).setDepth(7);
@@ -231,32 +242,41 @@ export class CustomWorldScene extends Phaser.Scene {
                     ease: 'Sine.easeOut'
                 });
             } else if (hasGroundAtCol) {
-                // Balok Permukaan Tanah (Row 8: y=400..450)
+                // Balok Permukaan Tanah Padat & Mulus (Row 8: y=400..450)
                 const topTile = this.add.rectangle(cx, groundY + 25, 50, 50, subColor).setDepth(4);
-                topTile.setStrokeStyle(1, 0x000000, 0.2);
                 this.physics.add.existing(topTile, true);
                 this.platforms.add(topTile);
 
                 // Lapisan Rumput / Turf Permukaan (14px)
-                const turf = this.add.rectangle(cx, groundY + 7, 50, 14, surfaceColor).setDepth(5);
+                this.add.rectangle(cx, groundY + 7, 50, 14, surfaceColor).setDepth(5);
             }
 
-            // B. Lapisan Bawah Tanah (Row 9..11: Subsoil, Row 12: Stone)
+            // B. Lapisan Bawah Tanah Solid & Mulus (Row 9..11: Subsoil, Row 12: Stone)
             // Jika tanah di Row 8 dihapus dan bukan air/lava, biarkan tembus bolong (jurang)!
             if (hasGroundAtCol || inWater || inLava) {
                 for (let r = 9; r <= 11; r++) {
                     const ry = r * 50 + 25;
                     const subTile = this.add.rectangle(cx, ry, 50, 50, subColor).setDepth(3);
-                    subTile.setStrokeStyle(1, 0x000000, 0.15);
                     this.physics.add.existing(subTile, true);
                     this.platforms.add(subTile);
+
+                    // Sedikit aksen kerikil tanah halus persis seperti di preview
+                    if ((col + r) % 3 === 0) {
+                        this.add.rectangle(cx + 4, ry + 6, 8, 5, 0x000000, 0.12).setDepth(4);
+                    }
                 }
 
                 // Row 12: Slate Stone
                 const stoneTile = this.add.rectangle(cx, 12 * 50 + 25, 50, 50, stoneColor).setDepth(3);
-                stoneTile.setStrokeStyle(1, 0x000000, 0.2);
                 this.physics.add.existing(stoneTile, true);
                 this.platforms.add(stoneTile);
+
+                // Urat mineral kristal / emas terpendam seperti di preview
+                if ((col * 7 + 12 * 13) % 9 === 0) {
+                    this.add.circle(cx, 12 * 50 + 25, 4, 0x38bdf8).setDepth(4);
+                } else if ((col * 3 + 12 * 11) % 8 === 0) {
+                    this.add.rectangle(cx, 12 * 50 + 25, 6, 6, 0xf59e0b).setDepth(4);
+                }
             }
 
             // C. Row 13 (y=650..700): Bedrock Tak Tertembus di Dasar Dunia
@@ -485,17 +505,19 @@ export class CustomWorldScene extends Phaser.Scene {
             container.body.setOffset(-14, -14);
             this.physics.add.collider(container, this.platforms);
 
-            container.body.setVelocityX(60);
+            // Patroli aman dalam radius ±20px agar tidak tercebur ke kolam air atau lava di sebelahnya
+            container.body.setVelocityX(-40);
             container.startX = x;
+            container.patrolRadius = 20;
             container.isSlime = true;
             this.monsters.push(container);
 
             this.time.addEvent({
-                delay: 2000,
+                delay: 2200,
                 loop: true,
                 callback: () => {
                     if (container && container.body && container.body.blocked.down) {
-                        container.body.setVelocityY(-180);
+                        container.body.setVelocityY(-160);
                     }
                 }
             });
@@ -516,8 +538,9 @@ export class CustomWorldScene extends Phaser.Scene {
             container.body.setOffset(-11, -19);
             this.physics.add.collider(container, this.platforms);
 
-            container.body.setVelocityX(-50);
+            container.body.setVelocityX(-40);
             container.startX = x;
+            container.patrolRadius = 30;
             container.isSkeleton = true;
             this.monsters.push(container);
 
@@ -549,16 +572,20 @@ export class CustomWorldScene extends Phaser.Scene {
             const npc = this.add.rectangle(x, y, 24, 38, 0xa855f7).setDepth(8);
             npc.setStrokeStyle(1.5, 0xd8b4fe);
             this.physics.add.existing(npc, true);
+            this.npc = npc;
 
             this.add.circle(x - 4, y - 10, 2.5, 0xfde047).setDepth(9);
             this.add.circle(x + 4, y - 10, 2.5, 0xfde047).setDepth(9);
 
-            this.add.text(x, y - 28, 'Penjelajah Roh', {
-                fontSize: '11px',
+            // Speech bubble [E] mungil persis seperti di preview SceneBuilderModal
+            const bubble = this.add.rectangle(x, y - 28, 22, 14, 0x1e1b4b).setDepth(9);
+            bubble.setStrokeStyle(1, 0xc084fc);
+            this.add.text(x, y - 28, '[E]', {
+                fontSize: '9px',
                 fontStyle: 'bold',
-                fill: '#d8b4fe',
-                fontFamily: FONT_BODY
-            }).setOrigin(0.5).setDepth(9);
+                fill: '#ffffff',
+                fontFamily: "'JetBrains Mono', monospace"
+            }).setOrigin(0.5).setDepth(10);
         };
 
         const spawnChest = (x, y = 388) => {
@@ -635,12 +662,16 @@ export class CustomWorldScene extends Phaser.Scene {
     // ===============================================================
     setupCameraFollow() {
         this.cameras.main.setRoundPixels(true);
-        this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+        this.cameraAnchor = {
+            x: this.player ? this.player.x : 125,
+            y: 360
+        };
+        this.cameras.main.startFollow(this.cameraAnchor, true, 0.08, 0.08);
         this.zoomManager = new CameraZoomManager(this, {
             minZoom: 0.85,
             maxZoom: 1.6,
             defaultZoom: 1.0,
-            followTarget: this.player
+            followTarget: this.cameraAnchor
         });
     }
 
@@ -764,13 +795,24 @@ export class CustomWorldScene extends Phaser.Scene {
             AudioManager.playJump();
         }
 
-        // Update Patroli Monster
+        // Update Camera Anchor Smooth Follow
+        if (this.cameraAnchor) {
+            this.cameraAnchor.x = this.player.x;
+            if (this.player.y > 450) {
+                this.cameraAnchor.y = this.player.y - 70;
+            } else {
+                this.cameraAnchor.y = 360;
+            }
+        }
+
+        // Update Patroli Monster Aman (Terkunci dalam radius patroli agar tidak jatuh ke air)
         this.monsters.forEach(m => {
             if (m && m.body) {
-                if (m.x > m.startX + 120) {
-                    m.body.setVelocityX(-50);
-                } else if (m.x < m.startX - 120) {
-                    m.body.setVelocityX(50);
+                const rad = m.patrolRadius || 30;
+                if (m.x > m.startX + rad) {
+                    m.body.setVelocityX(-40);
+                } else if (m.x < m.startX - rad) {
+                    m.body.setVelocityX(40);
                 }
             }
         });
