@@ -104,6 +104,9 @@ export class SceneBuilderModal {
 
         this.createDOM();
         this.preventAllOverlaps();
+        if (this.scene) {
+            this.syncWithActiveScene(this.scene);
+        }
     }
 
     loadWorldData(data) {
@@ -3467,8 +3470,105 @@ export class SceneBuilderModal {
         if (typeof this.renderInspector === 'function') this.renderInspector();
     }
 
-    show() {
+    syncWithActiveScene(scene) {
+        if (!scene) {
+            if (window.__templateGame && window.__templateGame.scene) {
+                const activeScenes = window.__templateGame.scene.getScenes(true) || [];
+                scene = activeScenes.find(s => ['GameScene', 'HongKongScene', 'Scene2', 'CustomWorldScene', 'Scene3'].includes(s.scene && s.scene.key)) || activeScenes[0];
+            }
+        }
+        if (!scene || !scene.scene) return;
+        this.scene = scene;
+        const sceneKey = scene.scene.key;
+
+        // 1. JIKA SEDANG DI SCENE 1 (Tutorial - Lembah Salju)
+        if (sceneKey === 'GameScene') {
+            const playerX = scene.player ? scene.player.x : 125;
+            const playerCol = Math.max(1, Math.min(26, Math.floor(playerX / 50)));
+
+            const terrain = new Set();
+            for (let c = 0; c < 28; c++) {
+                terrain.add(`${c},8`);
+            }
+
+            const data = {
+                name: 'Level 1 • Lembah Salju',
+                biome: 'snow',
+                timeOfDay: 'day',
+                worldWidth: 1400,
+                worldHeight: 850,
+                entities: [
+                    { id: 'player_1', type: 'player', col: playerCol, row: 7, x: playerCol * 50 + 25, y: 400, label: 'Player Spawn', cat: 'creature', icon: '👤', wTiles: 1, hTiles: 1 },
+                    { id: 'npc_1', type: 'npc', col: 4, row: 7, x: 225, y: 400, label: 'Penjaga Gerbang (NPC)', cat: 'creature', icon: '🧙', wTiles: 1, hTiles: 1 },
+                    { id: 'spikes_1', type: 'spikes', col: 11, row: 7, x: 575, y: 400, label: 'Rintangan Duri Salju #1', cat: 'solid', icon: '⚠️', wTiles: 1, hTiles: 1 },
+                    { id: 'spikes_2', type: 'spikes', col: 12, row: 7, x: 625, y: 400, label: 'Rintangan Duri Salju #2', cat: 'solid', icon: '⚠️', wTiles: 1, hTiles: 1 },
+                    { id: 'platform_1', type: 'platforms', col: 8, row: 6, x: 425, y: 300, label: 'Pijakan Salju #1', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
+                    { id: 'platform_2', type: 'platforms', col: 9, row: 6, x: 475, y: 300, label: 'Pijakan Salju #2', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
+                    { id: 'platform_3', type: 'platforms', col: 10, row: 6, x: 525, y: 300, label: 'Pijakan Salju #3', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
+                    { id: 'platform_4', type: 'platforms', col: 14, row: 4, x: 725, y: 200, label: 'Pijakan Tinggi #1', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
+                    { id: 'platform_5', type: 'platforms', col: 15, row: 4, x: 775, y: 200, label: 'Pijakan Tinggi #2', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
+                    { id: 'coins_1', type: 'coins', col: 11, row: 4, x: 575, y: 200, label: 'Koin Emas Murni', cat: 'solid', icon: '🪙', wTiles: 1, hTiles: 1 },
+                    { id: 'portal_1', type: 'portal', col: 23, row: 7, x: 1175, y: 400, label: 'Portal ke Scene 2', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 }
+                ],
+                terrainTiles: Array.from(terrain)
+            };
+            this.loadWorldData(data);
+            return;
+        }
+
+        // 2. JIKA SEDANG DI SCENE 2 (Teluk Hong Kong)
+        if (sceneKey === 'HongKongScene' || sceneKey === 'Scene2') {
+            const playerX = scene.player ? scene.player.x : 160;
+            const playerCol = Math.max(1, Math.min(38, Math.floor(playerX / 50)));
+
+            const terrain = new Set();
+            for (let c = 0; c < 40; c++) {
+                terrain.add(`${c},8`);
+            }
+
+            const data = {
+                name: 'Level 2 • Teluk Hong Kong',
+                biome: 'hongkong',
+                timeOfDay: 'night',
+                worldWidth: 2000,
+                worldHeight: 850,
+                entities: [
+                    { id: 'player_1', type: 'player', col: playerCol, row: 7, x: playerCol * 50 + 25, y: 400, label: 'Player Spawn', cat: 'creature', icon: '👤', wTiles: 1, hTiles: 1 },
+                    { id: 'portal_back', type: 'portal', col: 1, row: 7, x: 75, y: 400, label: 'Portal Kembali ke Scene 1', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 },
+                    { id: 'npc_chen', type: 'npc', col: 6, row: 7, x: 325, y: 400, label: 'Kapten Chen (NPC)', cat: 'creature', icon: '🧙', wTiles: 1, hTiles: 1 },
+                    { id: 'hazard_ombak', type: 'spikes', col: 17, row: 7, x: 875, y: 400, label: 'Ombak Pecah (Hazard)', cat: 'solid', icon: '⚠️', wTiles: 1, hTiles: 1 },
+                    { id: 'platform_hk1', type: 'platforms', col: 8, row: 7, x: 425, y: 350, label: 'Peti Dermaga #1', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
+                    { id: 'platform_hk2', type: 'platforms', col: 15, row: 6, x: 775, y: 300, label: 'Peti Dermaga #2', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
+                    { id: 'platform_hk3', type: 'platforms', col: 22, row: 5, x: 1125, y: 250, label: 'Batu Karang Tinggi', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
+                    { id: 'chest_pearl', type: 'chest', col: 22, row: 4, x: 1125, y: 200, label: 'Mutiara Victoria', cat: 'solid', icon: '📦', wTiles: 1, hTiles: 1 }
+                ],
+                terrainTiles: Array.from(terrain)
+            };
+            this.loadWorldData(data);
+            return;
+        }
+
+        // 3. JIKA SEDANG DI CUSTOM WORLD SCENE
+        if (sceneKey === 'CustomWorldScene' && scene.worldData) {
+            const data = JSON.parse(JSON.stringify(scene.worldData));
+            if (scene.player) {
+                const playerCol = Math.max(0, Math.floor(scene.player.x / 50));
+                const pEnt = (data.entities || []).find(e => e.type === 'player');
+                if (pEnt) {
+                    pEnt.col = playerCol;
+                    pEnt.x = playerCol * 50 + 25;
+                }
+            }
+            this.loadWorldData(data);
+            return;
+        }
+    }
+
+    show(targetScene = null) {
         if (!this.overlay) return;
+        const sceneToSync = targetScene || this.scene;
+        this.syncWithActiveScene(sceneToSync);
+
         this._isOpen = true;
         this.overlay.classList.remove('hidden');
 

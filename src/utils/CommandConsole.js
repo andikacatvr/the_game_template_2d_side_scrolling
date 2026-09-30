@@ -1297,9 +1297,10 @@ export class CommandConsole {
     }
 
     getActiveScene() {
-        if (!window.__templateGame) return null;
-        const scenes = window.__templateGame.scene.getScenes(true);
-        return scenes && scenes.length > 0 ? scenes[0] : null;
+        if (!window.__templateGame || !window.__templateGame.scene) return null;
+        const scenes = window.__templateGame.scene.getScenes(true) || [];
+        if (scenes.length === 0) return null;
+        return scenes.find(s => ['GameScene', 'HongKongScene', 'Scene2', 'CustomWorldScene', 'Scene3'].includes(s.scene && s.scene.key)) || scenes[0];
     }
 
     openSceneBuilder() {
@@ -1309,7 +1310,7 @@ export class CommandConsole {
         } else if (activeScene) {
             this.sceneBuilderModal.scene = activeScene;
         }
-        this.sceneBuilderModal.show();
+        this.sceneBuilderModal.show(activeScene);
     }
 
     // ===============================================================
