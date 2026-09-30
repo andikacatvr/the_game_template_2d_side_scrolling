@@ -349,6 +349,10 @@ export class ProjectHubModal {
                     border-bottom: 1px solid #222222;
                 }
 
+                .gt-uhub-table-header.gt-uhub-cols-3 {
+                    grid-template-columns: 3fr 1.2fr 1.6fr;
+                }
+
                 .gt-uhub-row {
                     display: grid;
                     grid-template-columns: 2.2fr 1.2fr 1.2fr 1.4fr;
@@ -357,6 +361,10 @@ export class ProjectHubModal {
                     border-bottom: 1px solid #202020;
                     border-radius: 6px;
                     transition: background 0.15s ease;
+                }
+
+                .gt-uhub-row.gt-uhub-cols-3 {
+                    grid-template-columns: 3fr 1.2fr 1.6fr;
                 }
 
                 .gt-uhub-row:hover {
@@ -730,15 +738,12 @@ export class ProjectHubModal {
             const startSceneName = startScene ? startScene.name : 'Belum ada level';
 
             return `
-                <div class="gt-uhub-row" data-name="${(proj.name || '').toLowerCase()}">
+                <div class="gt-uhub-row gt-uhub-cols-3" data-name="${(proj.name || '').toLowerCase()}">
                     <div class="gt-uhub-col-name">
                         <span class="gt-uhub-project-name">
                             <span>📁</span> ${proj.name || 'Project Tanpa Judul'}
                         </span>
-                        <span class="gt-uhub-project-path">Start Level: ${startSceneName}</span>
-                    </div>
-                    <div>
-                        <span class="gt-badge-count">📦 ${scenesCount} Scenes</span>
+                        <span class="gt-uhub-project-path">Start Level: ${startSceneName} • (${scenesCount} Scene)</span>
                     </div>
                     <div class="gt-uhub-badge-platform">
                         <span>● Project Game</span>
@@ -776,9 +781,8 @@ export class ProjectHubModal {
             </div>
 
             <div class="gt-uhub-table-container">
-                <div class="gt-uhub-table-header">
+                <div class="gt-uhub-table-header gt-uhub-cols-3">
                     <div>Project Name</div>
-                    <div>Scenes</div>
                     <div>Status</div>
                     <div style="text-align: right;">Action</div>
                 </div>
@@ -786,15 +790,12 @@ export class ProjectHubModal {
                 ${projectRowsHTML}
 
                 <!-- Sandbox World (Scene 3) -->
-                <div class="gt-uhub-row" data-name="sandbox world scene 3">
+                <div class="gt-uhub-row gt-uhub-cols-3" data-name="sandbox world scene 3">
                     <div class="gt-uhub-col-name">
                         <span class="gt-uhub-project-name">
                             <span>🌟</span> Sandbox World (Scene 3)
                         </span>
                         <span class="gt-uhub-project-path">src/scenes/Scene3.js • Lab Koding Bebas</span>
-                    </div>
-                    <div>
-                        <span class="gt-uhub-badge-tag gt-tag-sandbox">Creative Canvas</span>
                     </div>
                     <div class="gt-uhub-badge-platform">
                         <span>● Standalone</span>
