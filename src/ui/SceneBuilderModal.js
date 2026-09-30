@@ -1405,18 +1405,7 @@ export class SceneBuilderModal {
             ctx.stroke();
         }
 
-        // 4. PARALLAX SILHOUETTE MOUNTAINS (Di atas garis tanah)
-        ctx.fillStyle = this.state.biome === 'cave' ? '#111827' : (this.state.biome === 'desert' ? '#92400e' : '#1e293b');
-        ctx.globalAlpha = 0.55;
-        for (let x = 0; x < worldW + 200; x += 150) {
-            ctx.beginPath();
-            ctx.moveTo(toX(x), groundY);
-            ctx.lineTo(toX(x + 75), toY(220 + (x % 50)));
-            ctx.lineTo(toX(x + 150), groundY);
-            ctx.closePath();
-            ctx.fill();
-        }
-        ctx.globalAlpha = 1.0;
+        // 4. PENENTUAN WARNA BIOME STRATA (Bersih tanpa siluet gunung yang menumpuk)
 
         // 5. PENENTUAN WARNA BIOME STRATA
         let surfaceColor = '#15803d'; // Forest rumput

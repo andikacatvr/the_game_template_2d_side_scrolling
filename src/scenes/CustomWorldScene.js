@@ -122,17 +122,6 @@ export class CustomWorldScene extends Phaser.Scene {
             celestial.setStrokeStyle(3, isNight ? 0xe2e8f0 : 0xfde047, 0.7);
         }
 
-        // Pegunungan siluet di background parallax
-        const bgG = this.add.graphics().setScrollFactor(0.15).setDepth(1);
-        bgG.fillStyle(this.worldData.biome === 'cave' ? 0x111827 : (this.worldData.biome === 'desert' ? 0xb45309 : 0x1e293b), 0.55);
-        for (let x = 0; x < worldWidth + 200; x += 160) {
-            bgG.beginPath();
-            bgG.moveTo(x, 420);
-            bgG.lineTo(x + 80, 240 + (x % 50));
-            bgG.lineTo(x + 160, 420);
-            bgG.closePath();
-            bgG.fillPath();
-        }
     }
 
     // ===============================================================
