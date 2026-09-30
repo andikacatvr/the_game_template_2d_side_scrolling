@@ -168,12 +168,18 @@ export class CustomWorldScene extends Phaser.Scene {
             if (this.worldData.hasLava) lavaRanges.push([1000, 1150]);
         }
 
+        const terrainSet = (Array.isArray(this.worldData.terrainTiles)) ? new Set(this.worldData.terrainTiles) : null;
+
         for (let i = 0; i < tileCount; i++) {
             const x = -64 + i * 32 + 16;
+            const col = Math.floor(x / 50);
 
             // Cek apakah permukaan tile ini berada di petak air atau lava
             const inWater = waterRanges.some(([s, e]) => x >= s && x <= e);
             const inLava = lavaRanges.some(([s, e]) => x >= s && x <= e);
+
+            // Cek apakah tanah di kolom ini aktif (atau dihapus jadi jurang)
+            const hasGroundAtCol = terrainSet ? (col < 0 || col >= 36 || terrainSet.has(`${col},8`)) : true;
 
             if (inWater) {
                 // Kolam Air 1x1
@@ -199,7 +205,7 @@ export class CustomWorldScene extends Phaser.Scene {
                         ease: 'Sine.easeOut'
                     });
                 }
-            } else {
+            } else if (hasGroundAtCol) {
                 // Lantai Permukaan Tanah Biasa
                 const topTile = this.add.rectangle(x, groundY, 32, 32, surfaceColor).setDepth(4);
                 topTile.setStrokeStyle(1, 0x000000, 0.25);
@@ -207,25 +213,56 @@ export class CustomWorldScene extends Phaser.Scene {
                 this.platforms.add(topTile);
             }
 
-            // Bawah Tanah Solid (SELALU ADA, TIDAK DIBOBOL/KOSONG): Subsoil Dirt -> Deep Cavern Stone -> Bedrock
+            // Bawah Tanah: Jika tanah baris 8 dihapus (jurang) dan bukan air/lava, biarkan kosong tembus sampai bedrock!
             const worldHeight = this.worldData.worldHeight || 850;
             const maxSubY = worldHeight - 32;
-            for (let dy = 32; groundY + dy <= maxSubY; dy += 32) {
-                const curY = groundY + dy;
-                let tileColor = subColor;
-                if (curY > 650) {
-                    tileColor = 0x1e293b; // Deep slate stone
+            if (hasGroundAtCol || inWater || inLava) {
+                for (let dy = 32; groundY + dy <= maxSubY; dy += 32) {
+                    const curY = groundY + dy;
+                    let tileColor = subColor;
+                    if (curY > 650) {
+                        tileColor = 0x1e293b; // Deep slate stone
+                    }
+                    const subTile = this.add.rectangle(x, curY, 32, 32, tileColor).setDepth(3);
+                    this.physics.add.existing(subTile, true);
+                    this.platforms.add(subTile);
                 }
-                const subTile = this.add.rectangle(x, curY, 32, 32, tileColor).setDepth(3);
-                this.physics.add.existing(subTile, true);
-                this.platforms.add(subTile);
             }
 
-            // Bedrock Tak Tertembus di Dasar Dunia
+            // Bedrock Tak Tertembus di Dasar Dunia (tetap ada di dasar jurang agar pemain tidak tembus batas dunia)
             const bedrockTile = this.add.rectangle(x, worldHeight - 16, 32, 32, 0x05070a).setDepth(4);
             bedrockTile.setStrokeStyle(1.5, 0x1e293b);
             this.physics.add.existing(bedrockTile, true);
             this.platforms.add(bedrockTile);
+        }
+
+        // Blok Tanah Kustom (Modular Dirt Tiles pada baris selain baris 8)
+        if (terrainSet) {
+            terrainSet.forEach(key => {
+                const parts = key.split(',');
+                const c = parseInt(parts[0], 10);
+                const r = parseInt(parts[1], 10);
+                if (r !== 8 && !isNaN(c) && !isNaN(r)) {
+                    const bx = c * 50 + 25;
+                    const by = r * 50 + 25;
+                    const dirtTile = this.add.rectangle(bx, by, 50, 50, surfaceColor).setDepth(4);
+                    dirtTile.setStrokeStyle(1.5, subColor);
+                    this.physics.add.existing(dirtTile, true);
+                    this.platforms.add(dirtTile);
+                }
+            });
+        }
+
+        // Blok Tanah yang Disimpan Sebagai Entitas Dinamis
+        if (hasCustom) {
+            this.worldData.entities.filter(e => e.type === 'dirt').forEach(d => {
+                const bx = d.col * 50 + 25;
+                const by = (d.row !== undefined ? d.row : 8) * 50 + 25;
+                const dirtTile = this.add.rectangle(bx, by, 50, 50, surfaceColor).setDepth(4);
+                dirtTile.setStrokeStyle(1.5, subColor);
+                this.physics.add.existing(dirtTile, true);
+                this.platforms.add(dirtTile);
+            });
         }
 
         // Rintangan Duri (Spikes)
