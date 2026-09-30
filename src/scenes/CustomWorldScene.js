@@ -252,16 +252,43 @@ export class CustomWorldScene extends Phaser.Scene {
             });
         }
 
-        // Pijakan Melayang (Floating Platforms)
+        // Pijakan Melayang (Floating Platforms - Auto-Merged)
         if (hasCustom) {
-            this.worldData.entities.filter(e => e.type === 'platforms').forEach(p => {
-                const pw = (p.wTiles || 2) * 50;
-                const px = p.col * 50 + pw / 2;
-                const py = p.row * 50 + 9;
-                const plat = this.add.rectangle(px, py, pw, 18, 0x1f2937).setDepth(6);
-                plat.setStrokeStyle(2, surfaceColor);
-                this.physics.add.existing(plat, true);
-                this.platforms.add(plat);
+            const platEntities = this.worldData.entities.filter(e => e.type === 'platforms');
+            const platRowMap = new Map();
+            platEntities.forEach(p => {
+                const r = p.row;
+                if (!platRowMap.has(r)) platRowMap.set(r, new Set());
+                const w = p.wTiles || 1;
+                for (let c = p.col; c < p.col + w; c++) platRowMap.get(r).add(c);
+            });
+
+            platRowMap.forEach((colsSet, row) => {
+                const sorted = Array.from(colsSet).sort((a, b) => a - b);
+                let cur = null;
+                const segs = [];
+                sorted.forEach(c => {
+                    if (!cur) {
+                        cur = { start: c, end: c };
+                    } else if (c === cur.end + 1) {
+                        cur.end = c;
+                    } else {
+                        segs.push(cur);
+                        cur = { start: c, end: c };
+                    }
+                });
+                if (cur) segs.push(cur);
+
+                segs.forEach(seg => {
+                    const count = seg.end - seg.start + 1;
+                    const pw = count * 50;
+                    const px = seg.start * 50 + pw / 2;
+                    const py = row * 50 + 9;
+                    const plat = this.add.rectangle(px, py, pw, 18, 0x1f2937).setDepth(6);
+                    plat.setStrokeStyle(2, surfaceColor);
+                    this.physics.add.existing(plat, true);
+                    this.platforms.add(plat);
+                });
             });
 
             // Koin Emas

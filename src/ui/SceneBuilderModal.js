@@ -1,18 +1,18 @@
 import { AudioManager } from '../utils/AudioManager.js';
 
-// Katalog Item Template untuk World Builder
+// Katalog Item Template untuk World Builder (Setiap Objek adalah Unit Kotak 1x1)
 export const ITEM_TEMPLATES = {
-    player: { type: 'player', label: 'Player Spawn', icon: '👤', cat: 'creature', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Titik awal pemain muncul di dunia' },
-    npc: { type: 'npc', label: 'NPC Guide', icon: '🧙', cat: 'creature', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Karakter interaktif pemberi info' },
-    slime: { type: 'slime', label: 'Monster Slime', icon: '🟢', cat: 'creature', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Musuh melompat berlendir' },
-    skeleton: { type: 'skeleton', label: 'Monster Skeleton', icon: '💀', cat: 'creature', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Musuh tengkorak berpatroli' },
-    platforms: { type: 'platforms', label: 'Pijakan Melayang', icon: '🧱', cat: 'solid', wTiles: 2, hTiles: 1, defaultRow: 5, desc: 'Platform melayang modular 2-kotak' },
-    spikes: { type: 'spikes', label: 'Rintangan Duri', icon: '⚠️', cat: 'solid', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Jebakan duri runcing mematikan' },
-    chest: { type: 'chest', label: 'Peti Harta Karun', icon: '📦', cat: 'solid', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Peti rahasia berisi hadiah' },
-    coins: { type: 'coins', label: 'Koin Emas', icon: '🪙', cat: 'solid', wTiles: 1, hTiles: 1, defaultRow: 4, desc: 'Koin koleksi penambah skor' },
-    portal: { type: 'portal', label: 'Goal Portal Finish', icon: '🌀', cat: 'solid', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Gerbang finish kemenangan' },
-    water: { type: 'water', label: 'Kolam Air (3 Tiles)', icon: '🌊', cat: 'fluid', wTiles: 3, hTiles: 3, defaultRow: 8, desc: 'Jurang air dingin memperlambat gerak' },
-    lava: { type: 'lava', label: 'Kolam Lava (3 Tiles)', icon: '🌋', cat: 'fluid', wTiles: 3, hTiles: 3, defaultRow: 8, desc: 'Lava mendidih langsung melukai pemain' }
+    player: { type: 'player', label: 'Player Spawn (1x1)', icon: '👤', cat: 'creature', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Titik awal pemain muncul di dunia (1x1)' },
+    npc: { type: 'npc', label: 'NPC Guide (1x1)', icon: '🧙', cat: 'creature', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Karakter interaktif pemberi info (1x1)' },
+    slime: { type: 'slime', label: 'Monster Slime (1x1)', icon: '🟢', cat: 'creature', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Musuh melompat berlendir (1x1)' },
+    skeleton: { type: 'skeleton', label: 'Monster Skeleton (1x1)', icon: '💀', cat: 'creature', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Musuh tengkorak berpatroli (1x1)' },
+    platforms: { type: 'platforms', label: 'Pijakan (1x1)', icon: '🧱', cat: 'solid', wTiles: 1, hTiles: 1, defaultRow: 5, desc: 'Balok pijakan 1x1 (otomatis menyatu saat berjejer)' },
+    spikes: { type: 'spikes', label: 'Rintangan Duri (1x1)', icon: '⚠️', cat: 'solid', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Jebakan duri runcing 1x1' },
+    chest: { type: 'chest', label: 'Peti Harta (1x1)', icon: '📦', cat: 'solid', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Peti rahasia berisi hadiah 1x1' },
+    coins: { type: 'coins', label: 'Koin Emas (1x1)', icon: '🪙', cat: 'solid', wTiles: 1, hTiles: 1, defaultRow: 4, desc: 'Koin koleksi penambah skor 1x1' },
+    portal: { type: 'portal', label: 'Portal Finish (1x1)', icon: '🌀', cat: 'solid', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Gerbang finish kemenangan 1x1' },
+    water: { type: 'water', label: 'Blok Air (1x1)', icon: '🌊', cat: 'fluid', wTiles: 1, hTiles: 1, defaultRow: 8, desc: 'Blok cairan air 1x1 (otomatis menyatu menjadi kolam saat berjejer)' },
+    lava: { type: 'lava', label: 'Blok Lava (1x1)', icon: '🌋', cat: 'fluid', wTiles: 1, hTiles: 1, defaultRow: 8, desc: 'Blok cairan lava 1x1 (otomatis menyatu menjadi jurang lava saat berjejer)' }
 };
 
 export class SceneBuilderModal {
@@ -36,18 +36,24 @@ export class SceneBuilderModal {
             worldWidth: 1800,
             worldHeight: 850,
 
-            // Dynamic Entity List (Supports drag-drop reordering, multiple instances, dynamic add/delete)
+            // Dynamic Entity List (Semua objek unit 1x1, otomatis menyatu bila berjejer)
             entities: [
                 { id: 'player_1', type: 'player', col: 2, row: 7, x: 125, y: 400, label: 'Player Spawn', cat: 'creature', icon: '👤', wTiles: 1, hTiles: 1 },
                 { id: 'npc_1', type: 'npc', col: 6, row: 7, x: 325, y: 400, label: 'NPC Guide', cat: 'creature', icon: '🧙', wTiles: 1, hTiles: 1 },
-                { id: 'spikes_1', type: 'spikes', col: 7, row: 7, x: 375, y: 400, label: 'Rintangan Duri #1', cat: 'solid', icon: '⚠️', wTiles: 1, hTiles: 1 },
-                { id: 'slime_1', type: 'slime', col: 10, row: 7, x: 525, y: 400, label: 'Monster Slime #1', cat: 'creature', icon: '🟢', wTiles: 1, hTiles: 1 },
-                { id: 'water_1', type: 'water', col: 11, row: 8, x: 625, y: 400, label: 'Kolam Air', cat: 'fluid', icon: '🌊', wTiles: 3, hTiles: 3 },
-                { id: 'platform_1', type: 'platforms', col: 12, row: 5, x: 650, y: 250, label: 'Pijakan Melayang #1', cat: 'solid', icon: '🧱', wTiles: 2, hTiles: 1 },
-                { id: 'coins_1', type: 'coins', col: 12, row: 4, x: 650, y: 200, label: 'Koin Emas #1', cat: 'solid', icon: '🪙', wTiles: 1, hTiles: 1 },
+                { id: 'spikes_1', type: 'spikes', col: 7, row: 7, x: 375, y: 400, label: 'Rintangan Duri', cat: 'solid', icon: '⚠️', wTiles: 1, hTiles: 1 },
+                { id: 'slime_1', type: 'slime', col: 10, row: 7, x: 525, y: 400, label: 'Monster Slime', cat: 'creature', icon: '🟢', wTiles: 1, hTiles: 1 },
+                { id: 'water_1', type: 'water', col: 11, row: 8, x: 575, y: 400, label: 'Blok Air #1', cat: 'fluid', icon: '🌊', wTiles: 1, hTiles: 1 },
+                { id: 'water_2', type: 'water', col: 12, row: 8, x: 625, y: 400, label: 'Blok Air #2', cat: 'fluid', icon: '🌊', wTiles: 1, hTiles: 1 },
+                { id: 'water_3', type: 'water', col: 13, row: 8, x: 675, y: 400, label: 'Blok Air #3', cat: 'fluid', icon: '🌊', wTiles: 1, hTiles: 1 },
+                { id: 'platform_1', type: 'platforms', col: 12, row: 5, x: 625, y: 250, label: 'Pijakan #1', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
+                { id: 'platform_2', type: 'platforms', col: 13, row: 5, x: 675, y: 250, label: 'Pijakan #2', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
+                { id: 'coins_1', type: 'coins', col: 12, row: 4, x: 625, y: 200, label: 'Koin Emas #1', cat: 'solid', icon: '🪙', wTiles: 1, hTiles: 1 },
+                { id: 'coins_2', type: 'coins', col: 13, row: 4, x: 675, y: 200, label: 'Koin Emas #2', cat: 'solid', icon: '🪙', wTiles: 1, hTiles: 1 },
                 { id: 'chest_1', type: 'chest', col: 15, row: 7, x: 775, y: 400, label: 'Peti Harta Karun', cat: 'solid', icon: '📦', wTiles: 1, hTiles: 1 },
-                { id: 'lava_1', type: 'lava', col: 20, row: 8, x: 1075, y: 400, label: 'Kolam Lava', cat: 'fluid', icon: '🌋', wTiles: 3, hTiles: 3 },
-                { id: 'skeleton_1', type: 'skeleton', col: 30, row: 7, x: 1525, y: 400, label: 'Monster Skeleton #1', cat: 'creature', icon: '💀', wTiles: 1, hTiles: 1 },
+                { id: 'lava_1', type: 'lava', col: 20, row: 8, x: 1025, y: 400, label: 'Blok Lava #1', cat: 'fluid', icon: '🌋', wTiles: 1, hTiles: 1 },
+                { id: 'lava_2', type: 'lava', col: 21, row: 8, x: 1075, y: 400, label: 'Blok Lava #2', cat: 'fluid', icon: '🌋', wTiles: 1, hTiles: 1 },
+                { id: 'lava_3', type: 'lava', col: 22, row: 8, x: 1125, y: 400, label: 'Blok Lava #3', cat: 'fluid', icon: '🌋', wTiles: 1, hTiles: 1 },
+                { id: 'skeleton_1', type: 'skeleton', col: 30, row: 7, x: 1525, y: 400, label: 'Monster Skeleton', cat: 'creature', icon: '💀', wTiles: 1, hTiles: 1 },
                 { id: 'portal_1', type: 'portal', col: 34, row: 7, x: 1725, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 }
             ]
         };
@@ -1432,7 +1438,14 @@ export class SceneBuilderModal {
                 </div>
                 <div class="gt-sb-prop-row">
                     <span class="gt-sb-prop-label">Dimensi Tile</span>
-                    <span class="gt-sb-prop-val" style="color: #38bdf8;">${obj.wTiles || 1} x ${obj.hTiles || 1} Tile</span>
+                    <span class="gt-sb-prop-val" style="color: #38bdf8;">${obj.wTiles || 1} x ${obj.hTiles || 1} Tile (Unit 1x1)</span>
+                </div>
+                <div class="gt-sb-prop-row">
+                    <span class="gt-sb-prop-label">Panjang Blok (Width)</span>
+                    <input type="number" class="gt-sb-prop-input" id="gt-sb-inp-wtiles" value="${obj.wTiles || 1}" min="1" max="10" step="1" title="Perlebar blok tile (1..10)" />
+                </div>
+                <div style="font-size: 9.5px; color: #4ade80; background: rgba(34, 197, 94, 0.1); padding: 5px 8px; border-radius: 4px; border: 1px dashed rgba(34, 197, 94, 0.3); margin-top: 4px; line-height: 1.35;">
+                    🔗 <b>Auto-Merge:</b> Blok 1x1 (Air, Lava, Pijakan) otomatis menyatu mulus saat diletakkan berdampingan!
                 </div>
             </div>
 
@@ -1451,6 +1464,17 @@ export class SceneBuilderModal {
         `;
 
         // Event listeners pada inspector
+        const inpWTiles = this.inspectorContent.querySelector('#gt-sb-inp-wtiles');
+        if (inpWTiles) {
+            inpWTiles.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value, 10);
+                if (!isNaN(val) && val >= 1 && val <= 36) {
+                    obj.wTiles = val;
+                    this.renderHierarchy();
+                }
+            });
+        }
+
         const inpCol = this.inspectorContent.querySelector('#gt-sb-inp-col');
         if (inpCol) {
             inpCol.addEventListener('input', (e) => {
@@ -1952,16 +1976,24 @@ export class SceneBuilderModal {
             stoneColor = '#0f172a';
         }
 
-        // Cari semua zona water dan lava dari entities dinamis
+        // Cari semua zona water dan lava dari entities dinamis (Unit 1x1 Auto-Merged)
         const waterEntities = this.state.entities.filter(e => e.type === 'water');
         const lavaEntities = this.state.entities.filter(e => e.type === 'lava');
 
-        const isWaterCol = (col) => {
-            return waterEntities.some(e => col >= e.col && col < e.col + (e.wTiles || 3));
-        };
-        const isLavaCol = (col) => {
-            return lavaEntities.some(e => col >= e.col && col < e.col + (e.wTiles || 3));
-        };
+        const waterCols = new Set();
+        waterEntities.forEach(e => {
+            const w = e.wTiles || 1;
+            for (let c = e.col; c < e.col + w; c++) waterCols.add(c);
+        });
+
+        const lavaCols = new Set();
+        lavaEntities.forEach(e => {
+            const w = e.wTiles || 1;
+            for (let c = e.col; c < e.col + w; c++) lavaCols.add(c);
+        });
+
+        const isWaterCol = (col) => waterCols.has(col);
+        const isLavaCol = (col) => lavaCols.has(col);
 
         const poolDepthRow = Math.min(11, bedrockRow - 1);
 
@@ -1987,6 +2019,15 @@ export class SceneBuilderModal {
                             ctx.fillStyle = '#7dd3fc';
                             ctx.fillRect(rx, waveY, rw, 3);
                         }
+                        // Jika blok di kanannya juga air, gambarkan sambungan mulus
+                        if (this.state.showGrid && isWaterCol(col + 1)) {
+                            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                            ctx.lineWidth = 1;
+                            ctx.beginPath();
+                            ctx.moveTo(rx + rw, ry);
+                            ctx.lineTo(rx + rw, ry + rh);
+                            ctx.stroke();
+                        }
                         continue;
                     }
                     if (inLava) {
@@ -2002,6 +2043,14 @@ export class SceneBuilderModal {
                             ctx.beginPath();
                             ctx.arc(rx + rw / 2, bubbleY, 3, 0, Math.PI * 2);
                             ctx.fill();
+                        }
+                        if (this.state.showGrid && isLavaCol(col + 1)) {
+                            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                            ctx.lineWidth = 1;
+                            ctx.beginPath();
+                            ctx.moveTo(rx + rw, ry);
+                            ctx.lineTo(rx + rw, ry + rh);
+                            ctx.stroke();
                         }
                         continue;
                     }
@@ -2078,28 +2127,80 @@ export class SceneBuilderModal {
         ctx.fillText('⬛ BEDROCK (DASAR BUMI TAK TERTEMBUS)', toX(20), bedrockY + cellSize * 0.65);
 
         // ===============================================================
-        // 6. DRAW ALL DYNAMIC ENTITIES ON CANVAS
+        // 6. AUTO-MERGED PLATFORMS RENDERING (BLOK 1x1 MENYATU SAAT BERJEJER)
+        // ===============================================================
+        const platEntities = this.state.entities.filter(e => e.type === 'platforms');
+        const platRowMap = new Map();
+        platEntities.forEach(p => {
+            const r = p.row;
+            if (!platRowMap.has(r)) platRowMap.set(r, new Set());
+            const w = p.wTiles || 1;
+            for (let c = p.col; c < p.col + w; c++) platRowMap.get(r).add(c);
+        });
+
+        platRowMap.forEach((colsSet, r) => {
+            const sorted = Array.from(colsSet).sort((a, b) => a - b);
+            let cur = null;
+            const segments = [];
+            sorted.forEach(c => {
+                if (!cur) {
+                    cur = { start: c, end: c };
+                } else if (c === cur.end + 1) {
+                    cur.end = c;
+                } else {
+                    segments.push(cur);
+                    cur = { start: c, end: c };
+                }
+            });
+            if (cur) segments.push(cur);
+
+            segments.forEach(seg => {
+                const px = toX(seg.start * 50);
+                const py = toY(r * 50);
+                const count = seg.end - seg.start + 1;
+                const pw = count * cellSize;
+                const ph = Math.max(6, 18 * scale);
+
+                // Badan Balok Pijakan Menyatu
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(px, py, pw, ph);
+
+                // Garis Rumput Permukaan Atas
+                ctx.fillStyle = surfaceColor;
+                ctx.fillRect(px, py, pw, 3.5 * scale);
+
+                // Border Luar
+                ctx.strokeStyle = surfaceColor;
+                ctx.lineWidth = 1.8;
+                ctx.strokeRect(px, py, pw, ph);
+
+                // Garis Sambungan Halus Antar Tile 1x1 (Seamless Joint Indicator)
+                if (count > 1) {
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+                    ctx.lineWidth = 1;
+                    for (let c = seg.start + 1; c <= seg.end; c++) {
+                        const jx = toX(c * 50);
+                        ctx.beginPath();
+                        ctx.moveTo(jx, py + 3.5 * scale);
+                        ctx.lineTo(jx, py + ph);
+                        ctx.stroke();
+                    }
+                }
+            });
+        });
+
+        // ===============================================================
+        // 7. DRAW ALL INDIVIDUAL DYNAMIC ENTITIES ON CANVAS
         // ===============================================================
         this.state.entities.forEach((ent, idx) => {
             const ex = toX(ent.col * 50 + 25);
             const ey = toY(ent.row * 50);
 
-            // A. PIJAKAN MELAYANG (PLATFORMS)
-            if (ent.type === 'platforms') {
-                const px = toX(ent.col * 50);
-                const py = toY(ent.row * 50);
-                const pw = (ent.wTiles || 2) * cellSize;
-                const ph = Math.max(6, 18 * scale);
-
-                ctx.fillStyle = '#1e293b';
-                ctx.fillRect(px, py, pw, ph);
-                ctx.strokeStyle = surfaceColor;
-                ctx.lineWidth = 2;
-                ctx.strokeRect(px, py, pw, ph);
-            }
+            // Platform sudah digambar dengan auto-merge di atas, lewati
+            if (ent.type === 'platforms') return;
 
             // B. KOIN EMAS (COINS)
-            else if (ent.type === 'coins') {
+            if (ent.type === 'coins') {
                 const coinX = toX(ent.col * 50 + 25);
                 const coinY = toY(ent.row * 50 + 25);
                 const coinW = Math.max(4, Math.abs(Math.sin(t * 3 + idx)) * (8 * scale));
