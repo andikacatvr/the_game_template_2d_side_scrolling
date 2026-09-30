@@ -437,45 +437,43 @@ export class HTMLGameHUD {
                 }
 
                 /* LEVEL / LOCATION BUTTON (BETWEEN BAG & MENU) */
+                /* WORLD MAP BUTTON (BETWEEN BAG & MENU) */
                 .gt-hud-btn-level {
+                    width: 44px;
                     height: 44px;
-                    padding: 0 14px;
-                    gap: 8px;
+                    padding: 0;
                     background: #181818;
                     border: 1px solid #333333;
                     border-radius: 8px;
                     color: #f4f4f5;
-                    font-size: 13.5px;
-                    font-weight: 700;
-                    letter-spacing: 0.3px;
                     display: flex;
                     align-items: center;
+                    justify-content: center;
                     cursor: pointer;
-                    white-space: nowrap;
                     transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
                     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.03);
                     backdrop-filter: blur(12px);
                     -webkit-backdrop-filter: blur(12px);
-                    font-family: 'Jost', sans-serif;
                 }
 
                 .gt-hud-btn-level:hover {
                     background: #222226;
                     border-color: #38bdf8;
-                    color: #ffffff;
                     box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
                     transform: translateY(-1px);
+                }
+
+                .gt-hud-btn-level:hover svg {
+                    stroke: #38bdf8;
                 }
 
                 .gt-hud-btn-level:active {
                     transform: translateY(1px);
                 }
 
-                .gt-hud-level-icon {
-                    font-size: 16px;
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
+                .gt-hud-map-svg {
+                    stroke: #e4e4e7;
+                    transition: stroke 0.15s ease;
                 }
 
                 .gt-hud-level-title {
@@ -551,10 +549,13 @@ export class HTMLGameHUD {
                         <span class="gt-hud-badge" id="gt-hud-badge">0</span>
                     </button>
 
-                    <!-- Level / Location Button Indicator (Tepat di Tengah Tombol Backpack & Hamburger) -->
-                    <button class="gt-hud-btn gt-hud-btn-level" id="gt-hud-btn-level" title="Informasi Level &amp; Tempat (Klik untuk Detail / Tekan M)">
-                        <span class="gt-hud-level-icon" id="gt-hud-level-icon">🗺️</span>
-                        <span class="gt-hud-level-title" id="gt-hud-level-title">Peta</span>
+                    <!-- World Map Button (Tepat di Tengah Tombol Backpack & Hamburger) -->
+                    <button class="gt-hud-btn gt-hud-btn-level" id="gt-hud-btn-level" title="🗺️ World Map (Klik untuk Peta Seluruh Scene / Tekan M)">
+                        <svg class="gt-hud-map-svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
+                            <line x1="9" y1="3" x2="9" y2="18"></line>
+                            <line x1="15" y1="6" x2="15" y2="21"></line>
+                        </svg>
                     </button>
 
                     <!-- Menu Button (Hamburger Bar) -->
@@ -1062,7 +1063,7 @@ export class HTMLGameHUD {
         if (this.stripIcon) this.stripIcon.textContent = info.icon;
         if (this.stripName) this.stripName.textContent = info.fullName;
         if (this.btnLevel) {
-            this.btnLevel.title = `${info.fullName} (${info.type}) • Klik untuk Detail / Tekan M`;
+            this.btnLevel.title = `🗺️ World Map: ${info.fullName} (${info.type}) • Tekan M / Klik untuk Peta`;
         }
     }
 
