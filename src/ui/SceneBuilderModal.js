@@ -66,6 +66,7 @@ export class SceneBuilderModal {
         this.clipboardEntity = null; // Clipboard untuk Ctrl+C dan Ctrl+V
 
         this.createDOM();
+        this.preventAllOverlaps();
     }
 
     createDOM() {
@@ -1288,27 +1289,126 @@ export class SceneBuilderModal {
         });
     }
 
+    // ===============================================================
+    // ANTI-NIMBUN / ANTI-OVERLAP GRID SYSTEM
+    // ===============================================================
+
+    /**
+     * Memeriksa apakah suatu area grid [col..col+wTiles-1, row] sudah ditempati objek lain.
+     */
+    isSlotOccupied(col, row, ignoreId = null, wTiles = 1) {
+        const targetStartCol = col;
+        const targetEndCol = col + Math.max(1, wTiles) - 1;
+
+        return this.state.entities.some(e => {
+            if (ignoreId && e.id === ignoreId) return false;
+
+            const eRow = (e.row !== undefined) ? e.row : 7;
+            if (eRow !== row) return false;
+
+            const eStartCol = e.col;
+            const eEndCol = e.col + (e.wTiles || 1) - 1;
+            const hasColOverlap = Math.max(targetStartCol, eStartCol) <= Math.min(targetEndCol, eEndCol);
+
+            return hasColOverlap;
+        });
+    }
+
+    /**
+     * Mencari petak kosong terdekat (bebas dari objek lain) agar objek tidak pernah bertumpuk.
+     */
+    findFreeSlot(preferredCol, preferredRow, wTiles = 1, ignoreId = null) {
+        const safeW = Math.max(1, wTiles);
+        let col = Math.max(0, Math.min(36 - safeW, preferredCol));
+        let row = Math.max(0, Math.min(13, preferredRow));
+
+        // Jika slot yang diinginkan sudah kosong, pakai langsung
+        if (!this.isSlotOccupied(col, row, ignoreId, safeW)) {
+            return { col, row };
+        }
+
+        // 1. Cari ke kanan pada baris yang sama
+        for (let c = col + 1; c <= 36 - safeW; c++) {
+            if (!this.isSlotOccupied(c, row, ignoreId, safeW)) {
+                return { col: c, row };
+            }
+        }
+
+        // 2. Cari ke kiri pada baris yang sama
+        for (let c = col - 1; c >= 0; c--) {
+            if (!this.isSlotOccupied(c, row, ignoreId, safeW)) {
+                return { col: c, row };
+            }
+        }
+
+        // 3. Jika satu baris penuh, cari baris terdekat (atas/bawah)
+        for (let offset = 1; offset <= 6; offset++) {
+            for (const r of [row - offset, row + offset]) {
+                if (r >= 0 && r <= 13) {
+                    if (!this.isSlotOccupied(col, r, ignoreId, safeW)) {
+                        return { col, row: r };
+                    }
+                    for (let c = col + 1; c <= 36 - safeW; c++) {
+                        if (!this.isSlotOccupied(c, r, ignoreId, safeW)) {
+                            return { col: c, row: r };
+                        }
+                    }
+                    for (let c = col - 1; c >= 0; c--) {
+                        if (!this.isSlotOccupied(c, r, ignoreId, safeW)) {
+                            return { col: c, row: r };
+                        }
+                    }
+                }
+            }
+        }
+
+        return { col, row };
+    }
+
+    /**
+     * Memastikan seluruh objek yang ada tidak ada yang bertumpukan pada posisi yang sama persis.
+     */
+    preventAllOverlaps() {
+        const seen = new Set();
+        this.state.entities.forEach(ent => {
+            const r = (ent.row !== undefined) ? ent.row : 7;
+            const w = ent.wTiles || 1;
+            const key = `${ent.col},${r}`;
+            if (seen.has(key)) {
+                const safe = this.findFreeSlot(ent.col + 1, r, w, ent.id);
+                ent.col = safe.col;
+                ent.row = safe.row;
+                ent.x = safe.col * 50 + 25;
+                ent.y = (safe.row === 7) ? 400 : (safe.row * 50 + 25);
+            }
+            for (let c = ent.col; c < ent.col + w; c++) {
+                seen.add(`${c},${ent.row}`);
+            }
+        });
+    }
+
     addNewEntity(type, insertIndex = -1, customCol = null, customRow = null) {
         const tmpl = ITEM_TEMPLATES[type];
         if (!tmpl) return;
 
         const count = this.state.entities.filter(e => e.type === type).length;
         const newId = `${type}_${Date.now()}`;
+        const wTiles = tmpl.wTiles || 1;
 
         // Tentukan posisi awal [col, row]
-        let col = customCol !== null ? customCol : Math.min(33, 4 + count * 3);
-        let row = customRow !== null ? customRow : tmpl.defaultRow;
+        let prefCol = customCol !== null ? customCol : Math.min(33, 4 + count * 3);
+        let prefRow = customRow !== null ? customRow : tmpl.defaultRow;
 
-        if (col < 0) col = 0;
-        if (col > 35) col = 35;
+        // Cegah tumpukan: cari slot kosong terdekat
+        const safeSlot = this.findFreeSlot(prefCol, prefRow, wTiles, null);
 
         const newEnt = {
             id: newId,
             type: type,
-            col: col,
-            row: row,
-            x: col * 50 + 25,
-            y: (row === 7) ? 400 : (row * 50 + 25),
+            col: safeSlot.col,
+            row: safeSlot.row,
+            x: safeSlot.col * 50 + 25,
+            y: (safeSlot.row === 7) ? 400 : (safeSlot.row * 50 + 25),
             label: `${tmpl.label} #${count + 1}`,
             cat: tmpl.cat,
             icon: tmpl.icon,
@@ -1326,6 +1426,10 @@ export class SceneBuilderModal {
         AudioManager.playClick();
         this.renderHierarchy();
         this.renderInspector();
+
+        if (this.gridInfoEl) {
+            this.gridInfoEl.textContent = `✨ OBJEK DITAMBAHKAN: ${newEnt.label} di [Col ${safeSlot.col}, Row ${safeSlot.row}] (Bebas Tumpukan)`;
+        }
     }
 
     deleteEntity(id) {
@@ -1357,13 +1461,20 @@ export class SceneBuilderModal {
         this.clipboardEntity = JSON.parse(JSON.stringify(ent));
 
         const newId = `${ent.type}_${Date.now()}`;
-        const newCol = Math.min(35, ent.col + (ent.wTiles || 1));
+        const wTiles = ent.wTiles || 1;
+
+        // Cari slot kosong terdekat di samping objek asli (anti-nimbun)
+        const safeSlot = this.findFreeSlot(ent.col + wTiles, ent.row, wTiles, null);
+
+        const count = this.state.entities.filter(e => e.type === ent.type).length;
         const clone = {
             ...ent,
             id: newId,
-            col: newCol,
-            x: newCol * 50 + 25,
-            label: `${ent.label.replace(/\s*\(Copy.*?\)/g, '')} (Copy)`
+            col: safeSlot.col,
+            row: safeSlot.row,
+            x: safeSlot.col * 50 + 25,
+            y: (safeSlot.row === 7) ? 400 : (safeSlot.row * 50 + 25),
+            label: `${ent.label.replace(/\s*\(Copy.*?\)/g, '')} (Copy #${count + 1})`
         };
 
         const idx = this.state.entities.findIndex(e => e.id === id);
@@ -1373,6 +1484,10 @@ export class SceneBuilderModal {
         AudioManager.playClick();
         this.renderHierarchy();
         this.renderInspector();
+
+        if (this.gridInfoEl) {
+            this.gridInfoEl.textContent = `📋 DIDUPLIKASI: ${clone.label} di [Col ${safeSlot.col}, Row ${safeSlot.row}] (Bebas Tumpukan)`;
+        }
     }
 
     copySelectedEntity() {
@@ -1384,34 +1499,44 @@ export class SceneBuilderModal {
         AudioManager.playClick();
 
         if (this.gridInfoEl) {
-            this.gridInfoEl.textContent = `📋 DISALIN: ${ent.label} (Tekan Ctrl+V untuk Paste)`;
+            this.gridInfoEl.textContent = `📋 DISALIN: ${ent.label} (Arahkan mouse & tekan Ctrl+V untuk Paste)`;
         }
     }
 
     pasteEntity() {
         if (!this.clipboardEntity) return;
 
+        const wTiles = this.clipboardEntity.wTiles || 1;
         const count = this.state.entities.filter(e => e.type === this.clipboardEntity.type).length;
         const newId = `${this.clipboardEntity.type}_${Date.now()}`;
 
-        let col, row;
+        let prefCol, prefRow;
         if (this.hoverTile) {
-            col = this.hoverTile.col;
-            row = this.hoverTile.row;
+            prefCol = this.hoverTile.col;
+            prefRow = (this.clipboardEntity.cat === 'fluid' || this.clipboardEntity.type === 'platforms' || this.clipboardEntity.type === 'coins') 
+                ? this.hoverTile.row 
+                : this.clipboardEntity.row;
         } else {
-            col = Math.min(35, this.clipboardEntity.col + (this.clipboardEntity.wTiles || 1));
-            row = this.clipboardEntity.row;
+            prefCol = this.clipboardEntity.col + wTiles;
+            prefRow = this.clipboardEntity.row;
         }
+
+        // Cari slot kosong terdekat agar paste tidak pernah menimpa/menimbun objek lain
+        const safeSlot = this.findFreeSlot(prefCol, prefRow, wTiles, null);
 
         const clone = {
             ...this.clipboardEntity,
             id: newId,
-            col: col,
-            row: row,
-            x: col * 50 + 25,
-            y: (row === 7) ? 400 : (row * 50 + 25),
+            col: safeSlot.col,
+            row: safeSlot.row,
+            x: safeSlot.col * 50 + 25,
+            y: (safeSlot.row === 7) ? 400 : (safeSlot.row * 50 + 25),
             label: `${this.clipboardEntity.label.replace(/\s*\(Copy.*?\)/g, '')} (Copy #${count + 1})`
         };
+
+        // Update koordinat clipboard agar paste berturut-turut berikutnya otomatis menempati slot kosong berikutnya
+        this.clipboardEntity.col = safeSlot.col;
+        this.clipboardEntity.row = safeSlot.row;
 
         this.state.entities.push(clone);
         this.state.selectedId = newId;
@@ -1421,7 +1546,7 @@ export class SceneBuilderModal {
         this.renderInspector();
 
         if (this.gridInfoEl) {
-            this.gridInfoEl.textContent = `✅ DITEMPEL: ${clone.label} di [Col ${col}, Row ${row}]`;
+            this.gridInfoEl.textContent = `✅ DITEMPEL: ${clone.label} di [Col ${safeSlot.col}, Row ${safeSlot.row}] (Bebas Tumpukan)`;
         }
     }
 
@@ -1535,7 +1660,21 @@ export class SceneBuilderModal {
                 if (!isNaN(val) && val >= 0 && val <= 35) {
                     obj.col = val;
                     obj.x = val * 50 + 25;
+                    if (this.isSlotOccupied(val, obj.row, obj.id, obj.wTiles || 1)) {
+                        if (this.gridInfoEl) this.gridInfoEl.textContent = `⚠️ PERINGATAN: Petak [Col ${val}, Row ${obj.row}] bertumpuk dengan objek lain!`;
+                    }
                     this.renderHierarchy();
+                }
+            });
+            inpCol.addEventListener('change', () => {
+                if (this.isSlotOccupied(obj.col, obj.row, obj.id, obj.wTiles || 1)) {
+                    const safe = this.findFreeSlot(obj.col, obj.row, obj.wTiles || 1, obj.id);
+                    obj.col = safe.col;
+                    obj.row = safe.row;
+                    obj.x = safe.col * 50 + 25;
+                    inpCol.value = safe.col;
+                    this.renderHierarchy();
+                    if (this.gridInfoEl) this.gridInfoEl.textContent = `⚡ Posisi otomatis disesuaikan ke [Col ${safe.col}] agar bebas tumpukan.`;
                 }
             });
         }
@@ -1547,7 +1686,21 @@ export class SceneBuilderModal {
                 if (!isNaN(val) && val >= 0 && val <= 14) {
                     obj.row = val;
                     obj.y = (val === 7) ? 400 : (val * 50 + 25);
+                    if (this.isSlotOccupied(obj.col, val, obj.id, obj.wTiles || 1)) {
+                        if (this.gridInfoEl) this.gridInfoEl.textContent = `⚠️ PERINGATAN: Petak [Col ${obj.col}, Row ${val}] bertumpuk dengan objek lain!`;
+                    }
                     this.renderHierarchy();
+                }
+            });
+            inpRow.addEventListener('change', () => {
+                if (this.isSlotOccupied(obj.col, obj.row, obj.id, obj.wTiles || 1)) {
+                    const safe = this.findFreeSlot(obj.col, obj.row, obj.wTiles || 1, obj.id);
+                    obj.col = safe.col;
+                    obj.row = safe.row;
+                    obj.y = (safe.row === 7) ? 400 : (safe.row * 50 + 25);
+                    inpRow.value = safe.row;
+                    this.renderHierarchy();
+                    if (this.gridInfoEl) this.gridInfoEl.textContent = `⚡ Posisi otomatis disesuaikan ke [Row ${safe.row}] agar bebas tumpukan.`;
                 }
             });
         }
@@ -1740,11 +1893,15 @@ export class SceneBuilderModal {
                     return;
                 }
 
-                // Cari apakah ada entity di koordinat ini
+                // Cari apakah ada entity di koordinat [col, row] ini secara akurat
                 const hit = this.state.entities.find(ent => {
                     const startCol = ent.col;
                     const endCol = ent.col + (ent.wTiles || 1) - 1;
-                    return col >= startCol && col <= endCol;
+                    const colMatch = (col >= startCol && col <= endCol);
+                    const entRow = (ent.row !== undefined) ? ent.row : 7;
+                    const rowMatch = (row === entRow) || 
+                        ((ent.cat === 'creature' || ent.type === 'spikes' || ent.type === 'chest' || ent.type === 'portal') && (row === 7 || row === 8));
+                    return colMatch && rowMatch;
                 });
 
                 if (hit) {
@@ -1758,7 +1915,22 @@ export class SceneBuilderModal {
             });
 
             this.canvas.addEventListener('mouseup', () => {
-                if (this.isCanvasDragging) {
+                if (this.isCanvasDragging && this.canvasDragEntity) {
+                    const ent = this.canvasDragEntity;
+                    const wTiles = ent.wTiles || 1;
+
+                    // Validasi anti-nimbun saat drag selesai:
+                    if (this.isSlotOccupied(ent.col, ent.row, ent.id, wTiles)) {
+                        const safe = this.findFreeSlot(ent.col, ent.row, wTiles, ent.id);
+                        ent.col = safe.col;
+                        ent.row = safe.row;
+                        ent.x = ent.col * 50 + 25;
+                        ent.y = (ent.row === 7) ? 400 : (ent.row * 50 + 25);
+                        if (this.gridInfoEl) {
+                            this.gridInfoEl.textContent = `⚡ POSISI DIATUR: Mencegah tumpukan dengan objek lain ke [Col ${ent.col}, Row ${ent.row}]`;
+                        }
+                    }
+
                     this.isCanvasDragging = false;
                     this.canvasDragEntity = null;
                     this.renderHierarchy();
@@ -1769,11 +1941,15 @@ export class SceneBuilderModal {
             // 3. Right-Click Quick Action (Delete Entity)
             this.canvas.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
-                const { col } = getTileFromMouse(e);
+                const { col, row } = getTileFromMouse(e);
                 const hit = this.state.entities.find(ent => {
                     const startCol = ent.col;
                     const endCol = ent.col + (ent.wTiles || 1) - 1;
-                    return col >= startCol && col <= endCol;
+                    const colMatch = (col >= startCol && col <= endCol);
+                    const entRow = (ent.row !== undefined) ? ent.row : 7;
+                    const rowMatch = (row === entRow) || 
+                        ((ent.cat === 'creature' || ent.type === 'spikes' || ent.type === 'chest' || ent.type === 'portal') && (row === 7 || row === 8));
+                    return colMatch && rowMatch;
                 });
 
                 if (hit && hit.type !== 'player') {
@@ -1804,25 +1980,27 @@ export class SceneBuilderModal {
                 }
 
                 if (data.source === 'hierarchy') {
-                    // Reposition existing entity to this tile
+                    // Reposition existing entity to this tile (bebas tumpukan)
                     const ent = this.state.entities.find(el => el.id === data.id);
                     if (ent) {
-                        ent.col = col;
-                        ent.x = col * 50 + 25;
-                        if (ent.type === 'platforms' || ent.type === 'coins' || ent.cat === 'fluid') {
-                            ent.row = Math.max(0, Math.min(13, row));
-                            ent.y = ent.row * 50 + 25;
-                        } else {
-                            ent.row = 7;
-                            ent.y = 400;
-                        }
+                        const wTiles = ent.wTiles || 1;
+                        let targetRow = (ent.type === 'platforms' || ent.type === 'coins' || ent.cat === 'fluid')
+                            ? Math.max(0, Math.min(13, row))
+                            : 7;
+
+                        const safe = this.findFreeSlot(col, targetRow, wTiles, ent.id);
+                        ent.col = safe.col;
+                        ent.row = safe.row;
+                        ent.x = safe.col * 50 + 25;
+                        ent.y = (safe.row === 7) ? 400 : (safe.row * 50 + 25);
+
                         this.state.selectedId = ent.id;
                         AudioManager.playClick();
                         this.renderHierarchy();
                         this.renderInspector();
                     }
                 } else if (data.source === 'backpack') {
-                    // Spawn new entity at this tile
+                    // Spawn new entity at this tile (anti-nimbun otomatis via addNewEntity)
                     this.addNewEntity(data.type, -1, col, row);
                 }
             });
