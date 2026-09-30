@@ -521,106 +521,200 @@ export class HTMLGameHUD {
 
         const modal = document.createElement('div');
         modal.id = 'gt-hud-level-modal';
+
+        const scene = this.scene;
+        const worldW = (scene && scene.physics && scene.physics.world && scene.physics.world.bounds) 
+            ? scene.physics.world.bounds.width 
+            : ((scene && scene.worldData && scene.worldData.worldWidth) || 1400);
+        const worldH = (scene && scene.physics && scene.physics.world && scene.physics.world.bounds) 
+            ? scene.physics.world.bounds.height 
+            : ((scene && scene.worldData && scene.worldData.worldHeight) || 450);
+
+        const playerX = scene && scene.player ? Math.round(scene.player.x) : 100;
+        const playerY = scene && scene.player ? Math.round(scene.player.y) : 350;
+
         modal.innerHTML = `
             <style>
-                .gt-level-modal-overlay {
+                .gt-radar-modal-overlay {
                     position: fixed;
                     inset: 0;
-                    background: rgba(0, 0, 0, 0.65);
-                    backdrop-filter: blur(8px);
-                    -webkit-backdrop-filter: blur(8px);
+                    background: rgba(4, 7, 15, 0.78);
+                    backdrop-filter: blur(10px);
+                    -webkit-backdrop-filter: blur(10px);
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     z-index: 99999;
                     font-family: 'Jost', -apple-system, BlinkMacSystemFont, sans-serif;
-                    animation: gtFadeIn 0.15s ease-out;
+                    animation: gtRadarIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                    user-select: none;
                 }
-                @keyframes gtFadeIn {
-                    from { opacity: 0; transform: scale(0.96); }
-                    to { opacity: 1; transform: scale(1); }
+                @keyframes gtRadarIn {
+                    from { opacity: 0; transform: scale(0.96) translateY(6px); }
+                    to { opacity: 1; transform: scale(1) translateY(0); }
                 }
-                .gt-level-card {
-                    width: 420px;
-                    max-width: 90vw;
-                    background: #141416;
-                    border: 1px solid #27272a;
+                .gt-radar-window {
+                    width: 820px;
+                    max-width: 95vw;
+                    background: #090e17;
+                    border: 1px solid #1e293b;
                     border-radius: 12px;
-                    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 24px rgba(56, 189, 248, 0.2);
-                    padding: 24px;
-                    color: #e4e4e7;
-                    position: relative;
+                    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(56, 189, 248, 0.15);
+                    padding: 20px 22px;
+                    color: #e2e8f0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 14px;
+                    box-sizing: border-box;
                 }
-                .gt-level-header {
+                .gt-radar-top {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    border-bottom: 1px solid #1e293b;
+                    padding-bottom: 12px;
+                }
+                .gt-radar-title-group {
                     display: flex;
                     align-items: center;
                     gap: 12px;
-                    margin-bottom: 14px;
                 }
-                .gt-level-badge-icon {
-                    width: 44px;
-                    height: 44px;
-                    border-radius: 10px;
-                    background: #1e293b;
+                .gt-radar-badge-icon {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 8px;
+                    background: #0f172a;
                     border: 1px solid #38bdf8;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 22px;
+                    font-size: 20px;
+                    box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
                 }
-                .gt-level-header-text {
-                    flex: 1;
-                }
-                .gt-level-tag {
-                    font-size: 11px;
-                    font-weight: 800;
-                    letter-spacing: 0.8px;
-                    text-transform: uppercase;
-                    color: #38bdf8;
-                    font-family: 'JetBrains Mono', monospace;
-                }
-                .gt-level-name {
-                    font-size: 18px;
+                .gt-radar-level-name {
+                    font-size: 17px;
                     font-weight: 800;
                     color: #ffffff;
-                    margin-top: 2px;
+                    letter-spacing: 0.3px;
                 }
-                .gt-level-desc {
-                    font-size: 13.5px;
-                    color: #a1a1aa;
-                    line-height: 1.5;
-                    margin-bottom: 16px;
-                }
-                .gt-level-box-objective {
-                    background: rgba(56, 189, 248, 0.08);
-                    border: 1px solid rgba(56, 189, 248, 0.25);
-                    border-radius: 8px;
-                    padding: 12px 14px;
-                    margin-bottom: 20px;
-                }
-                .gt-level-obj-title {
+                .gt-radar-sub-gps {
                     font-size: 11px;
-                    font-weight: 800;
-                    color: #7dd3fc;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    margin-bottom: 4px;
+                    color: #38bdf8;
+                    font-family: 'JetBrains Mono', monospace;
+                    margin-top: 2px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
                 }
-                .gt-level-obj-text {
-                    font-size: 13px;
+                .gt-radar-live-dot {
+                    width: 7px;
+                    height: 7px;
+                    border-radius: 50%;
+                    background: #22c55e;
+                    box-shadow: 0 0 8px #22c55e;
+                    animation: gtGpsPulse 1.2s infinite;
+                }
+                @keyframes gtGpsPulse {
+                    0%, 100% { opacity: 1; transform: scale(1); }
+                    50% { opacity: 0.4; transform: scale(0.8); }
+                }
+                .gt-radar-btn-close {
+                    background: #1e293b;
+                    border: 1px solid #334155;
+                    color: #94a3b8;
+                    width: 34px;
+                    height: 34px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 16px;
+                    transition: all 0.15s ease;
+                }
+                .gt-radar-btn-close:hover {
+                    background: #dc2626;
+                    border-color: #ef4444;
+                    color: #ffffff;
+                }
+                .gt-radar-screen-wrap {
+                    position: relative;
+                    width: 100%;
+                    height: 240px;
+                    background: #040810;
+                    border: 1px solid #1e293b;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.9);
+                }
+                #gt-radar-canvas {
+                    width: 100%;
+                    height: 100%;
+                    display: block;
+                }
+                .gt-radar-progress-bar {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 5px;
+                }
+                .gt-radar-progress-header {
+                    display: flex;
+                    justify-content: space-between;
+                    font-size: 11.5px;
+                    font-weight: 700;
+                    color: #94a3b8;
+                    font-family: 'JetBrains Mono', monospace;
+                }
+                .gt-radar-progress-track {
+                    height: 6px;
+                    background: #1e293b;
+                    border-radius: 3px;
+                    overflow: hidden;
+                }
+                .gt-radar-progress-fill {
+                    height: 100%;
+                    background: linear-gradient(90deg, #38bdf8, #22c55e);
+                    border-radius: 3px;
+                    transition: width 0.3s ease;
+                    box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+                }
+                .gt-radar-legend {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    background: #0d131f;
+                    border: 1px solid #1e293b;
+                    border-radius: 8px;
+                    padding: 8px 14px;
+                    font-size: 11.5px;
+                    flex-wrap: wrap;
+                    gap: 8px;
+                }
+                .gt-radar-legend-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
                     font-weight: 600;
-                    color: #f0f9ff;
-                    line-height: 1.4;
+                    color: #cbd5e1;
                 }
-                .gt-level-actions {
+                .gt-radar-footer {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding-top: 4px;
+                }
+                .gt-radar-hint {
+                    font-size: 12px;
+                    color: #64748b;
+                }
+                .gt-radar-actions {
                     display: flex;
                     gap: 8px;
-                    justify-content: flex-end;
                 }
-                .gt-level-btn {
-                    padding: 8px 16px;
+                .gt-radar-btn {
+                    padding: 7px 15px;
                     border-radius: 6px;
-                    font-size: 12.5px;
+                    font-size: 12px;
                     font-weight: 700;
                     cursor: pointer;
                     display: flex;
@@ -629,52 +723,86 @@ export class HTMLGameHUD {
                     transition: all 0.15s ease;
                     font-family: inherit;
                 }
-                .gt-level-btn-close {
-                    background: #27272a;
-                    border: 1px solid #3f3f46;
-                    color: #d4d4d8;
+                .gt-radar-btn-sec {
+                    background: #1e293b;
+                    border: 1px solid #334155;
+                    color: #e2e8f0;
                 }
-                .gt-level-btn-close:hover {
-                    background: #3f3f46;
+                .gt-radar-btn-sec:hover {
+                    background: #334155;
                     color: #ffffff;
                 }
-                .gt-level-btn-action {
+                .gt-radar-btn-pri {
                     background: #0284c7;
                     border: 1px solid #38bdf8;
                     color: #ffffff;
+                    box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
                 }
-                .gt-level-btn-action:hover {
+                .gt-radar-btn-pri:hover {
                     background: #0369a1;
-                    box-shadow: 0 0 14px rgba(56, 189, 248, 0.4);
+                    box-shadow: 0 0 16px rgba(56, 189, 248, 0.5);
                 }
             </style>
-            <div class="gt-level-modal-overlay" id="gt-level-overlay">
-                <div class="gt-level-card">
-                    <div class="gt-level-header">
-                        <div class="gt-level-badge-icon">${info.icon}</div>
-                        <div class="gt-level-header-text">
-                            <div class="gt-level-tag">${info.type}</div>
-                            <div class="gt-level-name">${info.fullName}</div>
+
+            <div class="gt-radar-modal-overlay" id="gt-radar-overlay">
+                <div class="gt-radar-window">
+                    <div class="gt-radar-top">
+                        <div class="gt-radar-title-group">
+                            <div class="gt-radar-badge-icon">${info.icon}</div>
+                            <div>
+                                <div class="gt-radar-level-name">RADAR PETA: ${info.fullName}</div>
+                                <div class="gt-radar-sub-gps">
+                                    <span class="gt-radar-live-dot"></span>
+                                    <span>GPS LIVE</span>
+                                    <span>•</span>
+                                    <span id="gt-radar-coord-text">X: ${playerX}px, Y: ${playerY}px</span>
+                                    <span>•</span>
+                                    <span>LEBAR DUNIA: ${worldW}px</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="gt-radar-btn-close" id="gt-radar-btn-x" title="Tutup Peta (ESC)">✕</button>
+                    </div>
+
+                    <div class="gt-radar-screen-wrap">
+                        <canvas id="gt-radar-canvas" width="800" height="240"></canvas>
+                    </div>
+
+                    <div class="gt-radar-progress-bar">
+                        <div class="gt-radar-progress-header">
+                            <span id="gt-radar-prog-title">🏃 KEMAJUAN MENUJU FINISH</span>
+                            <span id="gt-radar-prog-percent">0%</span>
+                        </div>
+                        <div class="gt-radar-progress-track">
+                            <div class="gt-radar-progress-fill" id="gt-radar-prog-fill" style="width: 10%;"></div>
                         </div>
                     </div>
-                    <div class="gt-level-desc">${info.desc}</div>
-                    <div class="gt-level-box-objective">
-                        <div class="gt-level-obj-title">🎯 Objektif Utama</div>
-                        <div class="gt-level-obj-text">${info.objective}</div>
+
+                    <div class="gt-radar-legend">
+                        <div class="gt-radar-legend-item"><span style="color:#fde047;">📍</span> <span>Hero (Kamu)</span></div>
+                        <div class="gt-radar-legend-item"><span style="color:#a855f7;">🌀</span> <span>Portal Finish</span></div>
+                        <div class="gt-radar-legend-item"><span style="color:#f59e0b;">🪙</span> <span>Koin Emas</span></div>
+                        <div class="gt-radar-legend-item"><span style="color:#22c55e;">🧙</span> <span>NPC Pemandu</span></div>
+                        <div class="gt-radar-legend-item"><span style="color:#ef4444;">⚠️</span> <span>Rintangan Bahaya</span></div>
+                        <div class="gt-radar-legend-item"><span style="color:#38bdf8;">🧱</span> <span>Pijakan</span></div>
                     </div>
-                    <div class="gt-level-actions">
-                        ${(this.scene && (this.scene.scene.key === 'CustomWorldScene' || this.scene.scene.key === 'Scene3')) ? `
-                            <button class="gt-level-btn gt-level-btn-action" id="gt-btn-modal-edit">
-                                <span>🛠️</span> Edit Scene
+
+                    <div class="gt-radar-footer">
+                        <div class="gt-radar-hint">🎯 ${info.objective}</div>
+                        <div class="gt-radar-actions">
+                            ${(scene && (scene.scene.key === 'CustomWorldScene' || scene.scene.key === 'Scene3')) ? `
+                                <button class="gt-radar-btn gt-radar-btn-pri" id="gt-radar-btn-edit">
+                                    <span>🛠️</span> Edit Level
+                                </button>
+                            ` : `
+                                <button class="gt-radar-btn gt-radar-btn-sec" id="gt-radar-btn-hub">
+                                    <span>📁</span> Project Hub
+                                </button>
+                            `}
+                            <button class="gt-radar-btn gt-radar-btn-sec" id="gt-radar-btn-close-bottom">
+                                Tutup Peta
                             </button>
-                        ` : `
-                            <button class="gt-level-btn gt-level-btn-action" id="gt-btn-modal-hub">
-                                <span>📁</span> Project Hub
-                            </button>
-                        `}
-                        <button class="gt-level-btn gt-level-btn-close" id="gt-btn-modal-close">
-                            Tutup
-                        </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -682,40 +810,283 @@ export class HTMLGameHUD {
 
         document.body.appendChild(modal);
 
-        const overlay = modal.querySelector('#gt-level-overlay');
-        const closeBtn = modal.querySelector('#gt-btn-modal-close');
-        const editBtn = modal.querySelector('#gt-btn-modal-edit');
-        const hubBtn = modal.querySelector('#gt-btn-modal-hub');
+        const canvas = modal.querySelector('#gt-radar-canvas');
+        const ctx = canvas ? canvas.getContext('2d') : null;
+        const overlay = modal.querySelector('#gt-radar-overlay');
+        const btnX = modal.querySelector('#gt-radar-btn-x');
+        const btnCloseBottom = modal.querySelector('#gt-radar-btn-close-bottom');
+        const btnEdit = modal.querySelector('#gt-radar-btn-edit');
+        const btnHub = modal.querySelector('#gt-radar-btn-hub');
+        const coordText = modal.querySelector('#gt-radar-coord-text');
+        const progPercent = modal.querySelector('#gt-radar-prog-percent');
+        const progFill = modal.querySelector('#gt-radar-prog-fill');
+
+        let animFrameId = null;
+        let animTime = 0;
 
         const closeModal = () => {
+            if (animFrameId) cancelAnimationFrame(animFrameId);
             AudioManager.playClick();
             modal.remove();
         };
 
-        if (closeBtn) closeBtn.addEventListener('click', closeModal);
+        if (btnX) btnX.addEventListener('click', closeModal);
+        if (btnCloseBottom) btnCloseBottom.addEventListener('click', closeModal);
         if (overlay) {
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) closeModal();
             });
         }
 
-        if (editBtn) {
-            editBtn.addEventListener('click', () => {
+        if (btnEdit) {
+            btnEdit.addEventListener('click', () => {
                 closeModal();
-                if (typeof this.scene.openSceneBuilder === 'function') {
-                    this.scene.openSceneBuilder();
+                if (typeof scene.openSceneBuilder === 'function') {
+                    scene.openSceneBuilder();
                 } else if (CommandConsole.instance) {
                     CommandConsole.instance.openSceneBuilder();
                 }
             });
         }
 
-        if (hubBtn) {
-            hubBtn.addEventListener('click', () => {
+        if (btnHub) {
+            btnHub.addEventListener('click', () => {
                 closeModal();
-                new ProjectHubModal(this.scene).show();
+                new ProjectHubModal(scene).show();
             });
         }
+
+        // ===========================================================
+        // RENDER LOOP RADAR MINI-MAP REAL-TIME
+        // ===========================================================
+        const renderRadar = () => {
+            if (!ctx || !canvas || !document.getElementById('gt-hud-level-modal')) return;
+            animTime += 0.04;
+
+            const W = canvas.width;
+            const H = canvas.height;
+            const scaleX = W / Math.max(800, worldW);
+            const scaleY = H / Math.max(300, worldH);
+
+            ctx.clearRect(0, 0, W, H);
+
+            // 1. Blueprint Grid & Scanner Scanlines
+            ctx.fillStyle = '#060a14';
+            ctx.fillRect(0, 0, W, H);
+
+            // Grid vertikal per 100px di game world
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.07)';
+            ctx.font = '9px "JetBrains Mono", monospace';
+            ctx.fillStyle = 'rgba(148, 163, 184, 0.4)';
+
+            for (let wx = 0; wx <= worldW; wx += 200) {
+                const rx = wx * scaleX;
+                ctx.beginPath();
+                ctx.moveTo(rx, 0);
+                ctx.lineTo(rx, H);
+                ctx.stroke();
+                ctx.fillText(`${wx}m`, rx + 3, 12);
+            }
+
+            // Grid horizontal
+            for (let wy = 0; wy <= worldH; wy += 100) {
+                const ry = wy * scaleY;
+                ctx.beginPath();
+                ctx.moveTo(0, ry);
+                ctx.lineTo(W, ry);
+                ctx.stroke();
+            }
+
+            // 2. Garis Dasar Lantai Tanah (Ground Baseline)
+            const groundY = (worldH > 500 ? 400 : (worldH - 50)) * scaleY;
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, groundY, W, H - groundY);
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, groundY);
+            ctx.lineTo(W, groundY);
+            ctx.stroke();
+
+            // 3. Platform Pijakan (Melayang)
+            if (scene && scene.platforms && typeof scene.platforms.getChildren === 'function') {
+                ctx.fillStyle = '#1e293b';
+                ctx.strokeStyle = '#0ea5e9';
+                ctx.lineWidth = 1.5;
+                scene.platforms.getChildren().forEach(p => {
+                    if (!p || !p.body) return;
+                    const bw = p.displayWidth || p.width || 50;
+                    const bh = p.displayHeight || p.height || 20;
+                    const bx = (p.x - bw / 2) * scaleX;
+                    const by = (p.y - bh / 2) * scaleY;
+                    ctx.fillRect(bx, by, bw * scaleX, Math.max(3, bh * scaleY));
+                    ctx.strokeRect(bx, by, bw * scaleX, Math.max(3, bh * scaleY));
+                });
+            }
+
+            // 4. Koin Harta Karun (Shimmering Gold)
+            if (scene && scene.coins && typeof scene.coins.getChildren === 'function') {
+                scene.coins.getChildren().forEach(c => {
+                    if (!c || !c.active) return;
+                    const cx = c.x * scaleX;
+                    const cy = c.y * scaleY;
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 3.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#fde047';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                });
+            }
+
+            // 5. Rintangan Duri / Bahaya
+            if (scene && scene.hazards && typeof scene.hazards.getChildren === 'function') {
+                ctx.fillStyle = '#ef4444';
+                scene.hazards.getChildren().forEach(h => {
+                    if (!h) return;
+                    const hx = h.x * scaleX;
+                    const hy = h.y * scaleY;
+                    ctx.beginPath();
+                    ctx.moveTo(hx - 4, hy + 4);
+                    ctx.lineTo(hx + 4, hy + 4);
+                    ctx.lineTo(hx, hy - 4);
+                    ctx.closePath();
+                    ctx.fill();
+                });
+            }
+
+            // 6. NPC Pemandu
+            let npcX = 225, npcY = 378;
+            if (scene && scene.npc) {
+                npcX = scene.npc.x;
+                npcY = scene.npc.y;
+            }
+            const nx = npcX * scaleX;
+            const ny = npcY * scaleY;
+            ctx.fillStyle = '#22c55e';
+            ctx.beginPath();
+            ctx.arc(nx, ny, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#86efac';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Label NPC
+            ctx.font = 'bold 9px "Jost", sans-serif';
+            ctx.fillStyle = '#86efac';
+            ctx.textAlign = 'center';
+            ctx.fillText('🧙 NPC', nx, ny - 8);
+
+            // 7. Portal Finish (Goal)
+            let goalX = worldW - 150, goalY = 375;
+            if (scene && scene.portalExit) {
+                goalX = scene.portalExit.x;
+                goalY = scene.portalExit.y;
+            } else if (scene && scene.portal) {
+                goalX = scene.portal.x;
+                goalY = scene.portal.y;
+            } else if (scene && scene.worldData && Array.isArray(scene.worldData.entities)) {
+                const pf = scene.worldData.entities.find(e => e.type === 'portal');
+                if (pf) {
+                    goalX = (pf.col !== undefined) ? (pf.col * 50 + 25) : pf.x;
+                    goalY = (pf.row !== undefined) ? (pf.row * 50 + 25) : 375;
+                }
+            }
+
+            const gx = goalX * scaleX;
+            const gy = goalY * scaleY;
+
+            // Rotating Pulse Rings Portal
+            ctx.strokeStyle = '#a855f7';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(gx, gy, 8 + Math.sin(animTime * 3) * 2, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(gx, gy, 14, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.fillStyle = '#c084fc';
+            ctx.font = 'bold 9px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('🌀 FINISH', gx, gy - 18);
+
+            // 8. HERO / PLAYER RADAR BEACON (PULSING REAL-TIME)
+            const curPx = (scene && scene.player) ? scene.player.x : playerX;
+            const curPy = (scene && scene.player) ? scene.player.y : playerY;
+            const px = curPx * scaleX;
+            const py = curPy * scaleY;
+
+            // Update text koordinat & progress bar live
+            if (coordText) {
+                coordText.textContent = `X: ${Math.round(curPx)}px, Y: ${Math.round(curPy)}px`;
+            }
+            const prog = Math.min(100, Math.max(0, Math.round((curPx / Math.max(1, goalX)) * 100)));
+            if (progPercent) progPercent.textContent = `${prog}%`;
+            if (progFill) progFill.style.width = `${prog}%`;
+
+            // Pulsing Radar Beacon Waves
+            const pulsePhase = (animTime * 1.5) % 1;
+            const pulseR = 6 + pulsePhase * 24;
+            const pulseAlpha = Math.max(0, 1 - pulsePhase);
+
+            ctx.strokeStyle = `rgba(56, 189, 248, ${pulseAlpha})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(px, py, pulseR, 0, Math.PI * 2);
+            ctx.stroke();
+
+            const pulsePhase2 = (animTime * 1.5 + 0.5) % 1;
+            const pulseR2 = 6 + pulsePhase2 * 24;
+            const pulseAlpha2 = Math.max(0, 1 - pulsePhase2);
+            ctx.strokeStyle = `rgba(34, 197, 94, ${pulseAlpha2})`;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(px, py, pulseR2, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Center Player Marker Dot
+            ctx.fillStyle = '#fde047';
+            ctx.beginPath();
+            ctx.arc(px, py, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#0284c7';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Floating Badge Callout "KAMU DI SINI"
+            const calloutW = 86;
+            const calloutH = 18;
+            const calloutX = px - calloutW / 2;
+            const calloutY = py - 28;
+
+            ctx.fillStyle = '#38bdf8';
+            ctx.beginPath();
+            ctx.roundRect(calloutX, calloutY, calloutW, calloutH, 4);
+            ctx.fill();
+
+            // Arrow down pointing to player
+            ctx.beginPath();
+            ctx.moveTo(px - 4, calloutY + calloutH);
+            ctx.lineTo(px + 4, calloutY + calloutH);
+            ctx.lineTo(px, calloutY + calloutH + 4);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#080d1a';
+            ctx.font = 'bold 8.5px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('📍 KAMU DI SINI', px, calloutY + 12);
+
+            animFrameId = requestAnimationFrame(renderRadar);
+        };
+
+        animFrameId = requestAnimationFrame(renderRadar);
     }
 
     updateHP(hp, maxHp = 3) {
