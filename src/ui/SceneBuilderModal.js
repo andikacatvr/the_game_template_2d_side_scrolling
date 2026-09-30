@@ -392,16 +392,9 @@ export class SceneBuilderModal {
                     border-top: 1px solid #282828;
                     display: flex;
                     align-items: center;
-                    justify-content: space-between;
+                    justify-content: flex-end;
                     gap: 12px;
                     flex-shrink: 0;
-                }
-
-                .gt-sb-status-text {
-                    font-size: 12px;
-                    font-weight: 600;
-                    color: #94a3b8;
-                    font-family: 'JetBrains Mono', monospace;
                 }
 
                 .gt-sb-btn-enter {
@@ -542,7 +535,6 @@ export class SceneBuilderModal {
 
                 <!-- Footer Action Bar -->
                 <div class="gt-sb-footer">
-                    <span class="gt-sb-status-text" id="gt-sb-status">✨ Siap Dimainkan Secara Instan</span>
                     <button class="gt-sb-btn-enter" id="gt-sb-btn-enter">
                         <span>🚀 Buat &amp; Masuki Dunia (Enter World)</span>
                         <span>➔</span>
