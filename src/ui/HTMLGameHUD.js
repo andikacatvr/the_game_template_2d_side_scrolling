@@ -42,6 +42,16 @@ export class HTMLGameHUD {
 
                 .gt-hud-root {
                     position: fixed;
+                    inset: 0;
+                    pointer-events: none;
+                    z-index: 99990;
+                    font-family: 'Jost', -apple-system, BlinkMacSystemFont, sans-serif;
+                    user-select: none;
+                    -webkit-user-select: none;
+                }
+
+                .gt-hud-top-bar {
+                    position: absolute;
                     top: ${topOffset};
                     left: 20px;
                     right: 20px;
@@ -49,10 +59,6 @@ export class HTMLGameHUD {
                     align-items: center;
                     justify-content: space-between;
                     pointer-events: none;
-                    z-index: 99990;
-                    font-family: 'Jost', -apple-system, BlinkMacSystemFont, sans-serif;
-                    user-select: none;
-                    -webkit-user-select: none;
                     transition: top 0.2s ease;
                 }
 
@@ -222,41 +228,82 @@ export class HTMLGameHUD {
                     transform: scale(1.3);
                 }
 
-                /* C. STRIP RADAR RAMPING DI TENGAH (SELALU TAMPIL LIVE) */
-                .gt-hud-center {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
+                /* C. STRIP RADAR DI BAWAH TENGAH (BOTTOM-CENTER REAL-TIME) */
+                .gt-hud-radar-bottom {
+                    position: absolute;
+                    bottom: 14px;
+                    left: 50%;
+                    transform: translateX(-50%);
                     pointer-events: auto;
-                    flex: 1;
-                    max-width: 480px;
-                    margin: 0 14px;
+                    z-index: 99980;
+                    display: flex;
+                    justify-content: center;
+                    align-items: flex-end;
                 }
 
                 .gt-hud-radar-strip {
-                    width: 100%;
-                    height: 52px;
-                    background: rgba(9, 14, 23, 0.94);
+                    background: rgba(8, 12, 22, 0.94);
                     border: 1px solid #1e293b;
-                    border-radius: 8px;
-                    padding: 4px 8px;
+                    border-radius: 9px;
+                    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8), 0 0 16px rgba(56, 189, 248, 0.15);
+                    backdrop-filter: blur(14px);
+                    -webkit-backdrop-filter: blur(14px);
+                    transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                                height 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                                padding 0.22s ease,
+                                border-color 0.2s ease,
+                                box-shadow 0.2s ease;
+                    box-sizing: border-box;
+                    overflow: hidden;
                     display: flex;
                     flex-direction: column;
                     justify-content: space-between;
-                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65), 0 0 16px rgba(56, 189, 248, 0.15);
-                    backdrop-filter: blur(12px);
-                    -webkit-backdrop-filter: blur(12px);
-                    cursor: pointer;
-                    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-                    box-sizing: border-box;
-                    overflow: hidden;
-                    position: relative;
                 }
 
                 .gt-hud-radar-strip:hover {
                     border-color: #38bdf8;
-                    box-shadow: 0 0 20px rgba(56, 189, 248, 0.35);
-                    transform: translateY(-1px);
+                    box-shadow: 0 0 22px rgba(56, 189, 248, 0.35);
+                }
+
+                /* Mode 1: Normal (Default Ramping) */
+                .gt-hud-radar-strip.is-normal {
+                    width: 480px;
+                    max-width: 92vw;
+                    height: 54px;
+                    padding: 4px 8px;
+                }
+                .gt-hud-radar-strip.is-normal .gt-hud-strip-canvas-wrap {
+                    height: 27px;
+                }
+
+                /* Mode 2: Expanded (Diperbesar / Tactical Box) */
+                .gt-hud-radar-strip.is-expanded {
+                    width: 620px;
+                    max-width: 94vw;
+                    height: 140px;
+                    padding: 6px 10px;
+                    gap: 4px;
+                }
+                .gt-hud-radar-strip.is-expanded .gt-hud-strip-canvas-wrap {
+                    height: 100px;
+                }
+
+                /* Mode 3: Minimized (Diperkecil / Capsule Pill) */
+                .gt-hud-radar-strip.is-minimized {
+                    width: 250px;
+                    height: 32px;
+                    padding: 0 12px;
+                    justify-content: center;
+                    border-radius: 20px;
+                    cursor: pointer;
+                }
+                .gt-hud-radar-strip.is-minimized .gt-hud-strip-canvas-wrap,
+                .gt-hud-radar-strip.is-minimized .gt-hud-strip-bar-track,
+                .gt-hud-radar-strip.is-minimized .gt-hud-strip-gps {
+                    display: none !important;
+                }
+                .gt-hud-radar-strip.is-minimized .gt-hud-strip-top {
+                    height: 100%;
                 }
 
                 .gt-hud-strip-top {
@@ -279,7 +326,8 @@ export class HTMLGameHUD {
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
-                    max-width: 180px;
+                    max-width: 190px;
+                    cursor: pointer;
                 }
 
                 .gt-hud-strip-gps {
@@ -299,19 +347,56 @@ export class HTMLGameHUD {
                     animation: gtGpsPulse 1.2s infinite;
                 }
 
+                .gt-hud-strip-right-cluster {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+
                 .gt-hud-strip-prog {
-                    font-size: 10px;
+                    font-size: 10.5px;
                     font-weight: 800;
                     color: #22c55e;
                 }
 
+                .gt-hud-strip-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 3px;
+                }
+
+                .gt-strip-action-btn {
+                    width: 20px;
+                    height: 20px;
+                    background: #182234;
+                    border: 1px solid #334155;
+                    border-radius: 4px;
+                    color: #94a3b8;
+                    font-size: 11px;
+                    font-weight: 700;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    line-height: 1;
+                    padding: 0;
+                    transition: all 0.15s ease;
+                }
+
+                .gt-strip-action-btn:hover {
+                    background: #38bdf8;
+                    border-color: #38bdf8;
+                    color: #040810;
+                    transform: scale(1.08);
+                }
+
                 .gt-hud-strip-canvas-wrap {
                     width: 100%;
-                    height: 26px;
                     border-radius: 4px;
                     overflow: hidden;
                     background: #040810;
                     border: 1px solid rgba(30, 41, 59, 0.6);
+                    cursor: pointer;
                 }
 
                 #gt-hud-strip-canvas {
@@ -335,17 +420,11 @@ export class HTMLGameHUD {
                     transition: width 0.2s ease;
                 }
 
-                @media (max-width: 860px) {
-                    .gt-hud-center {
-                        max-width: 280px;
+                @media (max-width: 600px) {
+                    .gt-hud-radar-bottom {
+                        bottom: 8px;
                     }
                     .gt-hud-strip-gps {
-                        display: none;
-                    }
-                }
-
-                @media (max-width: 640px) {
-                    .gt-hud-center {
                         display: none;
                     }
                 }
@@ -438,81 +517,92 @@ export class HTMLGameHUD {
                 }
             </style>
 
-            <div class="gt-hud-left">
-                <!-- HP Box -->
-                <div class="gt-hud-hp-box" id="gt-hud-hp-box">
-                    <span class="gt-hud-hp-label">HP</span>
-                    <div class="gt-hud-hp-hearts" id="gt-hud-hearts-container"></div>
-                    <span class="gt-hud-hp-num" id="gt-hud-hp-text">3/3</span>
+            <div class="gt-hud-top-bar" id="gt-hud-top-bar">
+                <div class="gt-hud-left">
+                    <!-- HP Box -->
+                    <div class="gt-hud-hp-box" id="gt-hud-hp-box">
+                        <span class="gt-hud-hp-label">HP</span>
+                        <div class="gt-hud-hp-hearts" id="gt-hud-hearts-container"></div>
+                        <span class="gt-hud-hp-num" id="gt-hud-hp-text">3/3</span>
+                    </div>
+
+                    <!-- Quest Button -->
+                    <button class="gt-hud-btn gt-hud-btn-quest" id="gt-hud-btn-quest" title="Buka Misi &amp; Quest">
+                        Quest
+                    </button>
                 </div>
 
-                <!-- Quest Button -->
-                <button class="gt-hud-btn gt-hud-btn-quest" id="gt-hud-btn-quest" title="Buka Misi &amp; Quest">
-                    Quest
-                </button>
+                <div class="gt-hud-right">
+                    <!-- Inventory Bag Button -->
+                    <button class="gt-hud-btn gt-hud-btn-bag" id="gt-hud-btn-bag" title="Buka Tas / Inventaris">
+                        <svg class="gt-hud-bag-svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 6V4.5A2.5 2.5 0 0 1 15 4.5V6" stroke="currentColor"></path>
+                            <rect x="4" y="6" width="16" height="15" rx="2.5" stroke="currentColor"></rect>
+                            <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor"></line>
+                            <rect x="10.5" y="10.5" width="3" height="3" rx="0.5" fill="currentColor"></rect>
+                        </svg>
+                        <span class="gt-hud-badge" id="gt-hud-badge">0</span>
+                    </button>
+
+                    <!-- Level / Location Button Indicator (Tepat di Tengah Tombol Backpack & Hamburger) -->
+                    <button class="gt-hud-btn gt-hud-btn-level" id="gt-hud-btn-level" title="Informasi Level &amp; Tempat (Klik untuk Detail / Tekan M)">
+                        <span class="gt-hud-level-icon" id="gt-hud-level-icon">🗺️</span>
+                        <span class="gt-hud-level-title" id="gt-hud-level-title">Peta</span>
+                    </button>
+
+                    <!-- Menu Button (Hamburger Bar) -->
+                    <button class="gt-hud-btn gt-hud-btn-menu" id="gt-hud-btn-menu" title="Menu Pengaturan (ESC)">
+                        <svg class="gt-hud-menu-svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="4" y1="6" x2="20" y2="6"></line>
+                            <line x1="4" y1="12" x2="20" y2="12"></line>
+                            <line x1="4" y1="18" x2="20" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
             </div>
 
-            <!-- Strip Radar Ramping di Tengah (Selalu Tampil Live) -->
-            <div class="gt-hud-center">
-                <div class="gt-hud-radar-strip" id="gt-hud-radar-strip" title="Radar Peta Level Real-Time (Klik untuk Perbesar / Tekan M)">
+            <!-- Radar Ramping di Bawah Tengah (Bisa Di-minimize & Diperbesar/Perkecil) -->
+            <div class="gt-hud-radar-bottom" id="gt-hud-radar-bottom">
+                <div class="gt-hud-radar-strip is-normal" id="gt-hud-radar-strip">
                     <div class="gt-hud-strip-top">
-                        <div class="gt-hud-strip-title">
+                        <div class="gt-hud-strip-title" id="gt-strip-title-btn" title="Klik untuk perkecil / perbesar">
                             <span id="gt-strip-icon">❄️</span>
                             <span id="gt-strip-name">Lv. 1 • Lembah Salju</span>
                         </div>
-                        <div class="gt-hud-strip-gps">
+                        <div class="gt-hud-strip-gps" id="gt-strip-gps">
                             <span class="gt-strip-gps-dot"></span>
                             <span id="gt-strip-coord">GPS LIVE</span>
                         </div>
-                        <div class="gt-hud-strip-prog" id="gt-strip-prog">0%</div>
+                        <div class="gt-hud-strip-right-cluster">
+                            <div class="gt-hud-strip-prog" id="gt-strip-prog">0%</div>
+                            <div class="gt-hud-strip-actions">
+                                <button class="gt-strip-action-btn" id="gt-strip-btn-min" title="Minimize / Perkecil Radar (Mode Pill)">−</button>
+                                <button class="gt-strip-action-btn" id="gt-strip-btn-size" title="Perbesar / Perkecil Ukuran Radar">⤢</button>
+                                <button class="gt-strip-action-btn" id="gt-strip-btn-modal" title="Buka Radar Peta Penuh (M)">🗺️</button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="gt-hud-strip-canvas-wrap">
+                    <div class="gt-hud-strip-canvas-wrap" id="gt-strip-canvas-wrap" title="Klik untuk Peta Lengkap / Double Klik untuk Ubah Ukuran">
                         <canvas id="gt-hud-strip-canvas" width="480" height="42"></canvas>
                     </div>
-                    <div class="gt-hud-strip-bar-track">
+                    <div class="gt-hud-strip-bar-track" id="gt-strip-bar-track">
                         <div class="gt-hud-strip-bar-fill" id="gt-strip-bar-fill" style="width: 10%;"></div>
                     </div>
                 </div>
-            </div>
-
-            <div class="gt-hud-right">
-                <!-- Inventory Bag Button -->
-                <button class="gt-hud-btn gt-hud-btn-bag" id="gt-hud-btn-bag" title="Buka Tas / Inventaris">
-                    <svg class="gt-hud-bag-svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 6V4.5A2.5 2.5 0 0 1 15 4.5V6" stroke="currentColor"></path>
-                        <rect x="4" y="6" width="16" height="15" rx="2.5" stroke="currentColor"></rect>
-                        <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor"></line>
-                        <rect x="10.5" y="10.5" width="3" height="3" rx="0.5" fill="currentColor"></rect>
-                    </svg>
-                    <span class="gt-hud-badge" id="gt-hud-badge">0</span>
-                </button>
-
-                <!-- Level / Location Button Indicator (Tepat di Tengah Tombol Backpack & Hamburger) -->
-                <button class="gt-hud-btn gt-hud-btn-level" id="gt-hud-btn-level" title="Informasi Level &amp; Tempat (Klik untuk Detail / Tekan M)">
-                    <span class="gt-hud-level-icon" id="gt-hud-level-icon">🗺️</span>
-                    <span class="gt-hud-level-title" id="gt-hud-level-title">Peta</span>
-                </button>
-
-                <!-- Menu Button (Hamburger Bar) -->
-                <button class="gt-hud-btn gt-hud-btn-menu" id="gt-hud-btn-menu" title="Menu Pengaturan (ESC)">
-                    <svg class="gt-hud-menu-svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="4" y1="6" x2="20" y2="6"></line>
-                        <line x1="4" y1="12" x2="20" y2="12"></line>
-                        <line x1="4" y1="18" x2="20" y2="18"></line>
-                    </svg>
-                </button>
             </div>
         `;
 
         document.body.appendChild(this.dom);
 
         // Bind DOM Elements
+        this.topBar = this.dom.querySelector('#gt-hud-top-bar');
         this.btnQuest = this.dom.querySelector('#gt-hud-btn-quest');
         this.btnBag = this.dom.querySelector('#gt-hud-btn-bag');
         this.btnLevel = this.dom.querySelector('#gt-hud-btn-level');
         this.levelIcon = this.dom.querySelector('#gt-hud-level-icon');
         this.levelTitle = this.dom.querySelector('#gt-hud-level-title');
         this.radarStrip = this.dom.querySelector('#gt-hud-radar-strip');
+        this.stripCanvasWrap = this.dom.querySelector('#gt-strip-canvas-wrap');
         this.stripCanvas = this.dom.querySelector('#gt-hud-strip-canvas');
         this.stripCtx = this.stripCanvas ? this.stripCanvas.getContext('2d') : null;
         this.stripIcon = this.dom.querySelector('#gt-strip-icon');
@@ -520,15 +610,72 @@ export class HTMLGameHUD {
         this.stripCoord = this.dom.querySelector('#gt-strip-coord');
         this.stripProg = this.dom.querySelector('#gt-strip-prog');
         this.stripBarFill = this.dom.querySelector('#gt-strip-bar-fill');
+        this.btnStripMin = this.dom.querySelector('#gt-strip-btn-min');
+        this.btnStripSize = this.dom.querySelector('#gt-strip-btn-size');
+        this.btnStripModal = this.dom.querySelector('#gt-strip-btn-modal');
+        this.stripTitleBtn = this.dom.querySelector('#gt-strip-title-btn');
         this.btnMenu = this.dom.querySelector('#gt-hud-btn-menu');
         this.bagBadge = this.dom.querySelector('#gt-hud-badge');
         this.hpText = this.dom.querySelector('#gt-hud-hp-text');
         this.heartsContainer = this.dom.querySelector('#gt-hud-hearts-container');
 
         this.stripRadarAnimId = null;
+        this.radarMode = 'normal';
+        try {
+            this.radarMode = localStorage.getItem('gt_radar_mode') || 'normal';
+        } catch (e) {}
 
+        this.setRadarMode(this.radarMode);
         this.bindEvents();
         this.syncInitialState();
+    }
+
+    setRadarMode(mode) {
+        if (!this.radarStrip) return;
+        this.radarMode = mode;
+        try {
+            localStorage.setItem('gt_radar_mode', mode);
+        } catch (e) {}
+
+        this.radarStrip.classList.remove('is-minimized', 'is-normal', 'is-expanded');
+        this.radarStrip.classList.add(`is-${mode}`);
+
+        if (mode === 'expanded') {
+            if (this.stripCanvas) {
+                this.stripCanvas.width = 620;
+                this.stripCanvas.height = 100;
+            }
+            if (this.btnStripSize) {
+                this.btnStripSize.textContent = '⤡';
+                this.btnStripSize.title = 'Kecilkan ke Ukuran Normal';
+            }
+            if (this.btnStripMin) {
+                this.btnStripMin.textContent = '−';
+                this.btnStripMin.title = 'Minimize Radar (Mode Pill Kecil)';
+            }
+        } else if (mode === 'minimized') {
+            if (this.btnStripMin) {
+                this.btnStripMin.textContent = '▲';
+                this.btnStripMin.title = 'Buka / Pulihkan Ukuran Radar';
+            }
+            if (this.btnStripSize) {
+                this.btnStripSize.textContent = '⤢';
+                this.btnStripSize.title = 'Perbesar Radar';
+            }
+        } else { // normal
+            if (this.stripCanvas) {
+                this.stripCanvas.width = 480;
+                this.stripCanvas.height = 42;
+            }
+            if (this.btnStripSize) {
+                this.btnStripSize.textContent = '⤢';
+                this.btnStripSize.title = 'Perbesar Ukuran Radar (Tactical Box)';
+            }
+            if (this.btnStripMin) {
+                this.btnStripMin.textContent = '−';
+                this.btnStripMin.title = 'Minimize Radar (Mode Pill Kecil)';
+            }
+        }
     }
 
     bindEvents() {
@@ -560,9 +707,73 @@ export class HTMLGameHUD {
             }
         });
 
-        // Strip Radar Click (Buka Detail Radar Peta)
+        // Strip Radar Min Button Click
+        if (this.btnStripMin) {
+            this.btnStripMin.addEventListener('click', (e) => {
+                e.stopPropagation();
+                AudioManager.playClick();
+                if (this.radarMode === 'minimized') {
+                    this.setRadarMode('normal');
+                } else {
+                    this.setRadarMode('minimized');
+                }
+            });
+        }
+
+        // Strip Radar Size Toggle Click (Normal <-> Expanded)
+        if (this.btnStripSize) {
+            this.btnStripSize.addEventListener('click', (e) => {
+                e.stopPropagation();
+                AudioManager.playClick();
+                if (this.radarMode === 'expanded') {
+                    this.setRadarMode('normal');
+                } else if (this.radarMode === 'normal') {
+                    this.setRadarMode('expanded');
+                } else {
+                    this.setRadarMode('normal');
+                }
+            });
+        }
+
+        // Strip Radar Modal Button Click
+        if (this.btnStripModal) {
+            this.btnStripModal.addEventListener('click', (e) => {
+                e.stopPropagation();
+                AudioManager.playClick();
+                this.showLevelInfoModal();
+            });
+        }
+
+        // Klik judul saat minimized untuk membuka kembali
+        if (this.stripTitleBtn) {
+            this.stripTitleBtn.addEventListener('click', (e) => {
+                if (this.radarMode === 'minimized') {
+                    e.stopPropagation();
+                    AudioManager.playClick();
+                    this.setRadarMode('normal');
+                }
+            });
+        }
+
+        // Strip Radar Body Click (jika sedang minimized, klik bar memulihkan ke normal)
         if (this.radarStrip) {
             this.radarStrip.addEventListener('click', (e) => {
+                if (this.radarMode === 'minimized') {
+                    e.stopPropagation();
+                    AudioManager.playClick();
+                    this.setRadarMode('normal');
+                }
+            });
+        }
+
+        // Double Click pada canvas wrap untuk toggle ukuran cepat, Single Click untuk buka modal
+        if (this.stripCanvasWrap) {
+            this.stripCanvasWrap.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                AudioManager.playClick();
+                this.setRadarMode(this.radarMode === 'expanded' ? 'normal' : 'expanded');
+            });
+            this.stripCanvasWrap.addEventListener('click', (e) => {
                 e.stopPropagation();
                 AudioManager.playClick();
                 this.showLevelInfoModal();
@@ -604,17 +815,6 @@ export class HTMLGameHUD {
                 }
             }
         });
-    }
-
-    syncInitialState() {
-        const hp = this.scene.hp !== undefined ? this.scene.hp : 3;
-        const maxHp = this.scene.maxHp !== undefined ? this.scene.maxHp : 3;
-        this.updateHP(hp, maxHp);
-
-        const invCount = Array.isArray(this.scene.inventory) ? this.scene.inventory.length : 0;
-        this.updateInventoryBadge(invCount);
-        this.updateLevelBadge();
-        this.startStripRadarLoop();
     }
 
     startStripRadarLoop() {
@@ -709,13 +909,30 @@ export class HTMLGameHUD {
                 });
             }
 
-            // 6. Portal Finish
             let goalX = worldW - 150, goalY = 375;
             if (scene && scene.portalExit) goalX = scene.portalExit.x, goalY = scene.portalExit.y;
             else if (scene && scene.portal) goalX = scene.portal.x, goalY = scene.portal.y;
             else if (scene && scene.worldData && Array.isArray(scene.worldData.entities)) {
                 const pf = scene.worldData.entities.find(e => e.type === 'portal');
                 if (pf) goalX = (pf.col !== undefined) ? (pf.col * 50 + 25) : pf.x;
+            }
+
+            // Update Live Texts & Progress Bar
+            if (this.stripCoord) {
+                this.stripCoord.textContent = `X:${Math.round(curPx)} Y:${Math.round(curPy)}`;
+            }
+            const prog = Math.min(100, Math.max(0, Math.round((curPx / Math.max(1, goalX)) * 100)));
+            if (this.stripProg) {
+                this.stripProg.textContent = `${prog}%`;
+            }
+            if (this.stripBarFill) {
+                this.stripBarFill.style.width = `${prog}%`;
+            }
+
+            // Jika mode minimized, lewati render canvas untuk hemat daya & CPU
+            if (this.radarMode === 'minimized') {
+                this.stripRadarAnimId = requestAnimationFrame(loop);
+                return;
             }
 
             const gx = goalX * scaleX;
@@ -747,18 +964,6 @@ export class HTMLGameHUD {
             ctx.strokeStyle = '#0284c7';
             ctx.lineWidth = 1.5;
             ctx.stroke();
-
-            // 8. Update Live Texts & Progress Bar
-            if (this.stripCoord) {
-                this.stripCoord.textContent = `X:${Math.round(curPx)} Y:${Math.round(curPy)}`;
-            }
-            const prog = Math.min(100, Math.max(0, Math.round((curPx / Math.max(1, goalX)) * 100)));
-            if (this.stripProg) {
-                this.stripProg.textContent = `${prog}%`;
-            }
-            if (this.stripBarFill) {
-                this.stripBarFill.style.width = `${prog}%`;
-            }
 
             this.stripRadarAnimId = requestAnimationFrame(loop);
         };
@@ -1442,12 +1647,13 @@ export class HTMLGameHUD {
     }
 
     adjustForMenuBar(hasMenuBar = false) {
-        if (!this.dom) return;
-        this.dom.style.top = hasMenuBar ? '44px' : '14px';
+        if (this.topBar) {
+            this.topBar.style.top = hasMenuBar ? '44px' : '14px';
+        }
     }
 
     show() {
-        if (this.dom) this.dom.style.display = 'flex';
+        if (this.dom) this.dom.style.display = 'block';
     }
 
     hide() {
