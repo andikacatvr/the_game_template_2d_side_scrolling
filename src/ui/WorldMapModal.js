@@ -161,20 +161,8 @@ export class WorldMapModal {
                     worldHeight: 850,
                     hasSkeleton: true,
                     hasPlatforms: true,
-                    hasPortal: true,
+                    hasPortal: false,
                     desc: 'Pelabuhan malam Teluk Victoria dengan kapal tongkang terapung, rintangan vertikal, dan kapal feri bintang.'
-                },
-                {
-                    id: 'CrystalCaveScene',
-                    name: 'Level 3 • Labirin Gua Kristal',
-                    biome: 'cave',
-                    worldWidth: 2000,
-                    worldHeight: 850,
-                    hasSpikes: true,
-                    hasLava: true,
-                    hasSkeleton: true,
-                    hasPortal: true,
-                    desc: 'Kedalaman gua purba bertabur kristal safir langka dengan rintangan lahar api dan skeleton penjaga.'
                 }
             ];
         } else {
