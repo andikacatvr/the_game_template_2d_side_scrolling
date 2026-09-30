@@ -671,11 +671,14 @@ export class ProjectHubModal {
                         <span class="gt-uhub-badge-tag gt-tag-sandbox">${biomeLabel}</span>
                     </div>
                     <div class="gt-uhub-badge-platform">
-                        <span>● Kreator Visual</span>
+                        <span>● Scene Kustom</span>
                     </div>
-                    <div class="gt-uhub-col-action">
+                    <div class="gt-uhub-col-action" style="display: flex; gap: 6px; justify-content: flex-end;">
+                        <button class="gt-uhub-btn-edit btn-edit-custom-world" data-index="${idx}" style="background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8; padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                            <span>✏️</span> Edit
+                        </button>
                         <button class="gt-uhub-btn-open btn-open-custom-world" data-index="${idx}">
-                            <span>▶</span> Mainkan
+                            <span>▶</span> Play
                         </button>
                     </div>
                 </div>
@@ -691,7 +694,7 @@ export class ProjectHubModal {
                         <input type="text" class="gt-uhub-search-input" id="gt-uhub-search" placeholder="Search projects..." value="${this.searchQuery}" />
                     </div>
                     <button class="gt-uhub-btn-primary" id="gt-uhub-btn-new-project">
-                        <span>+</span> New World
+                        <span>+</span> Buat Scene Baru
                     </button>
                 </div>
             </div>
@@ -700,7 +703,7 @@ export class ProjectHubModal {
                 <div class="gt-uhub-table-header">
                     <div>Name</div>
                     <div>Type</div>
-                    <div>Modified</div>
+                    <div>Status</div>
                     <div style="text-align: right;">Action</div>
                 </div>
 
@@ -722,7 +725,7 @@ export class ProjectHubModal {
                     </div>
                     <div class="gt-uhub-col-action">
                         <button class="gt-uhub-btn-open" id="btn-open-scene3">
-                            <span>▶</span> Open World
+                            <span>▶</span> Open Scene
                         </button>
                     </div>
                 </div>
@@ -736,6 +739,21 @@ export class ProjectHubModal {
             container.querySelectorAll('.gt-uhub-row').forEach(row => {
                 const name = row.getAttribute('data-name');
                 row.style.display = name.includes(this.searchQuery) ? 'grid' : 'none';
+            });
+        });
+
+        // Edit buttons for custom scenes
+        container.querySelectorAll('.btn-edit-custom-world').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.getAttribute('data-index'), 10);
+                const targetWorld = customWorlds[idx];
+                if (targetWorld) {
+                    this.hide();
+                    AudioManager.playClick();
+                    const builder = new SceneBuilderModal(this.scene);
+                    builder.loadWorldData(targetWorld);
+                    builder.show();
+                }
             });
         });
 

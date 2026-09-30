@@ -85,6 +85,44 @@ export class SceneBuilderModal {
         this.preventAllOverlaps();
     }
 
+    loadWorldData(data) {
+        if (!data) return;
+        if (data.name) this.state.name = data.name;
+        if (data.biome) this.state.biome = data.biome;
+        if (data.timeOfDay) this.state.timeOfDay = data.timeOfDay;
+        if (data.worldWidth) this.state.worldWidth = data.worldWidth;
+        if (data.worldHeight) this.state.worldHeight = data.worldHeight;
+        if (Array.isArray(data.entities)) {
+            this.state.entities = JSON.parse(JSON.stringify(data.entities));
+            if (this.state.entities.length > 0) {
+                this.state.selectedId = this.state.entities[0].id;
+            }
+        }
+        if (Array.isArray(data.terrainTiles)) {
+            this.state.terrainTiles = new Set(data.terrainTiles);
+        }
+
+        // Sinkronisasi elemen DOM
+        if (this.overlay) {
+            const nameInput = this.overlay.querySelector('#gt-sb-input-name');
+            if (nameInput) nameInput.value = this.state.name;
+            const tag = this.overlay.querySelector('#gt-sb-scene-tag');
+            if (tag) tag.textContent = `Scene: ${this.state.name}.scene`;
+
+            this.overlay.querySelectorAll('.gt-sb-biome-btn').forEach(btn => {
+                if (btn.getAttribute('data-biome') === this.state.biome) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        this.preventAllOverlaps();
+        this.renderHierarchy();
+        this.renderInspector();
+    }
+
     createDOM() {
         const oldEl = document.getElementById('gt-scene-builder-overlay');
         if (oldEl) oldEl.remove();
@@ -923,16 +961,16 @@ export class SceneBuilderModal {
                         <span class="gt-sb-unity-logo">🛠️</span>
                         <span class="gt-sb-unity-title">UNITY 2D ENGINE</span>
                     </div>
-                    <span class="gt-sb-scene-tag">Scene: CustomWorld.scene</span>
+                    <span class="gt-sb-scene-tag" id="gt-sb-scene-tag">Scene: ${this.state.name}.scene</span>
                     <div class="gt-sb-input-wrap">
-                        <input type="text" class="gt-sb-input-name" id="gt-sb-input-name" value="${this.state.name}" placeholder="Nama Level..." />
+                        <input type="text" class="gt-sb-input-name" id="gt-sb-input-name" value="${this.state.name}" placeholder="Nama Scene / Level..." />
                         <button class="gt-sb-btn-random" id="gt-sb-btn-random" title="Pilih nama acak">🎲 Acak</button>
                     </div>
                 </div>
 
                 <div class="gt-sb-topbar-center">
-                    <button class="gt-sb-play-btn" id="gt-sb-btn-enter" title="Play &amp; Uji Level ini secara langsung!">
-                        <span>▶ Play World</span>
+                    <button class="gt-sb-play-btn" id="gt-sb-btn-enter" title="Play &amp; Uji Scene ini secara langsung!">
+                        <span>▶ Play Scene (Live)</span>
                     </button>
                     <button class="gt-sb-tool-toggle ${this.state.showGrid ? 'active' : ''}" id="gt-sb-btn-grid" title="Toggle Grid Persegi 50px">
                         <span>⊞ Grid: ON</span>
@@ -2000,9 +2038,12 @@ export class SceneBuilderModal {
             });
         }
 
+        const sceneTagEl = overlay.querySelector('#gt-sb-scene-tag');
+
         if (nameInput) {
             nameInput.addEventListener('input', (e) => {
                 this.state.name = e.target.value.trim() || 'Dunia Kreasiku';
+                if (sceneTagEl) sceneTagEl.textContent = `Scene: ${this.state.name}.scene`;
             });
         }
 
@@ -2015,6 +2056,7 @@ export class SceneBuilderModal {
                 const a = adjectives[Math.floor(Math.random() * adjectives.length)];
                 this.state.name = `${p} ${a}`;
                 if (nameInput) nameInput.value = this.state.name;
+                if (sceneTagEl) sceneTagEl.textContent = `Scene: ${this.state.name}.scene`;
             });
         }
 

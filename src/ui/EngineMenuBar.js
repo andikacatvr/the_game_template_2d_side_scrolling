@@ -346,7 +346,7 @@ export class EngineMenuBar {
                         File <span style="font-size: 9px;">▾</span>
                     </button>
                     <div class="gt-mb-menu-dropdown-content" id="gt-mb-dd-file">
-                        <div class="gt-mb-menu-item" id="mi-new-world" style="color: #38bdf8; font-weight: 700;">🌍 + Buat Dunia Baru (Studio)</div>
+                        <div class="gt-mb-menu-item" id="mi-new-world" style="color: #38bdf8; font-weight: 700;">🎬 + Buat Scene Baru (Studio)</div>
                         <div class="gt-mb-menu-item" id="mi-hub">📁 Buka Project Hub</div>
                         <div class="gt-mb-menu-item" id="mi-save">💾 Simpan Progres (AutoSave)</div>
                         <div class="gt-mb-divider"></div>
