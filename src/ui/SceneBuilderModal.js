@@ -980,7 +980,7 @@ export class SceneBuilderModal {
                 <div class="gt-sb-topbar-left">
                     <div class="gt-sb-unity-brand">
                         <span class="gt-sb-unity-logo">🛠️</span>
-                        <span class="gt-sb-unity-title">UNITY 2D ENGINE</span>
+                        <span class="gt-sb-unity-title">Preview</span>
                     </div>
                     <span class="gt-sb-scene-tag" id="gt-sb-scene-tag">Scene: ${this.state.name}.scene</span>
                     <div class="gt-sb-input-wrap">
