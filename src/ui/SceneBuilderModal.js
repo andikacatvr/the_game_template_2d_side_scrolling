@@ -7,11 +7,16 @@ export class SceneBuilderModal {
         this._isOpen = false;
         this.animFrameId = null;
 
-        // Default State (100% matched with CustomWorldScene)
+        // Default State (100% matched with CustomWorldScene & Unity Inspector)
         this.state = {
             name: 'Gurun Api Tengkorak',
             biome: 'desert', // 'dirt' | 'snow' | 'desert' | 'cave'
             timeOfDay: 'day', // 'day' | 'sunset' | 'night'
+            showGrid: true,
+            showGizmos: true,
+            selectedId: 'player', // Currently selected object for Unity Inspector
+
+            // World Components Toggles
             hasLava: true,
             hasWater: true,
             hasSpikes: true,
@@ -22,7 +27,22 @@ export class SceneBuilderModal {
             hasChest: true,
             hasCoins: true,
             hasPortal: true,
-            worldWidth: 1800
+            worldWidth: 1800,
+
+            // Entity Transforms (Editable in Inspector)
+            positions: {
+                player: { x: 100, y: 416, label: 'Player Spawn', cat: 'creature', icon: '👤' },
+                npc: { x: 300, y: 416, label: 'NPC Guide', cat: 'creature', icon: '🧙' },
+                water: { x: 630, y: 416, label: 'Kolam Air (560-700)', cat: 'fluid', icon: '🌊' },
+                platforms: { x: 630, y: 280, label: 'Pijakan Melayang (x5)', cat: 'solid', icon: '🧱' },
+                coins: { x: 630, y: 240, label: 'Koin Emas (x5)', cat: 'solid', icon: '🪙' },
+                slime: { x: 520, y: 416, label: 'Monster Slime', cat: 'creature', icon: '🟢' },
+                spikes: { x: 850, y: 416, label: 'Rintangan Duri (x3)', cat: 'solid', icon: '⚠️' },
+                chest: { x: 800, y: 416, label: 'Peti Harta Karun', cat: 'solid', icon: '📦' },
+                lava: { x: 1080, y: 416, label: 'Kolam Lava (1000-1160)', cat: 'fluid', icon: '🌋' },
+                skeleton: { x: 1450, y: 416, label: 'Monster Skeleton', cat: 'creature', icon: '💀' },
+                portal: { x: 1700, y: 416, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀' }
+            }
         };
 
         this.animTime = 0;
@@ -39,7 +59,7 @@ export class SceneBuilderModal {
 
         this.overlay.innerHTML = `
             <style>
-                @import url('https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;700&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700;800&display=swap');
 
                 .gt-sb-overlay {
                     position: fixed;
@@ -49,7 +69,7 @@ export class SceneBuilderModal {
                     z-index: 99998;
                     display: flex;
                     flex-direction: column;
-                    background: #0f0f11;
+                    background: #0d0d10;
                     opacity: 1;
                     visibility: visible;
                     transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s ease;
@@ -58,6 +78,7 @@ export class SceneBuilderModal {
                     user-select: none;
                     -webkit-user-select: none;
                     overflow: hidden;
+                    color: #e4e4e7;
                 }
 
                 .gt-sb-overlay.hidden {
@@ -67,63 +88,65 @@ export class SceneBuilderModal {
                 }
 
                 /* =============================================================== */
-                /* 1. TOP HEADER STUDIO TOOLBAR                                    */
+                /* 1. TOP UNITY-STYLE TOOLBAR                                      */
                 /* =============================================================== */
                 .gt-sb-topbar {
-                    height: 54px;
-                    background: #16161a;
+                    height: 48px;
+                    background: #18181c;
                     border-bottom: 1px solid #27272a;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    padding: 0 18px;
+                    padding: 0 14px;
                     flex-shrink: 0;
-                    gap: 16px;
-                    z-index: 10;
-                    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+                    gap: 12px;
+                    z-index: 20;
+                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
                 }
 
                 .gt-sb-topbar-left {
                     display: flex;
                     align-items: center;
-                    gap: 12px;
-                    min-width: 280px;
+                    gap: 10px;
                 }
 
-                .gt-sb-brand {
+                .gt-sb-unity-brand {
                     display: flex;
                     align-items: center;
-                    gap: 8px;
+                    gap: 7px;
+                    padding: 4px 8px;
+                    background: #111114;
+                    border: 1px solid #27272a;
+                    border-radius: 5px;
                 }
 
-                .gt-sb-brand-icon {
-                    width: 28px;
-                    height: 28px;
-                    background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
-                    border-radius: 6px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
+                .gt-sb-unity-logo {
                     font-size: 15px;
-                    color: #fff;
-                    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
                 }
 
-                .gt-sb-brand-title {
-                    font-size: 15px;
+                .gt-sb-unity-title {
+                    font-size: 12px;
                     font-weight: 800;
                     color: #ffffff;
-                    letter-spacing: 0.3px;
+                    letter-spacing: 0.5px;
+                    font-family: 'JetBrains Mono', monospace;
+                }
+
+                .gt-sb-scene-tag {
+                    font-size: 11px;
+                    font-weight: 600;
+                    color: #71717a;
+                    font-family: 'JetBrains Mono', monospace;
                 }
 
                 .gt-sb-input-wrap {
                     display: flex;
                     align-items: center;
-                    gap: 6px;
-                    background: #111113;
-                    border: 1px solid #2d2d32;
-                    border-radius: 6px;
-                    padding: 2px 4px 2px 10px;
+                    gap: 4px;
+                    background: #111114;
+                    border: 1px solid #27272a;
+                    border-radius: 5px;
+                    padding: 2px 4px 2px 8px;
                 }
 
                 .gt-sb-input-name {
@@ -131,9 +154,9 @@ export class SceneBuilderModal {
                     border: none;
                     outline: none;
                     color: #f4f4f5;
-                    font-size: 12.5px;
+                    font-size: 12px;
                     font-weight: 600;
-                    width: 170px;
+                    width: 150px;
                     font-family: inherit;
                 }
 
@@ -141,9 +164,9 @@ export class SceneBuilderModal {
                     background: #242429;
                     border: 1px solid #38383e;
                     color: #e4e4e7;
-                    font-size: 11px;
+                    font-size: 10.5px;
                     font-weight: 700;
-                    padding: 4px 8px;
+                    padding: 3px 6px;
                     border-radius: 4px;
                     cursor: pointer;
                     transition: all 0.12s ease;
@@ -154,29 +177,92 @@ export class SceneBuilderModal {
                     color: #ffffff;
                 }
 
-                /* Biome Selector Toolbar */
+                /* Unity Play Controls in Center */
                 .gt-sb-topbar-center {
                     display: flex;
                     align-items: center;
-                    gap: 6px;
-                    background: #111113;
-                    padding: 4px 6px;
-                    border-radius: 8px;
-                    border: 1px solid #27272a;
+                    gap: 8px;
                 }
 
-                .gt-sb-biome-btn {
-                    padding: 5px 12px;
+                .gt-sb-play-btn {
+                    background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+                    border: 1px solid #4ade80;
+                    color: #ffffff;
+                    padding: 5px 16px;
                     border-radius: 5px;
-                    border: 1px solid transparent;
-                    background: transparent;
-                    color: #a1a1aa;
                     font-size: 12px;
-                    font-weight: 700;
+                    font-weight: 800;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
                     gap: 6px;
+                    transition: all 0.15s ease;
+                    box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
+                    font-family: inherit;
+                }
+
+                .gt-sb-play-btn:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 0 18px rgba(74, 222, 128, 0.6);
+                    filter: brightness(1.1);
+                }
+
+                .gt-sb-tool-toggle {
+                    background: #1c1c21;
+                    border: 1px solid #2d2d34;
+                    color: #a1a1aa;
+                    padding: 4px 10px;
+                    border-radius: 5px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                    transition: all 0.15s ease;
+                    font-family: 'JetBrains Mono', monospace;
+                }
+
+                .gt-sb-tool-toggle:hover {
+                    background: #27272e;
+                    color: #f4f4f5;
+                }
+
+                .gt-sb-tool-toggle.active {
+                    background: #172554;
+                    border-color: #38bdf8;
+                    color: #38bdf8;
+                }
+
+                /* Right Section Toolbar */
+                .gt-sb-topbar-right {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                .gt-sb-biome-group {
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                    background: #111114;
+                    padding: 3px 5px;
+                    border-radius: 6px;
+                    border: 1px solid #27272a;
+                }
+
+                .gt-sb-biome-btn {
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    border: 1px solid transparent;
+                    background: transparent;
+                    color: #a1a1aa;
+                    font-size: 11px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
                     transition: all 0.15s ease;
                     font-family: inherit;
                 }
@@ -187,49 +273,19 @@ export class SceneBuilderModal {
                 }
 
                 .gt-sb-biome-btn.active {
-                    background: #172554;
-                    border-color: #38bdf8;
-                    color: #38bdf8;
-                    box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
-                }
-
-                .gt-sb-topbar-right {
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                }
-
-                .gt-sb-btn-enter {
-                    background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #0284c7 100%);
-                    border: 1px solid #38bdf8;
-                    color: #ffffff;
-                    padding: 7px 18px;
-                    border-radius: 6px;
-                    font-size: 12.5px;
-                    font-weight: 800;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    transition: all 0.15s ease;
-                    box-shadow: 0 4px 16px rgba(2, 132, 199, 0.45);
-                    font-family: inherit;
-                }
-
-                .gt-sb-btn-enter:hover {
-                    transform: translateY(-1px);
-                    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.6);
-                    filter: brightness(1.1);
+                    background: #1e293b;
+                    border-color: #60a5fa;
+                    color: #60a5fa;
                 }
 
                 .gt-sb-btn-close {
-                    width: 32px;
-                    height: 32px;
-                    border-radius: 6px;
-                    background: #1f1f23;
-                    border: 1px solid #2d2d32;
+                    width: 30px;
+                    height: 30px;
+                    border-radius: 5px;
+                    background: #1c1c21;
+                    border: 1px solid #2d2d34;
                     color: #a1a1aa;
-                    font-size: 15px;
+                    font-size: 14px;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
@@ -244,8 +300,95 @@ export class SceneBuilderModal {
                 }
 
                 /* =============================================================== */
-                /* 2. MINIATURE MAP VIEWPORT (THE CENTRAL STAGE)                    */
+                /* 2. MIDDLE STUDIO BODY: HIERARCHY | SCENE VIEW | INSPECTOR        */
                 /* =============================================================== */
+                .gt-sb-body {
+                    flex: 1;
+                    display: flex;
+                    overflow: hidden;
+                    position: relative;
+                }
+
+                /* --- LEFT: HIERARCHY PANEL --- */
+                .gt-sb-hierarchy {
+                    width: 220px;
+                    background: #141417;
+                    border-right: 1px solid #27272a;
+                    display: flex;
+                    flex-direction: column;
+                    flex-shrink: 0;
+                    z-index: 10;
+                }
+
+                .gt-sb-panel-header {
+                    height: 30px;
+                    background: #18181c;
+                    border-bottom: 1px solid #27272a;
+                    padding: 0 10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    font-size: 11px;
+                    font-weight: 800;
+                    color: #a1a1aa;
+                    letter-spacing: 0.5px;
+                    font-family: 'JetBrains Mono', monospace;
+                }
+
+                .gt-sb-hierarchy-list {
+                    flex: 1;
+                    overflow-y: auto;
+                    padding: 6px 0;
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .gt-sb-hierarchy-list::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .gt-sb-hierarchy-list::-webkit-scrollbar-thumb {
+                    background: #27272a;
+                    border-radius: 2px;
+                }
+
+                .gt-sb-tree-item {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 5px 10px;
+                    font-size: 11.5px;
+                    font-weight: 600;
+                    color: #d4d4d8;
+                    cursor: pointer;
+                    transition: all 0.1s ease;
+                    border-left: 2px solid transparent;
+                }
+
+                .gt-sb-tree-item:hover {
+                    background: #1d1d23;
+                    color: #ffffff;
+                }
+
+                .gt-sb-tree-item.active {
+                    background: #1e293b;
+                    border-left-color: #38bdf8;
+                    color: #38bdf8;
+                    font-weight: 700;
+                }
+
+                .gt-sb-tree-left {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                }
+
+                .gt-sb-tree-coord {
+                    font-size: 9.5px;
+                    color: #71717a;
+                    font-family: 'JetBrains Mono', monospace;
+                }
+
+                /* --- CENTER: SCENE VIEWPORT & MINIATURE GRID --- */
                 .gt-sb-stage-viewport {
                     flex: 1;
                     position: relative;
@@ -254,7 +397,6 @@ export class SceneBuilderModal {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    border-bottom: 1px solid #27272a;
                 }
 
                 #gt-sb-canvas {
@@ -263,29 +405,29 @@ export class SceneBuilderModal {
                     display: block;
                 }
 
-                /* HUD Overlay Badges on Top of Miniature Map */
+                /* Top Left Viewport Badge */
                 .gt-sb-stage-badge-topleft {
                     position: absolute;
-                    top: 14px;
-                    left: 18px;
+                    top: 10px;
+                    left: 12px;
                     display: flex;
                     align-items: center;
-                    gap: 8px;
-                    background: rgba(15, 15, 18, 0.85);
+                    gap: 7px;
+                    background: rgba(18, 18, 22, 0.85);
                     backdrop-filter: blur(8px);
-                    border: 1px solid rgba(255, 255, 255, 0.15);
-                    padding: 5px 12px;
-                    border-radius: 6px;
-                    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+                    border: 1px solid rgba(255, 255, 255, 0.12);
+                    padding: 4px 10px;
+                    border-radius: 5px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
                     pointer-events: none;
                 }
 
                 .gt-sb-live-dot {
-                    width: 7px;
-                    height: 7px;
+                    width: 6px;
+                    height: 6px;
                     border-radius: 50%;
                     background: #22c55e;
-                    box-shadow: 0 0 8px #22c55e;
+                    box-shadow: 0 0 6px #22c55e;
                     animation: pulseLive 1.4s infinite;
                 }
 
@@ -295,68 +437,135 @@ export class SceneBuilderModal {
                 }
 
                 .gt-sb-stage-badge-title {
-                    font-size: 11px;
+                    font-size: 10.5px;
                     font-weight: 800;
                     color: #ffffff;
                     letter-spacing: 0.4px;
                     font-family: 'JetBrains Mono', monospace;
                 }
 
+                /* Top Right Grid Info Badge */
                 .gt-sb-stage-badge-topright {
                     position: absolute;
-                    top: 14px;
-                    right: 18px;
-                    background: rgba(15, 15, 18, 0.85);
+                    top: 10px;
+                    right: 12px;
+                    background: rgba(18, 18, 22, 0.85);
                     backdrop-filter: blur(8px);
-                    border: 1px solid rgba(255, 255, 255, 0.15);
-                    padding: 5px 12px;
-                    border-radius: 6px;
-                    font-size: 11px;
+                    border: 1px solid rgba(255, 255, 255, 0.12);
+                    padding: 4px 10px;
+                    border-radius: 5px;
+                    font-size: 10px;
                     font-weight: 700;
                     color: #38bdf8;
                     font-family: 'JetBrains Mono', monospace;
                     pointer-events: none;
                 }
 
-                /* Scale Ruler / Map Progress Track */
+                /* Bottom Scale Ruler Track */
                 .gt-sb-stage-ruler {
                     position: absolute;
-                    bottom: 12px;
-                    left: 18px;
-                    right: 18px;
+                    bottom: 8px;
+                    left: 12px;
+                    right: 12px;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    background: rgba(15, 15, 18, 0.7);
+                    background: rgba(18, 18, 22, 0.75);
                     backdrop-filter: blur(6px);
                     border: 1px solid rgba(255, 255, 255, 0.1);
-                    padding: 4px 14px;
-                    border-radius: 6px;
-                    font-size: 10px;
+                    padding: 3px 12px;
+                    border-radius: 5px;
+                    font-size: 9.5px;
                     font-family: 'JetBrains Mono', monospace;
                     color: #94a3b8;
                     pointer-events: none;
                 }
 
-                .gt-sb-ruler-tag {
+                /* --- RIGHT: INSPECTOR PANEL --- */
+                .gt-sb-inspector {
+                    width: 250px;
+                    background: #141417;
+                    border-left: 1px solid #27272a;
+                    display: flex;
+                    flex-direction: column;
+                    flex-shrink: 0;
+                    z-index: 10;
+                }
+
+                .gt-sb-inspector-content {
+                    flex: 1;
+                    overflow-y: auto;
+                    padding: 12px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                }
+
+                .gt-sb-inspector-card {
+                    background: #1a1a1f;
+                    border: 1px solid #27272e;
+                    border-radius: 6px;
+                    padding: 10px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+
+                .gt-sb-card-title {
+                    font-size: 11px;
+                    font-weight: 800;
+                    color: #38bdf8;
+                    font-family: 'JetBrains Mono', monospace;
+                    border-bottom: 1px solid #27272a;
+                    padding-bottom: 4px;
                     display: flex;
                     align-items: center;
-                    gap: 5px;
+                    justify-content: space-between;
+                }
+
+                .gt-sb-prop-row {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    font-size: 11px;
+                }
+
+                .gt-sb-prop-label {
+                    color: #a1a1aa;
+                    font-weight: 600;
+                }
+
+                .gt-sb-prop-val {
+                    color: #f4f4f5;
+                    font-family: 'JetBrains Mono', monospace;
+                    font-weight: 700;
+                }
+
+                .gt-sb-prop-input {
+                    width: 70px;
+                    background: #111114;
+                    border: 1px solid #2d2d34;
+                    color: #38bdf8;
+                    font-size: 11px;
+                    font-family: 'JetBrains Mono', monospace;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    text-align: right;
                 }
 
                 /* =============================================================== */
                 /* 3. DOCKED GROWTOPIA BACKPACK DRAWER (BOTTOM)                     */
                 /* =============================================================== */
                 .gt-sb-drawer {
-                    height: 200px;
-                    background: #141416;
+                    height: 155px;
+                    background: #131316;
                     border-top: 1px solid #27272a;
                     display: flex;
                     flex-direction: column;
-                    padding: 12px 20px;
+                    padding: 8px 14px;
                     box-sizing: border-box;
                     flex-shrink: 0;
-                    gap: 10px;
+                    gap: 6px;
                     z-index: 10;
                 }
 
@@ -370,8 +579,8 @@ export class SceneBuilderModal {
                 .gt-sb-drawer-title {
                     display: flex;
                     align-items: center;
-                    gap: 8px;
-                    font-size: 13px;
+                    gap: 6px;
+                    font-size: 11.5px;
                     font-weight: 800;
                     color: #ffffff;
                     letter-spacing: 0.3px;
@@ -381,88 +590,79 @@ export class SceneBuilderModal {
                 .gt-sb-category-bar {
                     display: flex;
                     align-items: center;
-                    gap: 6px;
+                    gap: 5px;
                 }
 
                 .gt-sb-cat-btn {
-                    padding: 5px 12px;
-                    border-radius: 6px;
-                    background: #1a1a1e;
-                    border: 1px solid #2c2c32;
+                    padding: 3px 10px;
+                    border-radius: 4px;
+                    background: #18181c;
+                    border: 1px solid #27272a;
                     color: #a1a1aa;
-                    font-size: 11.5px;
+                    font-size: 11px;
                     font-weight: 700;
                     cursor: pointer;
                     display: flex;
                     align-items: center;
-                    gap: 6px;
-                    transition: all 0.15s ease;
+                    gap: 5px;
+                    transition: all 0.12s ease;
                     font-family: inherit;
                 }
 
                 .gt-sb-cat-btn:hover {
-                    background: #24242a;
+                    background: #222228;
                     color: #ffffff;
-                    border-color: #3f3f46;
                 }
 
                 .gt-sb-cat-btn.active {
                     background: #172554;
                     color: #38bdf8;
                     border-color: #38bdf8;
-                    box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
                 }
 
                 .gt-sb-cat-count {
-                    font-size: 9.5px;
+                    font-size: 9px;
                     font-family: 'JetBrains Mono', monospace;
-                    padding: 1px 5px;
-                    border-radius: 4px;
+                    padding: 1px 4px;
+                    border-radius: 3px;
                     background: rgba(255, 255, 255, 0.08);
                     color: #94a3b8;
-                    border: 1px solid rgba(255, 255, 255, 0.05);
-                }
-
-                .gt-sb-cat-btn.active .gt-sb-cat-count {
-                    background: rgba(56, 189, 248, 0.2);
-                    color: #7dd3fc;
-                    border-color: rgba(56, 189, 248, 0.3);
                 }
 
                 /* Backpack Slots Grid */
                 .gt-sb-palette-grid {
                     display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-                    gap: 8px;
+                    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                    gap: 6px;
                     overflow-y: auto;
                     flex: 1;
                     padding-right: 4px;
                 }
 
                 .gt-sb-palette-grid::-webkit-scrollbar {
-                    width: 5px;
+                    width: 4px;
                 }
                 .gt-sb-palette-grid::-webkit-scrollbar-thumb {
                     background: #27272a;
-                    border-radius: 3px;
+                    border-radius: 2px;
                 }
 
                 .gt-sb-chip {
-                    background: #1a1a1e;
-                    border: 1px solid #2a2a30;
-                    border-radius: 7px;
-                    padding: 8px 12px;
+                    background: #18181c;
+                    border: 1px solid #27272e;
+                    border-radius: 5px;
+                    padding: 5px 8px;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
                     cursor: pointer;
-                    transition: all 0.15s ease;
-                    height: 38px;
+                    transition: all 0.12s ease;
+                    height: 32px;
                     box-sizing: border-box;
                 }
 
                 .gt-sb-chip:hover {
-                    background: #24242a;
+                    background: #222228;
                     border-color: #3f3f46;
                     transform: translateY(-1px);
                 }
@@ -470,29 +670,27 @@ export class SceneBuilderModal {
                 .gt-sb-chip.active {
                     background: #11261b;
                     border-color: #22c55e;
-                    box-shadow: 0 0 10px rgba(34, 197, 94, 0.15);
                 }
 
                 .gt-sb-chip-left {
                     display: flex;
                     align-items: center;
-                    gap: 8px;
-                    font-size: 12px;
+                    gap: 6px;
+                    font-size: 11px;
                     font-weight: 700;
                     color: #e4e4e7;
                 }
 
                 .gt-sb-chip-check {
-                    width: 16px;
-                    height: 16px;
-                    border-radius: 4px;
-                    border: 1.5px solid #52525b;
+                    width: 14px;
+                    height: 14px;
+                    border-radius: 3px;
+                    border: 1px solid #52525b;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 11px;
+                    font-size: 10px;
                     color: transparent;
-                    transition: all 0.12s ease;
                 }
 
                 .gt-sb-chip.active .gt-sb-chip-check {
@@ -502,68 +700,95 @@ export class SceneBuilderModal {
                 }
             </style>
 
-            <!-- 1. Top Studio Toolbar -->
+            <!-- 1. Top Unity-Style Toolbar -->
             <div class="gt-sb-topbar">
                 <div class="gt-sb-topbar-left">
-                    <div class="gt-sb-brand">
-                        <div class="gt-sb-brand-icon">🛠️</div>
-                        <span class="gt-sb-brand-title">WORLD STUDIO</span>
+                    <div class="gt-sb-unity-brand">
+                        <span class="gt-sb-unity-logo">🛠️</span>
+                        <span class="gt-sb-unity-title">UNITY 2D ENGINE</span>
                     </div>
+                    <span class="gt-sb-scene-tag">Scene: CustomWorld.scene</span>
                     <div class="gt-sb-input-wrap">
-                        <input type="text" class="gt-sb-input-name" id="gt-sb-input-name" value="${this.state.name}" placeholder="Nama Dunia..." />
-                        <button class="gt-sb-btn-random" id="gt-sb-btn-random" title="Pilih nama acak keren">🎲 Acak</button>
+                        <input type="text" class="gt-sb-input-name" id="gt-sb-input-name" value="${this.state.name}" placeholder="Nama Level..." />
+                        <button class="gt-sb-btn-random" id="gt-sb-btn-random" title="Pilih nama acak">🎲 Acak</button>
                     </div>
                 </div>
 
                 <div class="gt-sb-topbar-center">
-                    <button class="gt-sb-biome-btn ${this.state.biome === 'desert' ? 'active' : ''}" data-biome="desert">
-                        <span>🏜️</span> <span>Gurun Pasir</span>
+                    <button class="gt-sb-play-btn" id="gt-sb-btn-enter" title="Play &amp; Uji Level ini secara langsung!">
+                        <span>▶ Play World</span>
                     </button>
-                    <button class="gt-sb-biome-btn ${this.state.biome === 'snow' ? 'active' : ''}" data-biome="snow">
-                        <span>❄️</span> <span>Puncak Salju</span>
+                    <button class="gt-sb-tool-toggle ${this.state.showGrid ? 'active' : ''}" id="gt-sb-btn-grid" title="Toggle Grid Miniatur 50px">
+                        <span>⊞ Grid: ON</span>
                     </button>
-                    <button class="gt-sb-biome-btn ${this.state.biome === 'dirt' ? 'active' : ''}" data-biome="dirt">
-                        <span>🌲</span> <span>Hutan Dirt</span>
-                    </button>
-                    <button class="gt-sb-biome-btn ${this.state.biome === 'cave' ? 'active' : ''}" data-biome="cave">
-                        <span>🌋</span> <span>Gua Obsidian</span>
+                    <button class="gt-sb-tool-toggle ${this.state.showGizmos ? 'active' : ''}" id="gt-sb-btn-gizmo" title="Toggle Transform Gizmo">
+                        <span>◈ Gizmos</span>
                     </button>
                 </div>
 
                 <div class="gt-sb-topbar-right">
-                    <button class="gt-sb-btn-enter" id="gt-sb-btn-enter" title="Langsung masuk dan mainkan level ini!">
-                        <span>🚀 Buat &amp; Masuki Dunia (Enter World)</span>
-                        <span>➔</span>
-                    </button>
-                    <button class="gt-sb-btn-close" id="gt-sb-close-btn" title="Kembali ke Game (ESC)">✕</button>
+                    <div class="gt-sb-biome-group">
+                        <button class="gt-sb-biome-btn ${this.state.biome === 'desert' ? 'active' : ''}" data-biome="desert">
+                            <span>🏜️ Gurun</span>
+                        </button>
+                        <button class="gt-sb-biome-btn ${this.state.biome === 'snow' ? 'active' : ''}" data-biome="snow">
+                            <span>❄️ Salju</span>
+                        </button>
+                        <button class="gt-sb-biome-btn ${this.state.biome === 'dirt' ? 'active' : ''}" data-biome="dirt">
+                            <span>🌲 Hutan</span>
+                        </button>
+                        <button class="gt-sb-biome-btn ${this.state.biome === 'cave' ? 'active' : ''}" data-biome="cave">
+                            <span>🌋 Gua</span>
+                        </button>
+                    </div>
+                    <button class="gt-sb-btn-close" id="gt-sb-close-btn" title="Tutup Studio (ESC)">✕</button>
                 </div>
             </div>
 
-            <!-- 2. Central Miniature Map Viewport -->
-            <div class="gt-sb-stage-viewport" id="gt-sb-viewport">
-                <canvas id="gt-sb-canvas"></canvas>
-
-                <!-- Top Left Badge -->
-                <div class="gt-sb-stage-badge-topleft">
-                    <div class="gt-sb-live-dot"></div>
-                    <span class="gt-sb-stage-badge-title">MINIATURE MAP STAGE (1:1 WORLD OVERVIEW)</span>
+            <!-- 2. Middle Body: Hierarchy (Left) | Scene Viewport (Center) | Inspector (Right) -->
+            <div class="gt-sb-body">
+                <!-- Left: Hierarchy Tree -->
+                <div class="gt-sb-hierarchy">
+                    <div class="gt-sb-panel-header">
+                        <span>▼ HIERARCHY</span>
+                        <span id="gt-sb-hierarchy-count">11 Objects</span>
+                    </div>
+                    <div class="gt-sb-hierarchy-list" id="gt-sb-hierarchy-list">
+                        <!-- Rendered dynamically -->
+                    </div>
                 </div>
 
-                <!-- Top Right Badge -->
-                <div class="gt-sb-stage-badge-topright">
-                    <span id="gt-sb-world-width-tag">WORLD WIDTH: 1800px</span>
+                <!-- Center: Scene Viewport & Miniature Grid -->
+                <div class="gt-sb-stage-viewport" id="gt-sb-viewport">
+                    <canvas id="gt-sb-canvas"></canvas>
+
+                    <!-- Top Left Badge -->
+                    <div class="gt-sb-stage-badge-topleft">
+                        <div class="gt-sb-live-dot"></div>
+                        <span class="gt-sb-stage-badge-title">SCENE VIEW (1:1 MINIATURE MAP)</span>
+                    </div>
+
+                    <!-- Top Right Badge -->
+                    <div class="gt-sb-stage-badge-topright">
+                        <span id="gt-sb-grid-info">GRID: 50px MINIATUR | WORLD: 1800x450</span>
+                    </div>
+
+                    <!-- Bottom Scale Ruler Track -->
+                    <div class="gt-sb-stage-ruler">
+                        <div style="color: #38bdf8;"><span>🏁</span> <span>[x: 100] SPAWN</span></div>
+                        <div style="color: #64748b;"><span>────── 50px TILE GRID MINIATUR (1800px) ──────</span></div>
+                        <div style="color: #a855f7;"><span>🌀</span> <span>[x: 1700] FINISH</span></div>
+                    </div>
                 </div>
 
-                <!-- Bottom Scale Track / Ruler -->
-                <div class="gt-sb-stage-ruler">
-                    <div class="gt-sb-ruler-tag" style="color: #38bdf8;">
-                        <span>🏁</span> <span>[x: 100] SPAWN START</span>
+                <!-- Right: Inspector Panel -->
+                <div class="gt-sb-inspector">
+                    <div class="gt-sb-panel-header">
+                        <span>ⓘ INSPECTOR</span>
+                        <span id="gt-sb-inspector-type">Transform</span>
                     </div>
-                    <div class="gt-sb-ruler-tag" style="color: #64748b;">
-                        <span>─────── 1:1 MAP SCALE OVERVIEW ───────</span>
-                    </div>
-                    <div class="gt-sb-ruler-tag" style="color: #a855f7;">
-                        <span>🌀</span> <span>[x: 1700] PORTAL GOAL</span>
+                    <div class="gt-sb-inspector-content" id="gt-sb-inspector-content">
+                        <!-- Rendered dynamically based on selected object -->
                     </div>
                 </div>
             </div>
@@ -572,25 +797,25 @@ export class SceneBuilderModal {
             <div class="gt-sb-drawer">
                 <div class="gt-sb-drawer-header">
                     <div class="gt-sb-drawer-title">
-                        <span>🎒</span> <span>BACKPACK KOMPONEN DUNIA</span>
+                        <span>🎒</span> <span>PROJECT BACKPACK ASSETS</span>
                     </div>
 
                     <!-- Growtopia Category Tabs -->
                     <div class="gt-sb-category-bar">
                         <button class="gt-sb-cat-btn active" data-cat="all">
-                            <span>🎒</span> <span>Semua</span>
+                            <span>🎒 Semua</span>
                             <span class="gt-sb-cat-count" id="count-all">9/9</span>
                         </button>
                         <button class="gt-sb-cat-btn" data-cat="solid">
-                            <span>🧱</span> <span>Objek Padat</span>
+                            <span>🧱 Objek Padat</span>
                             <span class="gt-sb-cat-count" id="count-solid">4/4</span>
                         </button>
                         <button class="gt-sb-cat-btn" data-cat="creature">
-                            <span>👥</span> <span>Karakter &amp; Makhluk</span>
+                            <span>👥 Makhluk &amp; Karakter</span>
                             <span class="gt-sb-cat-count" id="count-creature">3/3</span>
                         </button>
                         <button class="gt-sb-cat-btn" data-cat="fluid">
-                            <span>🌊</span> <span>Cairan Bahaya</span>
+                            <span>🌊 Cairan Bahaya</span>
                             <span class="gt-sb-cat-count" id="count-fluid">2/2</span>
                         </button>
                     </div>
@@ -647,8 +872,157 @@ export class SceneBuilderModal {
         this.canvas = this.overlay.querySelector('#gt-sb-canvas');
         this.ctx = this.canvas ? this.canvas.getContext('2d') : null;
         this.viewport = this.overlay.querySelector('#gt-sb-viewport');
+        this.hierarchyList = this.overlay.querySelector('#gt-sb-hierarchy-list');
+        this.inspectorContent = this.overlay.querySelector('#gt-sb-inspector-content');
 
         this.bindEvents();
+        this.renderHierarchy();
+        this.renderInspector();
+    }
+
+    renderHierarchy() {
+        if (!this.hierarchyList) return;
+        const positions = this.state.positions;
+        let html = '';
+
+        for (const [key, obj] of Object.entries(positions)) {
+            // Check visibility
+            let isVisible = true;
+            if (key === 'slime' && !this.state.hasSlime) isVisible = false;
+            if (key === 'skeleton' && !this.state.hasSkeleton) isVisible = false;
+            if (key === 'npc' && !this.state.hasNpc) isVisible = false;
+            if (key === 'platforms' && !this.state.hasPlatforms) isVisible = false;
+            if (key === 'spikes' && !this.state.hasSpikes) isVisible = false;
+            if (key === 'chest' && !this.state.hasChest) isVisible = false;
+            if (key === 'coins' && !this.state.hasCoins) isVisible = false;
+            if (key === 'lava' && !this.state.hasLava) isVisible = false;
+            if (key === 'water' && !this.state.hasWater) isVisible = false;
+            if (key === 'portal' && !this.state.hasPortal) isVisible = false;
+
+            if (!isVisible) continue;
+
+            const isSelected = this.state.selectedId === key;
+            html += `
+                <div class="gt-sb-tree-item ${isSelected ? 'active' : ''}" data-id="${key}">
+                    <div class="gt-sb-tree-left">
+                        <span>${obj.icon}</span>
+                        <span>${obj.label}</span>
+                    </div>
+                    <span class="gt-sb-tree-coord">${obj.x}px</span>
+                </div>
+            `;
+        }
+
+        this.hierarchyList.innerHTML = html;
+
+        // Click handler to select
+        this.hierarchyList.querySelectorAll('.gt-sb-tree-item').forEach(item => {
+            item.addEventListener('click', () => {
+                AudioManager.playClick();
+                this.state.selectedId = item.getAttribute('data-id');
+                this.renderHierarchy();
+                this.renderInspector();
+            });
+        });
+    }
+
+    renderInspector() {
+        if (!this.inspectorContent) return;
+        const selId = this.state.selectedId;
+        const obj = this.state.positions[selId];
+
+        if (!obj) {
+            // Scene Settings
+            this.inspectorContent.innerHTML = `
+                <div class="gt-sb-inspector-card">
+                    <div class="gt-sb-card-title">🌐 WORLD SETTINGS</div>
+                    <div class="gt-sb-prop-row">
+                        <span class="gt-sb-prop-label">World Width</span>
+                        <span class="gt-sb-prop-val">1800 px</span>
+                    </div>
+                    <div class="gt-sb-prop-row">
+                        <span class="gt-sb-prop-label">World Height</span>
+                        <span class="gt-sb-prop-val">450 px</span>
+                    </div>
+                    <div class="gt-sb-prop-row">
+                        <span class="gt-sb-prop-label">Grid Tile Size</span>
+                        <span class="gt-sb-prop-val" style="color: #38bdf8;">50 px</span>
+                    </div>
+                    <div class="gt-sb-prop-row">
+                        <span class="gt-sb-prop-label">Ground Baseline</span>
+                        <span class="gt-sb-prop-val">416 px</span>
+                    </div>
+                    <div class="gt-sb-prop-row">
+                        <span class="gt-sb-prop-label">Gravity Y</span>
+                        <span class="gt-sb-prop-val">900 px/s²</span>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        this.inspectorContent.innerHTML = `
+            <div class="gt-sb-inspector-card">
+                <div class="gt-sb-card-title">
+                    <span>${obj.icon} ${obj.label}</span>
+                    <span style="font-size: 9px; color: #38bdf8;">ID: ${selId}</span>
+                </div>
+                <div class="gt-sb-prop-row">
+                    <span class="gt-sb-prop-label">Category</span>
+                    <span class="gt-sb-prop-val" style="color: #a855f7;">${obj.cat.toUpperCase()}</span>
+                </div>
+                <div class="gt-sb-prop-row">
+                    <span class="gt-sb-prop-label">Transform X</span>
+                    <input type="number" class="gt-sb-prop-input" id="gt-sb-inp-x" value="${obj.x}" step="10" />
+                </div>
+                <div class="gt-sb-prop-row">
+                    <span class="gt-sb-prop-label">Transform Y</span>
+                    <input type="number" class="gt-sb-prop-input" id="gt-sb-inp-y" value="${obj.y}" step="10" />
+                </div>
+                <div class="gt-sb-prop-row">
+                    <span class="gt-sb-prop-label">Grid Snap (50px)</span>
+                    <span class="gt-sb-prop-val" style="color: #22c55e;">Enabled</span>
+                </div>
+            </div>
+
+            <div class="gt-sb-inspector-card">
+                <div class="gt-sb-card-title">⚙️ ENTITY PROPERTIES</div>
+                <div class="gt-sb-prop-row">
+                    <span class="gt-sb-prop-label">Status</span>
+                    <span class="gt-sb-prop-val" style="color: #22c55e;">● Active</span>
+                </div>
+                <div class="gt-sb-prop-row">
+                    <span class="gt-sb-prop-label">Physics Body</span>
+                    <span class="gt-sb-prop-val">Arcade 2D</span>
+                </div>
+                <div class="gt-sb-prop-row">
+                    <span class="gt-sb-prop-label">Collision Layer</span>
+                    <span class="gt-sb-prop-val">Default</span>
+                </div>
+            </div>
+        `;
+
+        const inpX = this.inspectorContent.querySelector('#gt-sb-inp-x');
+        const inpY = this.inspectorContent.querySelector('#gt-sb-inp-y');
+
+        if (inpX) {
+            inpX.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value, 10);
+                if (!isNaN(val)) {
+                    obj.x = Math.max(0, Math.min(1800, val));
+                    this.renderHierarchy();
+                }
+            });
+        }
+        if (inpY) {
+            inpY.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value, 10);
+                if (!isNaN(val)) {
+                    obj.y = Math.max(50, Math.min(450, val));
+                    this.renderHierarchy();
+                }
+            });
+        }
     }
 
     bindEvents() {
@@ -657,6 +1031,8 @@ export class SceneBuilderModal {
         const enterBtn = overlay.querySelector('#gt-sb-btn-enter');
         const randomBtn = overlay.querySelector('#gt-sb-btn-random');
         const nameInput = overlay.querySelector('#gt-sb-input-name');
+        const gridBtn = overlay.querySelector('#gt-sb-btn-grid');
+        const gizmoBtn = overlay.querySelector('#gt-sb-btn-gizmo');
 
         if (nameInput) {
             nameInput.addEventListener('input', (e) => {
@@ -673,6 +1049,34 @@ export class SceneBuilderModal {
                 const a = adjectives[Math.floor(Math.random() * adjectives.length)];
                 this.state.name = `${p} ${a}`;
                 if (nameInput) nameInput.value = this.state.name;
+            });
+        }
+
+        // Toggle Grid Button
+        if (gridBtn) {
+            gridBtn.addEventListener('click', () => {
+                AudioManager.playClick();
+                this.state.showGrid = !this.state.showGrid;
+                if (this.state.showGrid) {
+                    gridBtn.classList.add('active');
+                    gridBtn.innerHTML = '<span>⊞ Grid: ON</span>';
+                } else {
+                    gridBtn.classList.remove('active');
+                    gridBtn.innerHTML = '<span>⊞ Grid: OFF</span>';
+                }
+            });
+        }
+
+        // Toggle Gizmos Button
+        if (gizmoBtn) {
+            gizmoBtn.addEventListener('click', () => {
+                AudioManager.playClick();
+                this.state.showGizmos = !this.state.showGizmos;
+                if (this.state.showGizmos) {
+                    gizmoBtn.classList.add('active');
+                } else {
+                    gizmoBtn.classList.remove('active');
+                }
             });
         }
 
@@ -714,6 +1118,8 @@ export class SceneBuilderModal {
                 const el = overlay.querySelector(`#count-${k}`);
                 if (el) el.textContent = `${v.active}/${v.total}`;
             }
+
+            this.renderHierarchy();
         };
 
         // Hitung status awal
@@ -753,6 +1159,35 @@ export class SceneBuilderModal {
             });
         });
 
+        // Canvas Click for raycasting selection
+        if (this.canvas) {
+            this.canvas.addEventListener('click', (e) => {
+                const rect = this.canvas.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const W = this.canvas.width;
+                const sx = W / (this.state.worldWidth || 1800);
+                const worldClickX = clickX / sx;
+
+                // Cari objek terdekat
+                let closestId = null;
+                let minDist = 120; // threshold
+                for (const [k, obj] of Object.entries(this.state.positions)) {
+                    const dist = Math.abs(obj.x - worldClickX);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        closestId = k;
+                    }
+                }
+
+                if (closestId) {
+                    AudioManager.playClick();
+                    this.state.selectedId = closestId;
+                    this.renderHierarchy();
+                    this.renderInspector();
+                }
+            });
+        }
+
         if (closeBtn) {
             closeBtn.addEventListener('click', () => {
                 AudioManager.playClick();
@@ -760,7 +1195,7 @@ export class SceneBuilderModal {
             });
         }
 
-        // Tombol Eksekusi "🚀 Buat & Masuki Dunia"
+        // Tombol Eksekusi "▶ Play World"
         if (enterBtn) {
             enterBtn.addEventListener('click', () => {
                 this.executeEnterWorld();
@@ -785,8 +1220,8 @@ export class SceneBuilderModal {
     resizeCanvas() {
         if (!this.canvas || !this.viewport) return;
         const rect = this.viewport.getBoundingClientRect();
-        this.canvas.width = Math.max(800, Math.floor(rect.width));
-        this.canvas.height = Math.max(260, Math.floor(rect.height));
+        this.canvas.width = Math.max(600, Math.floor(rect.width));
+        this.canvas.height = Math.max(200, Math.floor(rect.height));
     }
 
     executeEnterWorld() {
@@ -1050,7 +1485,8 @@ export class SceneBuilderModal {
 
         // 7. PETI HARTA (CHEST)
         if (this.state.hasChest) {
-            const cx = 800 * sx;
+            const chestObj = this.state.positions.chest || { x: 800 };
+            const cx = chestObj.x * sx;
             const cy = groundY - 14 * sy;
             const cw = Math.max(10, 24 * sx);
             const ch = Math.max(8, 16 * sy);
@@ -1073,7 +1509,8 @@ export class SceneBuilderModal {
 
         // 8. KARAKTER NPC (PENJELAJAH ROH)
         if (this.state.hasNpc) {
-            const npcX = 300 * sx;
+            const npcObj = this.state.positions.npc || { x: 300 };
+            const npcX = npcObj.x * sx;
             const npcY = groundY - 26 * sy;
             const nw = Math.max(8, 18 * sx);
             const nh = Math.max(12, 26 * sy);
@@ -1104,7 +1541,8 @@ export class SceneBuilderModal {
 
         // 9. MONSTER SLIME (PATROLI MELOMPAT MINI)
         if (this.state.hasSlime) {
-            const slimeBaseX = 520 * sx;
+            const slimeObj = this.state.positions.slime || { x: 520 };
+            const slimeBaseX = slimeObj.x * sx;
             const patrolOffset = Math.sin(t * 1.5) * (40 * sx);
             const jumpOffset = Math.abs(Math.sin(t * 3)) * (14 * sy);
             const smX = slimeBaseX + patrolOffset;
@@ -1127,7 +1565,8 @@ export class SceneBuilderModal {
 
         // 10. MONSTER SKELETON (PATROLI BERJALAN MINI)
         if (this.state.hasSkeleton) {
-            const skelBaseX = 1450 * sx;
+            const skelObj = this.state.positions.skeleton || { x: 1450 };
+            const skelBaseX = skelObj.x * sx;
             const patrolOffset = Math.sin(t * 1.2) * (50 * sx);
             const skX = skelBaseX + patrolOffset;
             const skY = groundY - 24 * sy;
@@ -1147,7 +1586,8 @@ export class SceneBuilderModal {
         }
 
         // 11. PLAYER AVATAR (TITIK START SPAWN)
-        const playerX = 100 * sx;
+        const playerObj = this.state.positions.player || { x: 100 };
+        const playerX = playerObj.x * sx;
         const playerY = groundY - 24 * sy;
         const pw = Math.max(8, 18 * sx);
         const ph = Math.max(12, 24 * sy);
@@ -1172,7 +1612,8 @@ export class SceneBuilderModal {
 
         // 12. FINISH EXIT PORTAL (PUSARAN PORTAL BERPUTAR)
         if (this.state.hasPortal) {
-            const portalX = (worldW - 100) * sx;
+            const portalObj = this.state.positions.portal || { x: 1700 };
+            const portalX = portalObj.x * sx;
             const portalY = (416 - 36) * sy;
             const portalR = Math.max(10, 20 * sy);
 
@@ -1208,6 +1649,95 @@ export class SceneBuilderModal {
             ctx.textAlign = 'center';
             ctx.fillText('GOAL', portalX, portalY - portalR - 3);
         }
+
+        // ===============================================================
+        // 13. MINIATURE GRID OVERLAY (50px GAME GRID SCALED DOWN PROPORTIONALLY)
+        // ===============================================================
+        if (this.state.showGrid) {
+            ctx.save();
+            ctx.lineWidth = 1;
+
+            // Real game tile is 50px. Miniature grid step is: 50 * sx and 50 * sy
+            const gridStepX = 50 * sx;
+            const gridStepY = 50 * sy;
+
+            // Draw Vertical Grid Lines
+            for (let gx = 0; gx <= worldW; gx += 50) {
+                const rx = gx * sx;
+                const isMajor = (gx % 250) === 0;
+
+                ctx.strokeStyle = isMajor ? 'rgba(56, 189, 248, 0.22)' : 'rgba(255, 255, 255, 0.08)';
+                ctx.beginPath();
+                ctx.moveTo(rx, 0);
+                ctx.lineTo(rx, H);
+                ctx.stroke();
+
+                // Draw coordinate text for major lines
+                if (isMajor && gx > 0 && gx < worldW) {
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.6)';
+                    ctx.font = "8px 'JetBrains Mono'";
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`${gx}`, rx, 14);
+                }
+            }
+
+            // Draw Horizontal Grid Lines
+            for (let gy = 0; gy <= worldH; gy += 50) {
+                const ry = gy * sy;
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
+                ctx.beginPath();
+                ctx.moveTo(0, ry);
+                ctx.lineTo(W, ry);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        // ===============================================================
+        // 14. UNITY TRANSFORM GIZMOS & SELECTION HIGHLIGHT
+        // ===============================================================
+        if (this.state.showGizmos && this.state.selectedId) {
+            const selId = this.state.selectedId;
+            const selObj = this.state.positions[selId];
+            if (selObj) {
+                const ox = selObj.x * sx;
+                const oy = groundY - 20 * sy;
+
+                ctx.save();
+                // Bounding selection box
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 4]);
+                ctx.strokeRect(ox - 18 * sx, oy - 18 * sy, 36 * sx, 36 * sy);
+                ctx.setLineDash([]);
+
+                // Transform handles (Corner squares)
+                ctx.fillStyle = '#ffffff';
+                const corners = [
+                    [ox - 18 * sx, oy - 18 * sy],
+                    [ox + 18 * sx, oy - 18 * sy],
+                    [ox - 18 * sx, oy + 18 * sy],
+                    [ox + 18 * sx, oy + 18 * sy]
+                ];
+                corners.forEach(([cx, cy]) => {
+                    ctx.fillRect(cx - 3, cy - 3, 6, 6);
+                });
+
+                // Coordinate Tag Badge
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                ctx.fillRect(ox - 30, oy - 30 * sy, 60, 16);
+                ctx.strokeStyle = '#38bdf8';
+                ctx.strokeRect(ox - 30, oy - 30 * sy, 60, 16);
+
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = "bold 9px 'JetBrains Mono'";
+                ctx.textAlign = 'center';
+                ctx.fillText(`x: ${Math.round(selObj.x)}`, ox, oy - 30 * sy + 11);
+
+                ctx.restore();
+            }
+        }
     }
 
     show() {
@@ -1215,7 +1745,7 @@ export class SceneBuilderModal {
         this._isOpen = true;
         this.overlay.classList.remove('hidden');
 
-        // Pastikan ukuran canvas langsung cocok dengan layar penuh
+        // Pastikan ukuran canvas langsung cocok dengan viewport layar penuh
         setTimeout(() => {
             this.resizeCanvas();
             this.startPreviewLoop();
