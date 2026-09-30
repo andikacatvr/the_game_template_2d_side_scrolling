@@ -1290,17 +1290,18 @@ export class SceneBuilderModal {
     }
 
     // ===============================================================
-    // ANTI-NIMBUN / ANTI-OVERLAP GRID SYSTEM
+    // ANTI-NIMBUN / STRICT SINGLE-OCCUPANCY GRID LOCK
     // ===============================================================
 
     /**
-     * Memeriksa apakah suatu area grid [col..col+wTiles-1, row] sudah ditempati objek lain.
+     * Mengambil entitas yang menempati area grid [col..col+wTiles-1, row].
+     * Mengembalikan objek entity jika ada, atau null jika kotak benar-benar kosong.
      */
-    isSlotOccupied(col, row, ignoreId = null, wTiles = 1) {
+    getOccupyingEntity(col, row, ignoreId = null, wTiles = 1) {
         const targetStartCol = col;
         const targetEndCol = col + Math.max(1, wTiles) - 1;
 
-        return this.state.entities.some(e => {
+        return this.state.entities.find(e => {
             if (ignoreId && e.id === ignoreId) return false;
 
             const eRow = (e.row !== undefined) ? e.row : 7;
@@ -1311,7 +1312,14 @@ export class SceneBuilderModal {
             const hasColOverlap = Math.max(targetStartCol, eStartCol) <= Math.min(targetEndCol, eEndCol);
 
             return hasColOverlap;
-        });
+        }) || null;
+    }
+
+    /**
+     * Memeriksa apakah suatu area grid [col..col+wTiles-1, row] sudah ditempati objek lain.
+     */
+    isSlotOccupied(col, row, ignoreId = null, wTiles = 1) {
+        return !!this.getOccupyingEntity(col, row, ignoreId, wTiles);
     }
 
     /**
@@ -1391,16 +1399,32 @@ export class SceneBuilderModal {
         const tmpl = ITEM_TEMPLATES[type];
         if (!tmpl) return;
 
+        const wTiles = tmpl.wTiles || 1;
+
+        // JIKA MENEMPATKAN DI KOTAK SPESIFIK (Stamp tool / Backpack drop / Klik):
+        // Jika kotak sudah terisi objek lain, TOLAK KERAS (tidak boleh ditimbun)!
+        if (customCol !== null && customRow !== null) {
+            const occupied = this.getOccupyingEntity(customCol, customRow, null, wTiles);
+            if (occupied) {
+                AudioManager.playClick();
+                if (this.gridInfoEl) {
+                    this.gridInfoEl.textContent = `⛔ KOTAK SUDAH TERISI: [Col ${customCol}, Row ${customRow}] sudah ditempati "${occupied.label}". Hapus objek itu terlebih dahulu jika ingin menempatkan objek baru!`;
+                }
+                return;
+            }
+        }
+
         const count = this.state.entities.filter(e => e.type === type).length;
         const newId = `${type}_${Date.now()}`;
-        const wTiles = tmpl.wTiles || 1;
 
         // Tentukan posisi awal [col, row]
         let prefCol = customCol !== null ? customCol : Math.min(33, 4 + count * 3);
         let prefRow = customRow !== null ? customRow : tmpl.defaultRow;
 
-        // Cegah tumpukan: cari slot kosong terdekat
-        const safeSlot = this.findFreeSlot(prefCol, prefRow, wTiles, null);
+        // Cari slot kosong
+        const safeSlot = (customCol !== null && customRow !== null) 
+            ? { col: customCol, row: customRow } 
+            : this.findFreeSlot(prefCol, prefRow, wTiles, null);
 
         const newEnt = {
             id: newId,
@@ -1428,7 +1452,7 @@ export class SceneBuilderModal {
         this.renderInspector();
 
         if (this.gridInfoEl) {
-            this.gridInfoEl.textContent = `✨ OBJEK DITAMBAHKAN: ${newEnt.label} di [Col ${safeSlot.col}, Row ${safeSlot.row}] (Bebas Tumpukan)`;
+            this.gridInfoEl.textContent = `✨ OBJEK DITAMBAHKAN: ${newEnt.label} di [Col ${safeSlot.col}, Row ${safeSlot.row}] (Kotak Bersih)`;
         }
     }
 
@@ -1451,6 +1475,10 @@ export class SceneBuilderModal {
 
         this.renderHierarchy();
         this.renderInspector();
+
+        if (this.gridInfoEl) {
+            this.gridInfoEl.textContent = `🗑️ OBJEK DIHAPUS: Petak [Col ${ent.col}, Row ${ent.row}] sekarang KOSONG dan siap diisi objek baru.`;
+        }
     }
 
     duplicateEntity(id) {
@@ -1499,7 +1527,7 @@ export class SceneBuilderModal {
         AudioManager.playClick();
 
         if (this.gridInfoEl) {
-            this.gridInfoEl.textContent = `📋 DISALIN: ${ent.label} (Arahkan mouse & tekan Ctrl+V untuk Paste)`;
+            this.gridInfoEl.textContent = `📋 DISALIN: ${ent.label} (Arahkan kursor ke petak KOSONG & tekan Ctrl+V)`;
         }
     }
 
@@ -1510,33 +1538,43 @@ export class SceneBuilderModal {
         const count = this.state.entities.filter(e => e.type === this.clipboardEntity.type).length;
         const newId = `${this.clipboardEntity.type}_${Date.now()}`;
 
-        let prefCol, prefRow;
+        let targetCol, targetRow;
         if (this.hoverTile) {
-            prefCol = this.hoverTile.col;
-            prefRow = (this.clipboardEntity.cat === 'fluid' || this.clipboardEntity.type === 'platforms' || this.clipboardEntity.type === 'coins') 
+            targetCol = this.hoverTile.col;
+            targetRow = (this.clipboardEntity.cat === 'fluid' || this.clipboardEntity.type === 'platforms' || this.clipboardEntity.type === 'coins') 
                 ? this.hoverTile.row 
                 : this.clipboardEntity.row;
-        } else {
-            prefCol = this.clipboardEntity.col + wTiles;
-            prefRow = this.clipboardEntity.row;
-        }
 
-        // Cari slot kosong terdekat agar paste tidak pernah menimpa/menimbun objek lain
-        const safeSlot = this.findFreeSlot(prefCol, prefRow, wTiles, null);
+            // JIKA PETAK YANG DIARAHKAN MOUSE SUDAH TERISI: TOLAK KERAS!
+            const occupied = this.getOccupyingEntity(targetCol, targetRow, null, wTiles);
+            if (occupied) {
+                AudioManager.playClick();
+                if (this.gridInfoEl) {
+                    this.gridInfoEl.textContent = `⛔ TIDAK BISA PASTE: Petak [Col ${targetCol}, Row ${targetRow}] sudah diisi oleh "${occupied.label}". Kotak harus kosong terlebih dahulu!`;
+                }
+                return;
+            }
+        } else {
+            // Jika kursor di luar canvas, tempatkan di petak kosong terdekat di samping
+            const prefCol = this.clipboardEntity.col + wTiles;
+            const prefRow = this.clipboardEntity.row;
+            const safeSlot = this.findFreeSlot(prefCol, prefRow, wTiles, null);
+            targetCol = safeSlot.col;
+            targetRow = safeSlot.row;
+        }
 
         const clone = {
             ...this.clipboardEntity,
             id: newId,
-            col: safeSlot.col,
-            row: safeSlot.row,
-            x: safeSlot.col * 50 + 25,
-            y: (safeSlot.row === 7) ? 400 : (safeSlot.row * 50 + 25),
+            col: targetCol,
+            row: targetRow,
+            x: targetCol * 50 + 25,
+            y: (targetRow === 7) ? 400 : (targetRow * 50 + 25),
             label: `${this.clipboardEntity.label.replace(/\s*\(Copy.*?\)/g, '')} (Copy #${count + 1})`
         };
 
-        // Update koordinat clipboard agar paste berturut-turut berikutnya otomatis menempati slot kosong berikutnya
-        this.clipboardEntity.col = safeSlot.col;
-        this.clipboardEntity.row = safeSlot.row;
+        this.clipboardEntity.col = targetCol;
+        this.clipboardEntity.row = targetRow;
 
         this.state.entities.push(clone);
         this.state.selectedId = newId;
@@ -1546,7 +1584,7 @@ export class SceneBuilderModal {
         this.renderInspector();
 
         if (this.gridInfoEl) {
-            this.gridInfoEl.textContent = `✅ DITEMPEL: ${clone.label} di [Col ${safeSlot.col}, Row ${safeSlot.row}] (Bebas Tumpukan)`;
+            this.gridInfoEl.textContent = `✅ DITEMPEL: ${clone.label} di [Col ${targetCol}, Row ${targetRow}] (Petak Bersih)`;
         }
     }
 
@@ -1655,52 +1693,56 @@ export class SceneBuilderModal {
 
         const inpCol = this.inspectorContent.querySelector('#gt-sb-inp-col');
         if (inpCol) {
-            inpCol.addEventListener('input', (e) => {
-                const val = parseInt(e.target.value, 10);
-                if (!isNaN(val) && val >= 0 && val <= 35) {
+            let lastValidCol = obj.col;
+            inpCol.addEventListener('change', () => {
+                const val = parseInt(inpCol.value, 10);
+                if (isNaN(val) || val < 0 || val > 35) {
+                    inpCol.value = lastValidCol;
+                    return;
+                }
+                const existing = this.getOccupyingEntity(val, obj.row, obj.id, obj.wTiles || 1);
+                if (existing) {
+                    inpCol.value = lastValidCol;
+                    AudioManager.playClick();
+                    if (this.gridInfoEl) {
+                        this.gridInfoEl.textContent = `⛔ GAGAL: Petak [Col ${val}, Row ${obj.row}] sudah diisi "${existing.label}". Hapus objek itu terlebih dahulu!`;
+                    }
+                } else {
                     obj.col = val;
                     obj.x = val * 50 + 25;
-                    if (this.isSlotOccupied(val, obj.row, obj.id, obj.wTiles || 1)) {
-                        if (this.gridInfoEl) this.gridInfoEl.textContent = `⚠️ PERINGATAN: Petak [Col ${val}, Row ${obj.row}] bertumpuk dengan objek lain!`;
+                    lastValidCol = val;
+                    this.renderHierarchy();
+                    if (this.gridInfoEl) {
+                        this.gridInfoEl.textContent = `✅ Posisi ${obj.label} diubah ke [Col ${val}, Row ${obj.row}]`;
                     }
-                    this.renderHierarchy();
-                }
-            });
-            inpCol.addEventListener('change', () => {
-                if (this.isSlotOccupied(obj.col, obj.row, obj.id, obj.wTiles || 1)) {
-                    const safe = this.findFreeSlot(obj.col, obj.row, obj.wTiles || 1, obj.id);
-                    obj.col = safe.col;
-                    obj.row = safe.row;
-                    obj.x = safe.col * 50 + 25;
-                    inpCol.value = safe.col;
-                    this.renderHierarchy();
-                    if (this.gridInfoEl) this.gridInfoEl.textContent = `⚡ Posisi otomatis disesuaikan ke [Col ${safe.col}] agar bebas tumpukan.`;
                 }
             });
         }
 
         const inpRow = this.inspectorContent.querySelector('#gt-sb-inp-row');
         if (inpRow) {
-            inpRow.addEventListener('input', (e) => {
-                const val = parseInt(e.target.value, 10);
-                if (!isNaN(val) && val >= 0 && val <= 14) {
+            let lastValidRow = obj.row;
+            inpRow.addEventListener('change', () => {
+                const val = parseInt(inpRow.value, 10);
+                if (isNaN(val) || val < 0 || val > 14) {
+                    inpRow.value = lastValidRow;
+                    return;
+                }
+                const existing = this.getOccupyingEntity(obj.col, val, obj.id, obj.wTiles || 1);
+                if (existing) {
+                    inpRow.value = lastValidRow;
+                    AudioManager.playClick();
+                    if (this.gridInfoEl) {
+                        this.gridInfoEl.textContent = `⛔ GAGAL: Petak [Col ${obj.col}, Row ${val}] sudah diisi "${existing.label}". Hapus objek itu terlebih dahulu!`;
+                    }
+                } else {
                     obj.row = val;
                     obj.y = (val === 7) ? 400 : (val * 50 + 25);
-                    if (this.isSlotOccupied(obj.col, val, obj.id, obj.wTiles || 1)) {
-                        if (this.gridInfoEl) this.gridInfoEl.textContent = `⚠️ PERINGATAN: Petak [Col ${obj.col}, Row ${val}] bertumpuk dengan objek lain!`;
+                    lastValidRow = val;
+                    this.renderHierarchy();
+                    if (this.gridInfoEl) {
+                        this.gridInfoEl.textContent = `✅ Posisi ${obj.label} diubah ke [Col ${obj.col}, Row ${val}]`;
                     }
-                    this.renderHierarchy();
-                }
-            });
-            inpRow.addEventListener('change', () => {
-                if (this.isSlotOccupied(obj.col, obj.row, obj.id, obj.wTiles || 1)) {
-                    const safe = this.findFreeSlot(obj.col, obj.row, obj.wTiles || 1, obj.id);
-                    obj.col = safe.col;
-                    obj.row = safe.row;
-                    obj.y = (safe.row === 7) ? 400 : (safe.row * 50 + 25);
-                    inpRow.value = safe.row;
-                    this.renderHierarchy();
-                    if (this.gridInfoEl) this.gridInfoEl.textContent = `⚡ Posisi otomatis disesuaikan ke [Row ${safe.row}] agar bebas tumpukan.`;
                 }
             });
         }
@@ -1864,12 +1906,17 @@ export class SceneBuilderModal {
                 }
 
                 if (this.gridInfoEl) {
-                    let layerName = 'LANGIT (SKY)';
-                    if (row === 8) layerName = 'TANAH (SURFACE)';
-                    else if (row > 8 && row <= 11) layerName = 'SUBSOIL (DIRT)';
-                    else if (row > 11) layerName = 'CAVERN (STONE)';
+                    const occ = this.getOccupyingEntity(col, row, this.isCanvasDragging ? this.canvasDragEntity?.id : null);
+                    if (occ) {
+                        this.gridInfoEl.textContent = `⛔ KOTAK TERISI: [Col ${col}, Row ${row}] oleh "${occ.label}" (Tidak dapat ditimbun / diisi lagi)`;
+                    } else {
+                        let layerName = 'LANGIT (SKY)';
+                        if (row === 8) layerName = 'TANAH (SURFACE)';
+                        else if (row > 8 && row <= 11) layerName = 'SUBSOIL (DIRT)';
+                        else if (row > 11) layerName = 'CAVERN (STONE)';
 
-                    this.gridInfoEl.textContent = `TILE: [Col: ${col}, Row: ${row}] (Center: ${col * 50 + 25}px) | ${layerName}`;
+                        this.gridInfoEl.textContent = `🟩 KOTAK KOSONG: [Col: ${col}, Row: ${row}] (Dapat diisi objek) | ${layerName}`;
+                    }
                 }
             });
 
@@ -1909,6 +1956,8 @@ export class SceneBuilderModal {
                     this.state.selectedId = hit.id;
                     this.isCanvasDragging = true;
                     this.canvasDragEntity = hit;
+                    this.dragStartCol = hit.col;
+                    this.dragStartRow = (hit.row !== undefined) ? hit.row : 7;
                     this.renderHierarchy();
                     this.renderInspector();
                 }
@@ -1919,15 +1968,21 @@ export class SceneBuilderModal {
                     const ent = this.canvasDragEntity;
                     const wTiles = ent.wTiles || 1;
 
-                    // Validasi anti-nimbun saat drag selesai:
-                    if (this.isSlotOccupied(ent.col, ent.row, ent.id, wTiles)) {
-                        const safe = this.findFreeSlot(ent.col, ent.row, wTiles, ent.id);
-                        ent.col = safe.col;
-                        ent.row = safe.row;
+                    // Periksa apakah petak tujuan sudah diisi objek lain:
+                    const existing = this.getOccupyingEntity(ent.col, ent.row, ent.id, wTiles);
+                    if (existing) {
+                        // KEMBALIKAN KE POSISI ASAL KARENA KOTAK SUDAH TERISI (TIDAK BOLEH DITIMBUN)
+                        ent.col = this.dragStartCol;
+                        ent.row = this.dragStartRow;
                         ent.x = ent.col * 50 + 25;
                         ent.y = (ent.row === 7) ? 400 : (ent.row * 50 + 25);
+                        AudioManager.playClick();
                         if (this.gridInfoEl) {
-                            this.gridInfoEl.textContent = `⚡ POSISI DIATUR: Mencegah tumpukan dengan objek lain ke [Col ${ent.col}, Row ${ent.row}]`;
+                            this.gridInfoEl.textContent = `⛔ GAGAL PINDAH: Kotak [Col ${this.dragStartCol}, Row ${this.dragStartRow}] -> [Col ${ent.col}, Row ${ent.row}] sudah diisi oleh "${existing.label}". Hapus objek itu dulu jika ingin mengisi petak ini!`;
+                        }
+                    } else {
+                        if (this.gridInfoEl) {
+                            this.gridInfoEl.textContent = `✅ Objek ${ent.label} dipindahkan ke [Col ${ent.col}, Row ${ent.row}] (Kotak Bersih)`;
                         }
                     }
 
@@ -1980,7 +2035,6 @@ export class SceneBuilderModal {
                 }
 
                 if (data.source === 'hierarchy') {
-                    // Reposition existing entity to this tile (bebas tumpukan)
                     const ent = this.state.entities.find(el => el.id === data.id);
                     if (ent) {
                         const wTiles = ent.wTiles || 1;
@@ -1988,11 +2042,19 @@ export class SceneBuilderModal {
                             ? Math.max(0, Math.min(13, row))
                             : 7;
 
-                        const safe = this.findFreeSlot(col, targetRow, wTiles, ent.id);
-                        ent.col = safe.col;
-                        ent.row = safe.row;
-                        ent.x = safe.col * 50 + 25;
-                        ent.y = (safe.row === 7) ? 400 : (safe.row * 50 + 25);
+                        const existing = this.getOccupyingEntity(col, targetRow, ent.id, wTiles);
+                        if (existing) {
+                            AudioManager.playClick();
+                            if (this.gridInfoEl) {
+                                this.gridInfoEl.textContent = `⛔ TIDAK BISA DIPINDAH: Kotak [Col ${col}, Row ${targetRow}] sudah diisi oleh "${existing.label}". Hapus objek itu terlebih dahulu!`;
+                            }
+                            return;
+                        }
+
+                        ent.col = col;
+                        ent.row = targetRow;
+                        ent.x = col * 50 + 25;
+                        ent.y = (targetRow === 7) ? 400 : (targetRow * 50 + 25);
 
                         this.state.selectedId = ent.id;
                         AudioManager.playClick();
@@ -2746,15 +2808,39 @@ export class SceneBuilderModal {
             if (this.hoverTile) {
                 const hx = toX(this.hoverTile.col * 50);
                 const hy = toY(this.hoverTile.row * 50);
+                const occ = this.getOccupyingEntity(this.hoverTile.col, this.hoverTile.row, this.isCanvasDragging ? this.canvasDragEntity?.id : null);
 
-                ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
-                ctx.fillRect(hx, hy, cellSize, cellSize);
+                if (occ) {
+                    // Kotak Terisi (Merah: DILARANG DITIMBUN / TERKUNCI)
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.28)';
+                    ctx.fillRect(hx, hy, cellSize, cellSize);
 
-                ctx.strokeStyle = '#38bdf8';
-                ctx.lineWidth = 1.5;
-                ctx.setLineDash([3, 3]);
-                ctx.strokeRect(hx, hy, cellSize, cellSize);
-                ctx.setLineDash([]);
+                    ctx.strokeStyle = '#ef4444';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([4, 2]);
+                    ctx.strokeRect(hx, hy, cellSize, cellSize);
+                    ctx.setLineDash([]);
+
+                    // Tanda silang merah halus di tengah petak
+                    ctx.strokeStyle = 'rgba(248, 113, 113, 0.85)';
+                    ctx.lineWidth = 1.8;
+                    ctx.beginPath();
+                    ctx.moveTo(hx + cellSize * 0.3, hy + cellSize * 0.3);
+                    ctx.lineTo(hx + cellSize * 0.7, hy + cellSize * 0.7);
+                    ctx.moveTo(hx + cellSize * 0.7, hy + cellSize * 0.3);
+                    ctx.lineTo(hx + cellSize * 0.3, hy + cellSize * 0.7);
+                    ctx.stroke();
+                } else {
+                    // Kotak Kosong (Cyan: TERSEDIA / BEBAS DIISI)
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
+                    ctx.fillRect(hx, hy, cellSize, cellSize);
+
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([3, 3]);
+                    ctx.strokeRect(hx, hy, cellSize, cellSize);
+                    ctx.setLineDash([]);
+                }
             }
 
             ctx.restore();
