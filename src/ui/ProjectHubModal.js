@@ -823,25 +823,11 @@ export class ProjectHubModal {
                     <div style="text-align: right;">Action</div>
                 </div>
 
-                ${projectRowsHTML}
-
-                <!-- Sandbox World (Scene 3) -->
-                <div class="gt-uhub-row gt-uhub-cols-3" data-name="sandbox world scene 3">
-                    <div class="gt-uhub-col-name">
-                        <span class="gt-uhub-project-name">
-                            <span>🌟</span> Sandbox World (Scene 3)
-                        </span>
-                        <span class="gt-uhub-project-path">src/scenes/Scene3.js • Lab Koding Bebas</span>
+                ${projectRowsHTML || `
+                    <div style="padding: 40px 20px; text-align: center; color: #64748b; font-size: 13px;">
+                        Belum ada project game. Klik tombol <strong>+ Buat Project Baru</strong> untuk mulai membuat game!
                     </div>
-                    <div class="gt-uhub-col-date" style="color: #64748b;">
-                        <span>📦</span> Template Bawaan
-                    </div>
-                    <div class="gt-uhub-col-action">
-                        <button class="gt-uhub-btn-open" id="btn-open-scene3">
-                            <span>▶</span> Open Scene
-                        </button>
-                    </div>
-                </div>
+                `}
             </div>
         `;
 
@@ -889,14 +875,6 @@ export class ProjectHubModal {
                 }
             });
         });
-
-        // Buka Scene 3
-        const btnScene3 = container.querySelector('#btn-open-scene3');
-        if (btnScene3) {
-            btnScene3.addEventListener('click', () => {
-                this.launchScene('Scene3');
-            });
-        }
 
         // Buat Project Baru Dialog
         const btnNewProj = container.querySelector('#gt-uhub-btn-new-project');
