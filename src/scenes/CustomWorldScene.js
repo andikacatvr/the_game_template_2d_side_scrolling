@@ -147,19 +147,33 @@ export class CustomWorldScene extends Phaser.Scene {
         }
 
         // Zona Bahaya: Kolam Air dan Kolam Lava
-        const hasWater = !!this.worldData.hasWater;
-        const hasLava = !!this.worldData.hasLava;
-        const waterStart = 550;
-        const waterEnd = 700;
-        const lavaStart = 1000;
-        const lavaEnd = 1150;
+        const hasCustom = Array.isArray(this.worldData.entities) && this.worldData.entities.length > 0;
+        
+        let waterRanges = [];
+        let lavaRanges = [];
+
+        if (hasCustom) {
+            this.worldData.entities.filter(e => e.type === 'water').forEach(w => {
+                const s = w.col * 50;
+                const e = (w.col + (w.wTiles || 3)) * 50;
+                waterRanges.push([s, e]);
+            });
+            this.worldData.entities.filter(e => e.type === 'lava').forEach(l => {
+                const s = l.col * 50;
+                const e = (l.col + (l.wTiles || 3)) * 50;
+                lavaRanges.push([s, e]);
+            });
+        } else {
+            if (this.worldData.hasWater) waterRanges.push([550, 700]);
+            if (this.worldData.hasLava) lavaRanges.push([1000, 1150]);
+        }
 
         for (let i = 0; i < tileCount; i++) {
             const x = -64 + i * 32 + 16;
 
             // Lewati tanah jika berada di kolam air atau lava
-            const inWater = hasWater && x >= waterStart && x <= waterEnd;
-            const inLava = hasLava && x >= lavaStart && x <= lavaEnd;
+            const inWater = waterRanges.some(([s, e]) => x >= s && x <= e);
+            const inLava = lavaRanges.some(([s, e]) => x >= s && x <= e);
 
             if (inWater) {
                 // Kolam Air
@@ -218,8 +232,15 @@ export class CustomWorldScene extends Phaser.Scene {
             this.platforms.add(bedrockTile);
         }
 
-        // Rintangan Duri (Spikes) jika aktif (Snapped to 50px Grid)
-        if (this.worldData.hasSpikes) {
+        // Rintangan Duri (Spikes)
+        if (hasCustom) {
+            this.worldData.entities.filter(e => e.type === 'spikes').forEach(sp => {
+                const spike = this.add.triangle(sp.x, groundY - 14, 0, 28, 14, 0, 28, 28, 0xdc2626).setDepth(6);
+                spike.setStrokeStyle(1.5, 0xfca5a5);
+                this.physics.add.existing(spike, true);
+                this.hazards.add(spike);
+            });
+        } else if (this.worldData.hasSpikes) {
             const spikePositions = [375, 825, 1325]; // Center of Cols 7, 16, 26
             spikePositions.forEach(spX => {
                 if (spX < worldWidth - 160) {
@@ -231,8 +252,35 @@ export class CustomWorldScene extends Phaser.Scene {
             });
         }
 
-        // Pijakan Melayang (Floating Platforms) jika aktif (Snapped to 50px Grid Lines)
-        if (this.worldData.hasPlatforms) {
+        // Pijakan Melayang (Floating Platforms)
+        if (hasCustom) {
+            this.worldData.entities.filter(e => e.type === 'platforms').forEach(p => {
+                const pw = (p.wTiles || 2) * 50;
+                const px = p.col * 50 + pw / 2;
+                const py = p.row * 50 + 9;
+                const plat = this.add.rectangle(px, py, pw, 18, 0x1f2937).setDepth(6);
+                plat.setStrokeStyle(2, surfaceColor);
+                this.physics.add.existing(plat, true);
+                this.platforms.add(plat);
+            });
+
+            // Koin Emas
+            this.worldData.entities.filter(e => e.type === 'coins').forEach(c => {
+                const cy = c.row * 50 + 25;
+                const coin = this.add.circle(c.x, cy, 8, 0xf59e0b).setDepth(7);
+                coin.setStrokeStyle(1.5, 0xfde047);
+                this.physics.add.existing(coin, true);
+                this.coins.add(coin);
+                this.tweens.add({
+                    targets: coin,
+                    y: cy - 6,
+                    duration: 700,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Sine.easeInOut'
+                });
+            });
+        } else if (this.worldData.hasPlatforms) {
             const platPositions = [
                 { x: 450, y: 300, w: 100 },  // Spans x: 400..500 (Cols 8-10, Row 6)
                 { x: 650, y: 250, w: 100 },  // Spans x: 600..700 (Cols 12-14, Row 5, jembatan air)
@@ -273,7 +321,14 @@ export class CustomWorldScene extends Phaser.Scene {
     // ===============================================================
     createPlayer() {
         const playerTexture = this.textures.exists('custom_player') ? 'custom_player' : 'skeleton_player';
-        this.player = this.physics.add.sprite(125, 360, playerTexture).setDepth(10);
+        
+        let spawnX = 125;
+        if (Array.isArray(this.worldData.entities)) {
+            const p = this.worldData.entities.find(e => e.type === 'player');
+            if (p) spawnX = p.x;
+        }
+
+        this.player = this.physics.add.sprite(spawnX, 360, playerTexture).setDepth(10);
         this.player.setCollideWorldBounds(true);
         this.physics.add.collider(this.player, this.platforms);
 
@@ -303,30 +358,16 @@ export class CustomWorldScene extends Phaser.Scene {
     // 4. PEMBUATAN MONSTER (SLIME & SKELETON)
     // ===============================================================
     buildMonsters() {
-        // Monster Slime Melompat (Col 10 center: x=525)
-        if (this.worldData.hasSlime) {
-            const slimeX = 525;
-            const slime = this.physics.add.sprite(slimeX, 390, null).setDepth(8);
-            const sG = this.add.graphics();
-            sG.fillStyle(0x22c55e, 1);
-            sG.fillRoundedRect(-14, -14, 28, 24, 6);
-            sG.fillStyle(0xffffff, 1);
-            sG.fillRect(-8, -8, 5, 5);
-            sG.fillRect(3, -8, 5, 5);
-            sG.fillStyle(0x0f172a, 1);
-            sG.fillRect(-6, -6, 3, 3);
-            sG.fillRect(5, -6, 3, 3);
-            slime.add ? slime.add(sG) : null;
+        const hasCustom = Array.isArray(this.worldData.entities) && this.worldData.entities.length > 0;
 
-            // Simple Slime Body
-            const slimeVisual = this.add.rectangle(slimeX, 396, 26, 22, 0x22c55e).setDepth(8);
+        const spawnSlime = (x) => {
+            const slimeVisual = this.add.rectangle(x, 396, 26, 22, 0x22c55e).setDepth(8);
             slimeVisual.setStrokeStyle(1.5, 0x86efac);
             this.physics.add.existing(slimeVisual);
             this.physics.add.collider(slimeVisual, this.platforms);
 
-            // AI Patroli Slime
             slimeVisual.body.setVelocityX(60);
-            slimeVisual.startX = slimeX;
+            slimeVisual.startX = x;
             slimeVisual.isSlime = true;
             this.monsters.push(slimeVisual);
 
@@ -341,22 +382,28 @@ export class CustomWorldScene extends Phaser.Scene {
             });
 
             this.physics.add.overlap(this.player, slimeVisual, () => this.handleHazardDamage());
-        }
+        };
 
-        // Monster Skeleton Berpatroli (Col 30 center: x=1525)
-        if (this.worldData.hasSkeleton) {
-            const skelX = 1525;
-            const skelVisual = this.add.rectangle(skelX, 390, 26, 38, 0x7f1d1d).setDepth(8);
+        const spawnSkeleton = (x) => {
+            const skelVisual = this.add.rectangle(x, 390, 26, 38, 0x7f1d1d).setDepth(8);
             skelVisual.setStrokeStyle(1.5, 0xfca5a5);
             this.physics.add.existing(skelVisual);
             this.physics.add.collider(skelVisual, this.platforms);
 
             skelVisual.body.setVelocityX(-50);
-            skelVisual.startX = skelX;
+            skelVisual.startX = x;
             skelVisual.isSkeleton = true;
             this.monsters.push(skelVisual);
 
             this.physics.add.overlap(this.player, skelVisual, () => this.handleHazardDamage());
+        };
+
+        if (hasCustom) {
+            this.worldData.entities.filter(e => e.type === 'slime').forEach(sl => spawnSlime(sl.x));
+            this.worldData.entities.filter(e => e.type === 'skeleton').forEach(sk => spawnSkeleton(sk.x));
+        } else {
+            if (this.worldData.hasSlime) spawnSlime(525);
+            if (this.worldData.hasSkeleton) spawnSkeleton(1525);
         }
     }
 
@@ -364,37 +411,43 @@ export class CustomWorldScene extends Phaser.Scene {
     // 5. INTERAKSI: NPC & PETI HARTA
     // ===============================================================
     buildInteractions() {
-        if (this.worldData.hasNpc) {
-            const npcX = 325; // Col 6 center
-            this.npc = this.add.rectangle(npcX, 390, 28, 42, 0xa855f7).setDepth(8);
-            this.npc.setStrokeStyle(1.5, 0xd8b4fe);
-            this.physics.add.existing(this.npc, true);
+        const hasCustom = Array.isArray(this.worldData.entities) && this.worldData.entities.length > 0;
 
-            // Eyes
-            const eye1 = this.add.circle(npcX - 5, 380, 2.5, 0xfde047).setDepth(9);
-            const eye2 = this.add.circle(npcX + 5, 380, 2.5, 0xfde047).setDepth(9);
+        const spawnNPC = (x) => {
+            const npc = this.add.rectangle(x, 390, 28, 42, 0xa855f7).setDepth(8);
+            npc.setStrokeStyle(1.5, 0xd8b4fe);
+            this.physics.add.existing(npc, true);
 
-            // Label Nama
-            this.add.text(npcX, 355, 'Penjelajah Roh', {
+            this.add.circle(x - 5, 380, 2.5, 0xfde047).setDepth(9);
+            this.add.circle(x + 5, 380, 2.5, 0xfde047).setDepth(9);
+
+            this.add.text(x, 355, 'Penjelajah Roh', {
                 fontSize: '11px',
                 fontStyle: 'bold',
                 fill: '#d8b4fe',
                 fontFamily: FONT_BODY
             }).setOrigin(0.5).setDepth(9);
-        }
+        };
 
-        if (this.worldData.hasChest) {
-            const chestX = 775; // Col 15 center
-            this.chest = this.add.rectangle(chestX, 400, 26, 20, 0xb45309).setDepth(7);
-            this.chest.setStrokeStyle(1.5, 0xfde047);
-            this.physics.add.existing(this.chest, true);
+        const spawnChest = (x) => {
+            const chest = this.add.rectangle(x, 400, 26, 20, 0xb45309).setDepth(7);
+            chest.setStrokeStyle(1.5, 0xfde047);
+            this.physics.add.existing(chest, true);
 
-            this.add.text(chestX, 380, '📦 Peti', {
+            this.add.text(x, 380, '📦 Peti', {
                 fontSize: '10px',
                 fontStyle: 'bold',
                 fill: '#fbbf24',
                 fontFamily: FONT_BODY
             }).setOrigin(0.5).setDepth(8);
+        };
+
+        if (hasCustom) {
+            this.worldData.entities.filter(e => e.type === 'npc').forEach(n => spawnNPC(n.x));
+            this.worldData.entities.filter(e => e.type === 'chest').forEach(c => spawnChest(c.x));
+        } else {
+            if (this.worldData.hasNpc) spawnNPC(325);
+            if (this.worldData.hasChest) spawnChest(775);
         }
     }
 
@@ -402,7 +455,12 @@ export class CustomWorldScene extends Phaser.Scene {
     // 6. PORTAL KELUAR KE MENU / HUB
     // ===============================================================
     createPortal(worldWidth) {
-        const portalX = 1725; // Col 34 center
+        let portalX = 1725;
+        if (Array.isArray(this.worldData.entities)) {
+            const p = this.worldData.entities.find(e => e.type === 'portal');
+            if (p) portalX = p.x;
+        }
+
         const portalY = 360;
         this.portalEnd = this.add.container(portalX, portalY).setDepth(12);
 
