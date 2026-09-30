@@ -222,35 +222,38 @@ export class HongKongScene extends Phaser.Scene {
             .setDepth(5);
 
         // -------------------------------------------------------------
-        // PLATFORMS FISIKA (Pijakan karakter di atas dermaga batu)
+        // PLATFORMS FISIKA (Pijakan karakter di atas dermaga batu, Row 8 y=400)
         // -------------------------------------------------------------
         this.platforms = this.physics.add.staticGroup();
 
-        // Lantai utama dermaga: membentang dari x: -400 sampai 2400 di y: 434
-        const groundHeight = 40;
-        for (let x = -400; x <= 2400; x += 120) {
-            const block = this.add.rectangle(x, 434, 120, groundHeight, 0x000000, 0);
+        // Lantai utama dermaga: membentang presisi pada Row 8 (permukaan y = 400)
+        const groundHeight = 50;
+        for (let col = -4; col <= 44; col++) {
+            const blockX = col * 50 + 25;
+            const block = this.add.rectangle(blockX, 425, 50, groundHeight, 0x000000, 0);
             this.physics.add.existing(block, true);
             this.platforms.add(block);
         }
 
-        // Platform bebatuan tinggi / peti pelabuhan untuk variasi lompatan
-        this.createPierCrate(420, 360, 80, 24);
-        this.createPierCrate(760, 330, 96, 24);
-        this.createPierCrate(1140, 290, 84, 24);
-        this.createPierCrate(1460, 340, 90, 24);
+        // Platform bebatuan tinggi / peti pelabuhan (Snap Presisi Grid 50px)
+        this.createPierCrate(8, 7, 2);   // col 8..9, row 7 (surface y=350)
+        this.createPierCrate(14, 6, 2);  // col 14..15, row 6 (surface y=300)
+        this.createPierCrate(22, 5, 2);  // col 22..23, row 5 (surface y=250)
+        this.createPierCrate(29, 6, 2);  // col 29..30, row 6 (surface y=300)
 
         // -------------------------------------------------------------
-        // ITEM QUEST: Mutiara Victoria (Di atas platform tinggi x=1140)
+        // ITEM QUEST: Mutiara Victoria (Di atas platform tinggi col=22, row=4)
         // -------------------------------------------------------------
         if (!this.collectedItemIds.includes('mutiara_victoria')) {
-            this.questItem = this.physics.add.sprite(1140, 250, 'hk_pearl_item').setDepth(15);
+            const pearlX = 1150;
+            const pearlY = 215;
+            this.questItem = this.physics.add.sprite(pearlX, pearlY, 'hk_pearl_item').setDepth(15);
             this.questItem.body.setAllowGravity(false);
             this.questItem.body.immovable = true;
             this.questItem.body.moves = false;
             this.tweens.add({
                 targets: this.questItem,
-                y: 242,
+                y: pearlY - 6,
                 duration: 900,
                 yoyo: true,
                 repeat: -1,
@@ -270,18 +273,18 @@ export class HongKongScene extends Phaser.Scene {
         }
 
         // -------------------------------------------------------------
-        // HAZARD: Ombak Pasang / Semburan Air Asin (x: 880, y: 418)
+        // HAZARD: Ombak Pasang / Semburan Air Asin (col: 17, permukaan tanah y=400)
         // -------------------------------------------------------------
-        this.hazard = this.physics.add.staticSprite(880, 412, 'skeleton_hazard').setDepth(8);
-        this.hazardText = this.add.text(880, 382, 'Ombak Pecah', {
+        this.hazard = this.physics.add.staticSprite(875, 388, 'skeleton_hazard').setDepth(8);
+        this.hazardText = this.add.text(875, 366, 'Ombak Pecah', {
             fontSize: '10px', fontStyle: 'bold', fill: '#67e8f9', fontFamily: FONT_BODY
         }).setOrigin(0.5).setDepth(12);
 
         // -------------------------------------------------------------
-        // NPC: Kapten Dermaga Chen
+        // NPC: Kapten Dermaga Chen (col: 6, permukaan tanah y=400)
         // -------------------------------------------------------------
-        const npcX = 300;
-        const npcY = 398;
+        const npcX = 325;
+        const npcY = 378;
         this.npc = this.physics.add.staticSprite(npcX, npcY, 'skeleton_npc').setDepth(10);
         this.npcData = {
             name: 'Kapten Chen (Penjaga Dermaga)',
@@ -315,9 +318,9 @@ export class HongKongScene extends Phaser.Scene {
         this.npcPrompt = null;
 
         // -------------------------------------------------------------
-        // PORTAL 1 (KIRI, x=90): Kembali ke Scene 1 (Padang Salju)
+        // PORTAL 1 (KIRI, col: 1): Kembali ke Scene 1 (Padang Salju)
         // -------------------------------------------------------------
-        this.portalBack = this.add.container(90, 396).setDepth(12);
+        this.portalBack = this.add.container(75, 376).setDepth(12);
         const pBackRing = this.add.circle(0, 0, 22, 0x38bdf8, 0.25).setStrokeStyle(2, 0x7dd3fc);
         const pBackIcon = this.add.text(0, 0, '<', { fontSize: '18px', fontStyle: 'bold', fill: '#bae6fd', fontFamily: FONT_BODY }).setOrigin(0.5);
         const pBackLabel = this.add.text(0, -32, '← Scene 1', { fontSize: '11px', fontStyle: 'bold', fill: '#bae6fd', fontFamily: FONT_BODY }).setOrigin(0.5);
@@ -331,14 +334,19 @@ export class HongKongScene extends Phaser.Scene {
         });
     }
 
-    createPierCrate(x, y, width, height) {
-        const crateVisual = this.add.rectangle(x, y, width, height, 0x1e293b, 0.9)
+    createPierCrate(col, row, tileCount = 2) {
+        const width = tileCount * 50;
+        const height = 24;
+        const x = col * 50 + width / 2; // Center X tepat di tengah sel-sel grid
+        const y = row * 50 + height / 2; // Pijakan atas tepat di garis horizontal grid row * 50
+        const crateVisual = this.add.rectangle(x, y, width, height, 0x1e293b, 0.95)
             .setStrokeStyle(2, 0x475569)
             .setDepth(6);
-        const crateHighlight = this.add.rectangle(x, y - height / 2 + 2, width, 3, 0x94a3b8, 0.8).setDepth(6);
+        const crateHighlight = this.add.rectangle(x, row * 50 + 2, width - 4, 3, 0x94a3b8, 0.85).setDepth(6);
         const phys = this.add.rectangle(x, y, width, height, 0x000000, 0);
         this.physics.add.existing(phys, true);
         this.platforms.add(phys);
+        return { visual: crateVisual, phys, col, row, tileCount };
     }
 
     // ===============================================================
@@ -393,8 +401,8 @@ export class HongKongScene extends Phaser.Scene {
     // PEMBUATAN KARAKTER PLAYER & KOLISI
     // ===============================================================
     createPlayer() {
-        const spawnX = this.savedSpawnPos ? this.savedSpawnPos.x : (this.startData?.spawnX || 160);
-        const spawnY = this.savedSpawnPos ? this.savedSpawnPos.y : 380;
+        const spawnX = this.savedSpawnPos ? this.savedSpawnPos.x : (this.startData?.spawnX || 175);
+        const spawnY = this.savedSpawnPos ? this.savedSpawnPos.y : 378;
 
         const playerTexture = this.textures.exists('custom_player') ? 'custom_player' : 'skeleton_player';
         this.player = this.physics.add.sprite(spawnX, spawnY, playerTexture).setDepth(10);

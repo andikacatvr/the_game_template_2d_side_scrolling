@@ -3537,10 +3537,11 @@ export class SceneBuilderModal {
                     { id: 'portal_back', type: 'portal', col: 1, row: 7, x: 75, y: 400, label: 'Portal Kembali ke Scene 1', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 },
                     { id: 'npc_chen', type: 'npc', col: 6, row: 7, x: 325, y: 400, label: 'Kapten Chen (NPC)', cat: 'creature', icon: '🧙', wTiles: 1, hTiles: 1 },
                     { id: 'hazard_ombak', type: 'spikes', col: 17, row: 7, x: 875, y: 400, label: 'Ombak Pecah (Hazard)', cat: 'solid', icon: '⚠️', wTiles: 1, hTiles: 1 },
-                    { id: 'platform_hk1', type: 'platforms', col: 8, row: 7, x: 425, y: 350, label: 'Peti Dermaga #1', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
-                    { id: 'platform_hk2', type: 'platforms', col: 15, row: 6, x: 775, y: 300, label: 'Peti Dermaga #2', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
-                    { id: 'platform_hk3', type: 'platforms', col: 22, row: 5, x: 1125, y: 250, label: 'Batu Karang Tinggi', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
-                    { id: 'chest_pearl', type: 'chest', col: 22, row: 4, x: 1125, y: 200, label: 'Mutiara Victoria', cat: 'solid', icon: '📦', wTiles: 1, hTiles: 1 }
+                    { id: 'platform_hk1', type: 'platforms', col: 8, row: 7, x: 450, y: 350, label: 'Peti Dermaga #1', cat: 'solid', icon: '🧱', wTiles: 2, hTiles: 1 },
+                    { id: 'platform_hk2', type: 'platforms', col: 14, row: 6, x: 750, y: 300, label: 'Peti Dermaga #2', cat: 'solid', icon: '🧱', wTiles: 2, hTiles: 1 },
+                    { id: 'platform_hk3', type: 'platforms', col: 22, row: 5, x: 1150, y: 250, label: 'Batu Karang Tinggi', cat: 'solid', icon: '🧱', wTiles: 2, hTiles: 1 },
+                    { id: 'chest_pearl', type: 'chest', col: 22, row: 4, x: 1150, y: 200, label: 'Mutiara Victoria', cat: 'solid', icon: '📦', wTiles: 1, hTiles: 1 },
+                    { id: 'platform_hk4', type: 'platforms', col: 29, row: 6, x: 1500, y: 300, label: 'Peti Dermaga #3', cat: 'solid', icon: '🧱', wTiles: 2, hTiles: 1 }
                 ],
                 terrainTiles: Array.from(terrain)
             };
