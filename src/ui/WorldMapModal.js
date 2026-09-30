@@ -4,9 +4,10 @@ import { ProjectManager } from '../utils/ProjectManager.js';
 // ===============================================================
 // WORLD MAP MODAL (TORAM ONLINE STYLE INTERCONNECTED SCENE MAP)
 // ===============================================================
-// Menampilkan peta dunia fantasi dengan jalur/node yang menghubungkan
-// semua scene di dalam Project (seperti peta dunia Toram Online).
-// Pemain dapat melihat rute perjalanan, info scene, dan Quick Travel.
+// Peta dunia RPG real-time yang akurat mendeteksi lokasi pemain
+// (baik di Tutorial / Story Campaign, maupun di Custom Projects),
+// menampilkan graf rute jalan batu (cobblestone roads) antar-scene,
+// dan mendukung fitur Quick Travel / Teleportasi instan.
 // ===============================================================
 
 export class WorldMapModal {
@@ -30,8 +31,73 @@ export class WorldMapModal {
     constructor(scene) {
         this.scene = scene;
         this.dom = null;
-        this.selectedSceneId = null;
-        this.currentView = 'world'; // 'world' | 'radar'
+        this.realtimeLocation = this.detectRealtimePlayerLocation();
+        
+        // Peta yang aktif ditampilkan:
+        // Jika pemain di custom world, buka project tersebut.
+        // Jika pemain di GameScene/HongKongScene/dll (Tutorial & Story), buka Story Campaign.
+        if (this.realtimeLocation.mode === 'custom' && this.realtimeLocation.projectId) {
+            this.activeViewProjectId = this.realtimeLocation.projectId;
+        } else {
+            this.activeViewProjectId = 'story_campaign';
+        }
+
+        this.selectedSceneId = this.realtimeLocation.sceneId;
+    }
+
+    // Mendeteksi lokasi real-time pemain saat ini secara presisi
+    detectRealtimePlayerLocation() {
+        const sceneKey = this.scene && this.scene.scene ? this.scene.scene.key : '';
+
+        if (sceneKey === 'GameScene') {
+            return {
+                mode: 'story',
+                sceneId: 'GameScene',
+                sceneName: 'Level 1 • Lembah Salju (Tutorial)',
+                biome: 'snow'
+            };
+        }
+        if (sceneKey === 'HongKongScene' || sceneKey === 'Scene2') {
+            return {
+                mode: 'story',
+                sceneId: 'HongKongScene',
+                sceneName: 'Level 2 • Teluk Hong Kong',
+                biome: 'dirt'
+            };
+        }
+        if (sceneKey === 'CrystalCaveScene') {
+            return {
+                mode: 'story',
+                sceneId: 'CrystalCaveScene',
+                sceneName: 'Level 3 • Labirin Gua Kristal',
+                biome: 'cave'
+            };
+        }
+        if (sceneKey === 'CustomWorldScene') {
+            const sId = this.scene.sceneId || (this.scene.worldData ? this.scene.worldData.id : null);
+            const sName = (this.scene.worldData && this.scene.worldData.name) ? this.scene.worldData.name : 'Custom Scene';
+            return {
+                mode: 'custom',
+                projectId: this.scene.projectId || null,
+                sceneId: sId,
+                sceneName: sName,
+                biome: (this.scene.worldData && this.scene.worldData.biome) || 'desert'
+            };
+        }
+        if (sceneKey === 'Scene3') {
+            return {
+                mode: 'sandbox',
+                sceneId: 'Scene3',
+                sceneName: 'Sandbox World • Lab Koding',
+                biome: 'dirt'
+            };
+        }
+        return {
+            mode: 'story',
+            sceneId: 'GameScene',
+            sceneName: 'Level 1 • Lembah Salju (Tutorial)',
+            biome: 'snow'
+        };
     }
 
     open() {
@@ -53,73 +119,42 @@ export class WorldMapModal {
         this.destroy();
     }
 
-    // Mengambil daftar seluruh scene yang tersedia dalam project saat ini
+    // Mengambil daftar project yang tersedia untuk switcher
+    getAvailableProjects() {
+        const list = [
+            { id: 'story_campaign', name: '⭐ Campaign Petualangan Utama (Tutorial & Story)' }
+        ];
+
+        const customProjects = ProjectManager.getProjects();
+        if (Array.isArray(customProjects)) {
+            customProjects.forEach(p => {
+                list.push({ id: p.id, name: `📁 ${p.name || 'Project Game'}` });
+            });
+        }
+        return list;
+    }
+
+    // Mengambil data seluruh scene pada project/campaign yang sedang dilihat
     getScenesData() {
-        let projectId = null;
-        let currentSceneId = null;
-
-        if (this.scene) {
-            projectId = this.scene.projectId || null;
-            currentSceneId = this.scene.sceneId || (this.scene.worldData ? this.scene.worldData.id : null);
-        }
-
-        let project = null;
-        if (projectId) {
-            project = ProjectManager.getProject(projectId);
-        }
-
-        // Jika tidak ada project ID aktif, cari di project pertama atau buat data fallback
-        if (!project) {
-            const allProjects = ProjectManager.getProjects();
-            if (allProjects.length > 0) {
-                // Cari project yang mungkin memuat scene saat ini
-                project = allProjects.find(p => (p.scenes || []).some(s => s.id === currentSceneId)) || allProjects[0];
-            }
-        }
-
         let scenes = [];
-        let projectName = 'Dunia Petualangan';
+        let projectName = '';
 
-        if (project && Array.isArray(project.scenes) && project.scenes.length > 0) {
-            projectName = project.name || 'Petualangan Game';
-            projectId = project.id;
-            scenes = project.scenes.map((s, idx) => ({
-                id: s.id,
-                name: s.name || `Level ${idx + 1}`,
-                biome: s.biome || 'desert',
-                worldWidth: s.worldWidth || 1800,
-                worldHeight: s.worldHeight || 850,
-                hasLava: s.hasLava,
-                hasWater: s.hasWater,
-                hasSpikes: s.hasSpikes,
-                hasSlime: s.hasSlime,
-                hasSkeleton: s.hasSkeleton,
-                hasNpc: s.hasNpc,
-                hasChest: s.hasChest,
-                hasCoins: s.hasCoins,
-                hasPortal: s.hasPortal,
-                entities: s.entities || [],
-                isCurrent: s.id === currentSceneId || (!currentSceneId && idx === 0),
-                index: idx + 1
-            }));
-        } else {
-            // Fallback: Mode Story Utama (Scene1 & Scene2)
-            projectName = 'Story Campaign Utama';
+        if (this.activeViewProjectId === 'story_campaign') {
+            projectName = 'Campaign Petualangan Utama (Tutorial)';
             scenes = [
                 {
-                    id: 'Scene1',
-                    name: 'Level 1 • Lembah Salju',
+                    id: 'GameScene',
+                    name: 'Level 1 • Lembah Salju (Tutorial)',
                     biome: 'snow',
                     worldWidth: 1400,
-                    worldHeight: 850,
+                    worldHeight: 1000,
                     hasSlime: true,
                     hasCoins: true,
                     hasPortal: true,
-                    isCurrent: this.scene && this.scene.scene && this.scene.scene.key === 'Scene1',
-                    index: 1
+                    desc: 'Lembah dingin bersalju tempat mempelajari kontrol jalan, lompat, koin emas, dan dasar petualangan.'
                 },
                 {
-                    id: 'Scene2',
+                    id: 'HongKongScene',
                     name: 'Level 2 • Teluk Hong Kong',
                     biome: 'dirt',
                     worldWidth: 2200,
@@ -127,23 +162,76 @@ export class WorldMapModal {
                     hasSkeleton: true,
                     hasPlatforms: true,
                     hasPortal: true,
-                    isCurrent: this.scene && this.scene.scene && this.scene.scene.key === 'Scene2',
-                    index: 2
+                    desc: 'Pelabuhan malam Teluk Victoria dengan kapal tongkang terapung, rintangan vertikal, dan kapal feri bintang.'
+                },
+                {
+                    id: 'CrystalCaveScene',
+                    name: 'Level 3 • Labirin Gua Kristal',
+                    biome: 'cave',
+                    worldWidth: 2000,
+                    worldHeight: 850,
+                    hasSpikes: true,
+                    hasLava: true,
+                    hasSkeleton: true,
+                    hasPortal: true,
+                    desc: 'Kedalaman gua purba bertabur kristal safir langka dengan rintangan lahar api dan skeleton penjaga.'
                 }
             ];
+        } else {
+            const project = ProjectManager.getProject(this.activeViewProjectId);
+            if (project && Array.isArray(project.scenes) && project.scenes.length > 0) {
+                projectName = project.name || 'Project Game';
+                scenes = project.scenes.map((s, idx) => ({
+                    id: s.id,
+                    name: s.name || `Level ${idx + 1}`,
+                    biome: s.biome || 'desert',
+                    worldWidth: s.worldWidth || 1800,
+                    worldHeight: s.worldHeight || 850,
+                    hasLava: s.hasLava,
+                    hasWater: s.hasWater,
+                    hasSpikes: s.hasSpikes,
+                    hasSlime: s.hasSlime,
+                    hasSkeleton: s.hasSkeleton,
+                    hasNpc: s.hasNpc,
+                    hasChest: s.hasChest,
+                    hasCoins: s.hasCoins,
+                    hasPortal: s.hasPortal,
+                    entities: s.entities || [],
+                    desc: `Dunia petualangan modular dengan tema ${s.biome}.`
+                }));
+            } else {
+                projectName = 'Project Kreasiku';
+                scenes = [
+                    {
+                        id: 'scene_default_1',
+                        name: 'Level 1 • Area Baru',
+                        biome: 'desert',
+                        worldWidth: 1800,
+                        worldHeight: 850,
+                        hasPortal: true,
+                        desc: 'Area petualangan baru.'
+                    }
+                ];
+            }
         }
 
-        // Tentukan selectedSceneId default ke scene aktif
-        const current = scenes.find(s => s.isCurrent) || scenes[0];
-        if (!this.selectedSceneId && current) {
-            this.selectedSceneId = current.id;
+        // Tandai isCurrent secara real-time berdasarkan posisi aktual pemain
+        scenes = scenes.map((s, idx) => ({
+            ...s,
+            index: idx + 1,
+            isCurrent: (s.id === this.realtimeLocation.sceneId)
+        }));
+
+        // Pastikan selectedSceneId valid
+        if (!this.selectedSceneId || !scenes.some(s => s.id === this.selectedSceneId)) {
+            const cur = scenes.find(s => s.isCurrent);
+            this.selectedSceneId = cur ? cur.id : scenes[0].id;
         }
 
         return {
-            projectId,
+            projectId: this.activeViewProjectId,
             projectName,
-            scenes,
-            currentSceneId: current ? current.id : null
+            scenes
         };
     }
 
@@ -158,51 +246,47 @@ export class WorldMapModal {
     }
 
     getBiomeLandmarkSVG(biome) {
-        // SVG miniatur ilustrasi landmark RPG ala Toram Online
         switch (biome) {
             case 'snow':
                 return `
                     <svg viewBox="0 0 100 80" class="gt-landmark-svg">
-                        <!-- Pegunungan Salju & Awan -->
+                        <!-- Pegunungan Salju & Awan Melayang Toram Style -->
                         <polygon points="50,10 75,55 25,55" fill="#93c5fd" stroke="#1e3a8a" stroke-width="2"/>
                         <polygon points="50,10 60,30 50,26 40,30" fill="#ffffff"/>
                         <polygon points="25,25 45,60 5,60" fill="#60a5fa" stroke="#1e3a8a" stroke-width="2"/>
                         <polygon points="25,25 33,38 25,35 17,38" fill="#ffffff"/>
                         <polygon points="75,22 95,60 55,60" fill="#bfdbfe" stroke="#1e3a8a" stroke-width="2"/>
                         <polygon points="75,22 83,36 75,33 67,36" fill="#ffffff"/>
-                        <!-- Pohon Cemara Bersalju -->
+                        <!-- Pohon Cemara -->
                         <polygon points="35,45 42,62 28,62" fill="#1e293b"/>
                         <polygon points="35,45 39,52 35,50 31,52" fill="#ffffff"/>
-                        <!-- Awan Toram -->
-                        <ellipse cx="78" cy="18" rx="14" ry="5" fill="#f8fafc" opacity="0.9"/>
-                        <ellipse cx="20" cy="16" rx="12" ry="4" fill="#f8fafc" opacity="0.85"/>
+                        <!-- Awan Putih -->
+                        <ellipse cx="78" cy="18" rx="14" ry="5" fill="#f8fafc" opacity="0.95"/>
+                        <ellipse cx="20" cy="16" rx="12" ry="4" fill="#f8fafc" opacity="0.9"/>
                     </svg>
                 `;
             case 'desert':
                 return `
                     <svg viewBox="0 0 100 80" class="gt-landmark-svg">
-                        <!-- Piramida / Reruntuhan Pilar Kuno -->
+                        <!-- Piramida Gurun & Reruntuhan Pilar Kuno -->
                         <polygon points="50,15 88,60 12,60" fill="#d97706" stroke="#78350f" stroke-width="2"/>
                         <polygon points="50,15 88,60 50,60" fill="#b45309"/>
-                        <!-- Pilar Reruntuhan Kuno -->
+                        <!-- Pilar Reruntuhan -->
                         <rect x="22" y="32" width="6" height="26" fill="#fde68a" stroke="#78350f" stroke-width="1.5"/>
                         <rect x="20" y="30" width="10" height="4" fill="#fde68a" stroke="#78350f" stroke-width="1.5"/>
                         <rect x="72" y="36" width="6" height="22" fill="#fde68a" stroke="#78350f" stroke-width="1.5"/>
                         <rect x="70" y="34" width="10" height="4" fill="#fde68a" stroke="#78350f" stroke-width="1.5"/>
-                        <!-- Bukit Pasir -->
                         <path d="M5,62 Q50,54 95,62" stroke="#78350f" stroke-width="2.5" fill="none"/>
                     </svg>
                 `;
             case 'cave':
                 return `
                     <svg viewBox="0 0 100 80" class="gt-landmark-svg">
-                        <!-- Gunung Batu Vulkanik & Mulut Gua -->
+                        <!-- Gunung Vulkanik & Mulut Gua Magma -->
                         <polygon points="50,12 85,62 15,62" fill="#334155" stroke="#0f172a" stroke-width="2"/>
                         <polygon points="50,12 85,62 60,62" fill="#1e293b"/>
-                        <!-- Mulut Gua Bercahaya Lava -->
                         <path d="M40,62 Q50,38 60,62 Z" fill="#090d16" stroke="#ef4444" stroke-width="2"/>
                         <ellipse cx="50" cy="56" rx="6" ry="3" fill="#f97316"/>
-                        <!-- Retakan Lahar Panas -->
                         <path d="M48,25 L53,35 L47,44" stroke="#ef4444" stroke-width="2" fill="none"/>
                     </svg>
                 `;
@@ -210,38 +294,66 @@ export class WorldMapModal {
             default:
                 return `
                     <svg viewBox="0 0 100 80" class="gt-landmark-svg">
-                        <!-- Bukit Hijau Asri & Pepohonan Hutan -->
+                        <!-- Bukit Hijau Asri & Pohon Rindang Marbaro -->
                         <ellipse cx="50" cy="60" rx="42" ry="14" fill="#65a30d" stroke="#365314" stroke-width="2"/>
-                        <!-- Pohon Rindang Marbaro Forest -->
                         <circle cx="50" cy="30" r="18" fill="#22c55e" stroke="#14532d" stroke-width="2"/>
                         <circle cx="36" cy="36" r="14" fill="#16a34a" stroke="#14532d" stroke-width="2"/>
                         <circle cx="64" cy="36" r="14" fill="#15803d" stroke="#14532d" stroke-width="2"/>
                         <rect x="46" y="44" width="8" height="18" fill="#78350f" stroke="#451a03" stroke-width="1.5"/>
-                        <!-- Awan Putih -->
-                        <ellipse cx="22" cy="18" rx="12" ry="4" fill="#f8fafc" opacity="0.9"/>
+                        <ellipse cx="22" cy="18" rx="12" ry="4" fill="#f8fafc" opacity="0.95"/>
                     </svg>
                 `;
         }
     }
 
-    buildDOM() {
-        const { projectId, projectName, scenes, currentSceneId } = this.getScenesData();
-        const selectedScene = scenes.find(s => s.id === this.selectedSceneId) || scenes[0];
+    // Menghitung layout node yang proporsional dan terpusat di kanvas (tanpa scrollbar)
+    calculateNodeLayout(count) {
+        const positions = [];
 
-        // Hitung node layout dan jalan setapak ala Toram Online
+        if (count === 1) {
+            positions.push({ x: 330, y: 240 });
+        } else if (count === 2) {
+            positions.push({ x: 200, y: 240 });
+            positions.push({ x: 460, y: 240 });
+        } else if (count === 3) {
+            // Lengkungan 3 level (Tutorial -> Level 2 -> Level 3)
+            positions.push({ x: 140, y: 270 });
+            positions.push({ x: 330, y: 190 });
+            positions.push({ x: 520, y: 270 });
+        } else if (count === 4) {
+            positions.push({ x: 120, y: 280 });
+            positions.push({ x: 260, y: 190 });
+            positions.push({ x: 400, y: 280 });
+            positions.push({ x: 540, y: 190 });
+        } else {
+            // Serpentine multi-baris
+            for (let i = 0; i < count; i++) {
+                const row = Math.floor(i / 3);
+                const col = (row % 2 === 0) ? (i % 3) : (2 - (i % 3));
+                const x = 140 + col * 190;
+                const y = 140 + row * 150;
+                positions.push({ x, y });
+            }
+        }
+        return positions;
+    }
+
+    buildDOM() {
+        const { projectName, scenes } = this.getScenesData();
+        const availableProjects = this.getAvailableProjects();
+
         const nodePositions = this.calculateNodeLayout(scenes.length);
 
-        // Buat jalan setapak (paved cobblestone stone roads)
+        // Buat jalan setapak (paved cobblestone roads ala Toram Online)
         let roadsSVG = '';
         for (let i = 0; i < scenes.length - 1; i++) {
             const p1 = nodePositions[i];
             const p2 = nodePositions[i + 1];
             if (p1 && p2) {
-                // Jalan batu vintage berbayang
                 roadsSVG += `
-                    <!-- Shadow / outline jalan -->
+                    <!-- Shadow jalan batu -->
                     <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#6e583c" stroke-width="14" stroke-linecap="round"/>
-                    <!-- Cobblestone Pavers dasar -->
+                    <!-- Cobblestone pavers -->
                     <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#d3be96" stroke-width="10" stroke-linecap="round"/>
                     <!-- Garis pembagi batu tengah -->
                     <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#937a57" stroke-width="2" stroke-dasharray="6,5"/>
@@ -249,18 +361,18 @@ export class WorldMapModal {
             }
         }
 
-        // Render setiap node scene
+        // Render setiap node
         const nodesHTML = scenes.map((scene, idx) => {
-            const pos = nodePositions[idx] || { x: 100 + idx * 160, y: 180 };
+            const pos = nodePositions[idx] || { x: 150 + idx * 170, y: 240 };
             const isSelected = scene.id === this.selectedSceneId;
-            const isCurrent = scene.id === currentSceneId;
+            const isCurrent = scene.isCurrent;
 
             return `
                 <div class="gt-tmap-node ${isSelected ? 'is-selected' : ''} ${isCurrent ? 'is-current' : ''}" 
                      style="left: ${pos.x}px; top: ${pos.y}px;"
                      data-id="${scene.id}" 
                      data-index="${idx}"
-                     title="Klik untuk melihat info level: ${scene.name}">
+                     title="Klik untuk info scene: ${scene.name}">
                     
                     ${isCurrent ? `
                         <div class="gt-tmap-you-are-here">
@@ -283,6 +395,12 @@ export class WorldMapModal {
             `;
         }).join('');
 
+        const projectOptionsHTML = availableProjects.map(p => `
+            <option value="${p.id}" ${p.id === this.activeViewProjectId ? 'selected' : ''}>
+                ${p.name}
+            </option>
+        `).join('');
+
         this.dom = document.createElement('div');
         this.dom.className = 'gt-worldmap-overlay';
         this.dom.id = 'gt-worldmap-modal';
@@ -292,7 +410,7 @@ export class WorldMapModal {
                 .gt-worldmap-overlay {
                     position: fixed;
                     inset: 0;
-                    background: rgba(8, 12, 18, 0.85);
+                    background: rgba(6, 9, 15, 0.85);
                     backdrop-filter: blur(12px);
                     -webkit-backdrop-filter: blur(12px);
                     display: flex;
@@ -300,7 +418,7 @@ export class WorldMapModal {
                     justify-content: center;
                     z-index: 999999;
                     font-family: 'Jost', -apple-system, BlinkMacSystemFont, sans-serif;
-                    animation: gtMapFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+                    animation: gtMapFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
                     user-select: none;
                 }
 
@@ -312,7 +430,7 @@ export class WorldMapModal {
                 .gt-worldmap-container {
                     width: 1040px;
                     max-width: 95vw;
-                    height: 640px;
+                    height: 620px;
                     max-height: 90vh;
                     background: #14110d;
                     border: 2px solid #5a452a;
@@ -326,7 +444,7 @@ export class WorldMapModal {
 
                 /* Header Ornate RPG */
                 .gt-worldmap-header {
-                    padding: 14px 22px;
+                    padding: 12px 22px;
                     background: linear-gradient(180deg, #241c14 0%, #17120c 100%);
                     border-bottom: 2px solid #4a3720;
                     display: flex;
@@ -354,7 +472,7 @@ export class WorldMapModal {
                 }
 
                 .gt-worldmap-title {
-                    font-size: 17px;
+                    font-size: 16.5px;
                     font-weight: 800;
                     color: #fef3c7;
                     letter-spacing: 0.5px;
@@ -364,9 +482,34 @@ export class WorldMapModal {
                 }
 
                 .gt-worldmap-subtitle {
-                    font-size: 11.5px;
+                    font-size: 11px;
                     color: #d4a373;
-                    margin-top: 2px;
+                    margin-top: 3px;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                }
+
+                .gt-worldmap-select {
+                    background: #2b1f13;
+                    border: 1px solid #6b4d2a;
+                    border-radius: 5px;
+                    color: #fde68a;
+                    font-size: 11px;
+                    font-weight: 600;
+                    padding: 2px 8px;
+                    outline: none;
+                    cursor: pointer;
+                }
+
+                .gt-worldmap-live-loc {
+                    background: rgba(2, 132, 199, 0.2);
+                    border: 1px solid #0284c7;
+                    color: #38bdf8;
+                    font-size: 10.5px;
+                    font-weight: 700;
+                    padding: 2px 8px;
+                    border-radius: 4px;
                 }
 
                 .gt-worldmap-close-btn {
@@ -403,22 +546,21 @@ export class WorldMapModal {
                     flex: 1;
                     position: relative;
                     background: 
-                        radial-gradient(ellipse at center, rgba(254, 243, 199, 0.15) 0%, rgba(120, 85, 45, 0.35) 100%),
+                        radial-gradient(ellipse at center, rgba(254, 243, 199, 0.18) 0%, rgba(120, 85, 45, 0.35) 100%),
                         linear-gradient(135deg, #dfc08a 0%, #caa468 45%, #b58d53 100%);
                     box-shadow: inset 0 0 60px rgba(72, 45, 17, 0.6);
-                    overflow: auto;
+                    overflow: hidden; /* Tidak ada scrollbar horizontal */
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                 }
 
                 .gt-tmap-world-grid {
-                    position: absolute;
-                    inset: 0;
+                    position: relative;
                     width: 100%;
                     height: 100%;
-                    min-width: 720px;
-                    min-height: 520px;
                 }
 
-                /* SVG Jalan / Roads Layer */
                 .gt-tmap-roads-svg {
                     position: absolute;
                     inset: 0;
@@ -428,7 +570,6 @@ export class WorldMapModal {
                     z-index: 1;
                 }
 
-                /* Vintage Compass Rose */
                 .gt-tmap-compass {
                     position: absolute;
                     top: 20px;
@@ -453,7 +594,7 @@ export class WorldMapModal {
                 }
 
                 .gt-tmap-node:hover {
-                    transform: translate(-50%, -55%) scale(1.08);
+                    transform: translate(-50%, -54%) scale(1.08);
                     z-index: 25;
                 }
 
@@ -482,7 +623,6 @@ export class WorldMapModal {
                     filter: brightness(1.15) drop-shadow(0 0 8px #f59e0b);
                 }
 
-                /* Label Plate Kayu/Parchment Khas Toram */
                 .gt-tmap-label-plate {
                     margin-top: 2px;
                     background: linear-gradient(180deg, #3d2c1b 0%, #1e140a 100%);
@@ -493,7 +633,7 @@ export class WorldMapModal {
                     align-items: center;
                     gap: 5px;
                     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
-                    max-width: 140px;
+                    max-width: 150px;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
@@ -521,7 +661,6 @@ export class WorldMapModal {
                     text-overflow: ellipsis;
                 }
 
-                /* "KAMU DI SINI" Pin */
                 .gt-tmap-you-are-here {
                     position: absolute;
                     top: -28px;
@@ -535,7 +674,7 @@ export class WorldMapModal {
                     font-weight: 800;
                     padding: 2px 7px;
                     border-radius: 12px;
-                    box-shadow: 0 0 12px rgba(2, 132, 199, 0.8), 0 3px 6px rgba(0,0,0,0.6);
+                    box-shadow: 0 0 14px rgba(2, 132, 199, 0.9), 0 3px 6px rgba(0,0,0,0.6);
                     animation: gtPinBob 1.4s ease-in-out infinite;
                 }
 
@@ -734,7 +873,15 @@ export class WorldMapModal {
                         <div class="gt-worldmap-title-icon">🗺️</div>
                         <div>
                             <h2 class="gt-worldmap-title">World Map • Peta Dunia RPG</h2>
-                            <div class="gt-worldmap-subtitle">Project: <strong>${projectName}</strong> • (${scenes.length} Scene Terhubung)</div>
+                            <div class="gt-worldmap-subtitle">
+                                <span>Peta:</span>
+                                <select class="gt-worldmap-select" id="gt-worldmap-project-select">
+                                    ${projectOptionsHTML}
+                                </select>
+                                <span class="gt-worldmap-live-loc">
+                                    📍 Lokasi Real-time: ${this.realtimeLocation.sceneName}
+                                </span>
+                            </div>
                         </div>
                     </div>
                     <button class="gt-worldmap-close-btn" id="gt-worldmap-btn-close" title="Tutup Peta (ESC / M)">✕</button>
@@ -761,53 +908,30 @@ export class WorldMapModal {
                             </svg>
 
                             <!-- Node Scenes -->
-                            ${nodesHTML}
+                            <div id="gt-tmap-nodes-container">
+                                ${nodesHTML}
+                            </div>
                         </div>
                     </div>
 
                     <!-- Side Inspector Panel -->
                     <div class="gt-tmap-inspector" id="gt-tmap-inspector">
-                        <!-- Konten akan di-update oleh updateInspector() -->
+                        <!-- Konten di-update oleh updateInspector() -->
                     </div>
                 </div>
             </div>
         `;
     }
 
-    calculateNodeLayout(count) {
-        // Menghitung koordinat (X, Y) untuk menyusun node seperti peta Toram Online
-        // Memberikan layout jalan yang berliku / zig-zag organik
-        const positions = [];
-        const startX = 130;
-        const startY = 160;
-
-        for (let i = 0; i < count; i++) {
-            if (count <= 4) {
-                // Layout horizontal sedikit bergelombang
-                const x = startX + i * 180;
-                const y = (i % 2 === 0) ? startY + 20 : startY + 120;
-                positions.push({ x, y });
-            } else {
-                // Serpentine / Zig-zag multi-baris (khas Toram Online)
-                const row = Math.floor(i / 3);
-                const col = (row % 2 === 0) ? (i % 3) : (2 - (i % 3));
-                const x = startX + col * 200;
-                const y = startY + row * 150;
-                positions.push({ x, y });
-            }
-        }
-        return positions;
-    }
-
     updateInspector() {
         const inspector = this.dom ? this.dom.querySelector('#gt-tmap-inspector') : null;
         if (!inspector) return;
 
-        const { scenes, currentSceneId } = this.getScenesData();
+        const { scenes } = this.getScenesData();
         const selected = scenes.find(s => s.id === this.selectedSceneId) || scenes[0];
         if (!selected) return;
 
-        const isCurrent = selected.id === currentSceneId;
+        const isCurrent = (selected.id === this.realtimeLocation.sceneId);
         const biomeLabel = {
             snow: 'Puncak Bersalju',
             desert: 'Gurun & Reruntuhan Kuno',
@@ -834,13 +958,14 @@ export class WorldMapModal {
         inspector.innerHTML = `
             <div class="gt-inspector-header">
                 <span class="gt-inspector-tag ${isCurrent ? 'gt-tag-current' : 'gt-tag-available'}">
-                    ${isCurrent ? '● LOKASI SAAT INI' : '○ DAPAT DITELUSURI'}
+                    ${isCurrent ? '● LOKASI SAAT INI (REAL-TIME)' : '○ DAPAT DITELUSURI'}
                 </span>
                 <h3 class="gt-inspector-title">#${selected.index} ${selected.name}</h3>
                 <div class="gt-inspector-biome">
                     <span>${this.getBiomeIcon(selected.biome)}</span>
                     <span>Tema: ${biomeLabel}</span>
                 </div>
+                ${selected.desc ? `<p style="font-size: 11px; color: #a8947d; margin: 6px 0 0 0; line-height: 1.4;">${selected.desc}</p>` : ''}
             </div>
 
             <div class="gt-inspector-stat-grid">
@@ -859,7 +984,7 @@ export class WorldMapModal {
                 <div class="gt-stat-box">
                     <span class="gt-stat-label">Status</span>
                     <span class="gt-stat-value" style="color: ${isCurrent ? '#38bdf8' : '#34d399'};">
-                        ${isCurrent ? 'Aktif' : 'Terbuka'}
+                        ${isCurrent ? 'Sedang Dijejaki' : 'Terbuka'}
                     </span>
                 </div>
             </div>
@@ -895,32 +1020,27 @@ export class WorldMapModal {
 
         AudioManager.playLevelUp();
 
-        // Banner notifikasi di game scene jika tersedia
         if (this.scene && typeof this.scene.showWorldBanner === 'function') {
             this.scene.showWorldBanner(`🌀 Melakukan Quick Travel ke "${targetScene.name}"...`, '#0284c7');
         }
 
-        const { projectId } = this.getScenesData();
+        const sceneId = targetScene.id;
 
-        // Jalankan perpindahan scene
         if (this.scene && this.scene.scene) {
-            if (this.scene.scene.key === 'CustomWorldScene') {
-                this.scene.scene.start('CustomWorldScene', {
-                    worldData: targetScene,
-                    projectId: projectId,
-                    sceneId: targetScene.id,
-                    hp: this.scene.hp || 3,
-                    inventory: this.scene.inventory || []
-                });
-            } else if (targetScene.id === 'Scene1') {
-                this.scene.scene.start('Scene1');
-            } else if (targetScene.id === 'Scene2') {
-                this.scene.scene.start('Scene2');
+            if (sceneId === 'GameScene') {
+                this.scene.scene.start('GameScene');
+            } else if (sceneId === 'HongKongScene' || sceneId === 'Scene2') {
+                this.scene.scene.start('HongKongScene');
+            } else if (sceneId === 'CrystalCaveScene') {
+                this.scene.scene.start('CrystalCaveScene');
+            } else if (sceneId === 'Scene3') {
+                this.scene.scene.start('Scene3');
             } else {
-                // Default ke CustomWorldScene
+                // Custom project scene
+                const projId = (this.activeViewProjectId !== 'story_campaign') ? this.activeViewProjectId : null;
                 this.scene.scene.start('CustomWorldScene', {
                     worldData: targetScene,
-                    projectId: projectId,
+                    projectId: projId,
                     sceneId: targetScene.id,
                     hp: this.scene.hp || 3,
                     inventory: this.scene.inventory || []
@@ -951,6 +1071,25 @@ export class WorldMapModal {
             }
         });
 
+        // Dropdown Switcher Project
+        const projSelect = this.dom.querySelector('#gt-worldmap-project-select');
+        if (projSelect) {
+            projSelect.addEventListener('change', (e) => {
+                this.activeViewProjectId = e.target.value;
+                AudioManager.playClick();
+                this.selectedSceneId = null;
+
+                // Re-render konten
+                const oldContainer = this.dom.querySelector('.gt-worldmap-container');
+                if (oldContainer) {
+                    this.buildDOM();
+                    const newContainer = this.dom.querySelector('.gt-worldmap-container');
+                    oldContainer.replaceWith(newContainer);
+                    this.bindEvents();
+                }
+            });
+        }
+
         // Klik node scene
         this.dom.querySelectorAll('.gt-tmap-node').forEach(node => {
             node.addEventListener('click', (e) => {
@@ -959,7 +1098,6 @@ export class WorldMapModal {
                 const sceneId = node.getAttribute('data-id');
                 this.selectedSceneId = sceneId;
 
-                // Update UI state node yang aktif
                 this.dom.querySelectorAll('.gt-tmap-node').forEach(n => n.classList.remove('is-selected'));
                 node.classList.add('is-selected');
 
