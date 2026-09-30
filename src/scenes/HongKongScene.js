@@ -83,9 +83,8 @@ export class HongKongScene extends Phaser.Scene {
         // 5. Buat Kontrol Touch Mobile/Tablet Identik Scene 1
         this.createGoblinStyleTouchControls();
 
-        // 6. Buat Modal Game Over & Victory
+        // 6. Buat Modal Game Over
         this.createGameOverModalUI();
-        this.createVictoryModalUI();
 
         // 7. Buat Dialog Box RPG
         this.dialogBox = new DialogBox(this);
@@ -291,7 +290,7 @@ export class HongKongScene extends Phaser.Scene {
                 "Malam ini badai sedang turun, lihatlah gedung-gedung pencakar langit yang megah di seberang teluk.",
                 "Kapal Star Ferry sedang berlayar mengarungi ombak pelabuhan.",
                 "Konon ada Mutiara Teluk Victoria yang tersembunyi di atas platform bebatuan di sebelah kanan!",
-                "Jika kamu berhasil membawanya, naiklah ke Feri Ekspedisi di ujung dermaga untuk menuntaskan perjalananmu."
+                "Jika kamu berhasil membawanya, simpanlah baik-baik sebagai harta berharga petualanganmu."
             ]
         };
         this.tweens.add({
@@ -329,24 +328,6 @@ export class HongKongScene extends Phaser.Scene {
             duration: 4000,
             repeat: -1,
             ease: 'Linear'
-        });
-
-        // -------------------------------------------------------------
-        // PORTAL 2 (KANAN, x=1820): Gerbang Feri Ekspedisi (Victory)
-        // -------------------------------------------------------------
-        this.portalEnd = this.add.container(1820, 396).setDepth(12);
-        const pEndRing = this.add.circle(0, 0, 24, 0xf59e0b, 0.25).setStrokeStyle(2, 0xfbbf24);
-        const pEndIcon = this.add.text(0, 0, '[FERI]', { fontSize: '10px', fontStyle: 'bold', fill: '#fef08a', fontFamily: FONT_BODY }).setOrigin(0.5);
-        const pEndLabel = this.add.text(0, -34, 'Feri Ekspedisi', { fontSize: '11px', fontStyle: 'bold', fill: '#fef08a', fontFamily: FONT_BODY }).setOrigin(0.5);
-        this.portalEnd.add([pEndRing, pEndIcon, pEndLabel]);
-        this.tweens.add({
-            targets: pEndRing,
-            scaleX: 1.15,
-            scaleY: 1.15,
-            duration: 1100,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.easeInOut'
         });
     }
 
@@ -452,7 +433,7 @@ export class HongKongScene extends Phaser.Scene {
                     AudioManager.playCoin();
 
                     this.quest.selesai = true;
-                    this.quest.deskripsi = 'Mutiara telah diamankan! Pergilah ke Feri Ekspedisi di ujung kanan dermaga.';
+                    this.quest.deskripsi = 'Mutiara Teluk Victoria berhasil kamu kumpulkan ke dalam tas!';
                     this.autoSave(false);
                 }
             });
@@ -759,67 +740,6 @@ export class HongKongScene extends Phaser.Scene {
         }
     }
 
-    createVictoryModalUI() {
-        const cx = this.scale ? this.scale.width / 2 : 400;
-        const cy = this.scale ? this.scale.height / 2 : 225;
-        this.victoryModal = this.add.container(cx, cy).setDepth(60).setVisible(false).setScrollFactor(0);
-        const overlay = this.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.8).setInteractive();
-        const box = this.add.rectangle(0, 0, 480, 290, 0x062118, 0.98).setStrokeStyle(2.5, 0x10b981);
-
-        const icon = this.add.text(0, -82, '[ SELESAI ]', { fontSize: '14px', fontStyle: 'bold', fill: '#34d399', fontFamily: FONT_TITLE }).setOrigin(0.5);
-        const title = this.add.text(0, -48, 'MISI SELESAI!', {
-            fontSize: '28px', fontStyle: 'bold', fill: '#34d399', fontFamily: FONT_TITLE
-        }).setOrigin(0.5);
-
-        const subtitle = this.add.text(0, -10, 'Kamu berhasil menyeberangi Victoria Harbour!', {
-            fontSize: '13px', fill: '#a7f3d0', fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-
-        // Tombol Lanjut ke Scene 3: Gua Kristal
-        const nextSceneBtn = this.add.rectangle(0, 32, 260, 34, 0x7c3aed, 0.95)
-            .setStrokeStyle(1.5, 0xc084fc)
-            .setInteractive({ useHandCursor: true });
-        const nextSceneText = this.add.text(0, 32, 'Menuju Sandbox World (Scene 3) 🚀', {
-            fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-
-        nextSceneBtn.on('pointerdown', () => {
-            this.victoryModal.setVisible(false);
-            this.scene.start('Scene3', {
-                hp: this.hp,
-                maxHp: this.maxHp,
-                inventory: this.inventory,
-                collectedItemIds: this.collectedItemIds
-            });
-        });
-
-        const replayBtn = this.add.rectangle(0, 74, 260, 32, 0x059669, 0.95)
-            .setStrokeStyle(1.5, 0x34d399)
-            .setInteractive({ useHandCursor: true });
-        const replayText = this.add.text(0, 74, 'Kembali ke Scene 1', {
-            fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-
-        replayBtn.on('pointerdown', () => {
-            this.victoryModal.setVisible(false);
-            this.scene.start('GameScene');
-        });
-
-        const menuBtn = this.add.rectangle(0, 114, 260, 30, 0x1e293b, 0.95)
-            .setStrokeStyle(1.5, 0x64748b)
-            .setInteractive({ useHandCursor: true });
-        const menuText = this.add.text(0, 114, 'Menu Utama', {
-            fontSize: '11px', fill: '#94a3b8', fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-
-        menuBtn.on('pointerdown', () => {
-            this.victoryModal.setVisible(false);
-            AudioManager.stopAmbientBGM();
-            this.scene.start('TitleScene');
-        });
-
-        this.victoryModal.add([overlay, box, icon, title, subtitle, nextSceneBtn, nextSceneText, replayBtn, replayText, menuBtn, menuText]);
-    }
 
     updateModalsCenter(zoom) {
         const W = this.scale ? this.scale.width : 800;
@@ -839,10 +759,6 @@ export class HongKongScene extends Phaser.Scene {
         if (this.gameOverModal && this.gameOverModal.active) {
             this.gameOverModal.setPosition(centerPos.x, centerPos.y);
             this.gameOverModal.setScale(centerPos.scale);
-        }
-        if (this.victoryModal && this.victoryModal.active) {
-            this.victoryModal.setPosition(centerPos.x, centerPos.y);
-            this.victoryModal.setScale(centerPos.scale);
         }
         if (this.questModal && this.questModal.active) {
             this.questModal.setPosition(centerPos.x, centerPos.y);
@@ -1006,17 +922,6 @@ export class HongKongScene extends Phaser.Scene {
                 quest: this.quest,
                 collectedItemIds: this.collectedItemIds
             });
-            return;
-        }
-
-        // 3. Portal Feri Ekspedisi (x: 1820)
-        const distPortalEnd = Phaser.Math.Distance.Between(this.player.x, this.player.y, 1820, 396);
-        if (distPortalEnd < 70) {
-            if (!this.collectedItemIds.includes('mutiara_victoria')) {
-                this.showFloatingToast('Feri belum siap berangkat! Dapatkan Mutiara Victoria terlebih dahulu.', 0xef4444);
-            } else {
-                this.victoryModal.setVisible(true);
-            }
             return;
         }
     }
