@@ -63,6 +63,7 @@ export class SceneBuilderModal {
         this.isCanvasDragging = false;
         this.canvasDragEntity = null;
         this.draggedHierarchyId = null;
+        this.clipboardEntity = null; // Clipboard untuk Ctrl+C dan Ctrl+V
 
         this.createDOM();
     }
@@ -1353,6 +1354,8 @@ export class SceneBuilderModal {
         const ent = this.state.entities.find(e => e.id === id);
         if (!ent) return;
 
+        this.clipboardEntity = JSON.parse(JSON.stringify(ent));
+
         const newId = `${ent.type}_${Date.now()}`;
         const newCol = Math.min(35, ent.col + (ent.wTiles || 1));
         const clone = {
@@ -1360,7 +1363,7 @@ export class SceneBuilderModal {
             id: newId,
             col: newCol,
             x: newCol * 50 + 25,
-            label: `${ent.label} (Copy)`
+            label: `${ent.label.replace(/\s*\(Copy.*?\)/g, '')} (Copy)`
         };
 
         const idx = this.state.entities.findIndex(e => e.id === id);
@@ -1370,6 +1373,56 @@ export class SceneBuilderModal {
         AudioManager.playClick();
         this.renderHierarchy();
         this.renderInspector();
+    }
+
+    copySelectedEntity() {
+        if (!this.state.selectedId) return;
+        const ent = this.state.entities.find(el => el.id === this.state.selectedId);
+        if (!ent) return;
+
+        this.clipboardEntity = JSON.parse(JSON.stringify(ent));
+        AudioManager.playClick();
+
+        if (this.gridInfoEl) {
+            this.gridInfoEl.textContent = `📋 DISALIN: ${ent.label} (Tekan Ctrl+V untuk Paste)`;
+        }
+    }
+
+    pasteEntity() {
+        if (!this.clipboardEntity) return;
+
+        const count = this.state.entities.filter(e => e.type === this.clipboardEntity.type).length;
+        const newId = `${this.clipboardEntity.type}_${Date.now()}`;
+
+        let col, row;
+        if (this.hoverTile) {
+            col = this.hoverTile.col;
+            row = this.hoverTile.row;
+        } else {
+            col = Math.min(35, this.clipboardEntity.col + (this.clipboardEntity.wTiles || 1));
+            row = this.clipboardEntity.row;
+        }
+
+        const clone = {
+            ...this.clipboardEntity,
+            id: newId,
+            col: col,
+            row: row,
+            x: col * 50 + 25,
+            y: (row === 7) ? 400 : (row * 50 + 25),
+            label: `${this.clipboardEntity.label.replace(/\s*\(Copy.*?\)/g, '')} (Copy #${count + 1})`
+        };
+
+        this.state.entities.push(clone);
+        this.state.selectedId = newId;
+
+        AudioManager.playClick();
+        this.renderHierarchy();
+        this.renderInspector();
+
+        if (this.gridInfoEl) {
+            this.gridInfoEl.textContent = `✅ DITEMPEL: ${clone.label} di [Col ${col}, Row ${row}]`;
+        }
     }
 
     // ===============================================================
@@ -1452,11 +1505,11 @@ export class SceneBuilderModal {
             <div class="gt-sb-inspector-card">
                 <div class="gt-sb-card-title">⚡ AKSI OBJEK</div>
                 <div class="gt-sb-inspector-actions">
-                    <button class="gt-sb-btn-action gt-sb-btn-clone" id="gt-sb-act-clone">
+                    <button class="gt-sb-btn-action gt-sb-btn-clone" id="gt-sb-act-clone" title="Duplikasi Objek (Ctrl+C lalu Ctrl+V, atau Ctrl+D)">
                         <span>📋 Duplikasi</span>
                     </button>
                     ${obj.type !== 'player' ? `
-                    <button class="gt-sb-btn-action gt-sb-btn-delete" id="gt-sb-act-delete">
+                    <button class="gt-sb-btn-action gt-sb-btn-delete" id="gt-sb-act-delete" title="Hapus Objek (Delete / Backspace)">
                         <span>🗑️ Hapus</span>
                     </button>` : ''}
                 </div>
@@ -1794,18 +1847,42 @@ export class SceneBuilderModal {
             if (this._isOpen) this.resizeCanvas();
         });
 
-        // Keyboard ESC & Delete
+        // Keyboard Shortcuts (ESC, Delete, Ctrl+C, Ctrl+V, Ctrl+D)
         this._escHandler = (e) => {
             if (!this._isOpen) return;
+
+            // Abaikan shortcut jika sedang mengetik di input text
+            const isTyping = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA');
+
+            // ESC: Tutup modal
             if (e.key === 'Escape' || e.key === 'Esc') {
                 AudioManager.playClick();
                 this.hide();
-            } else if ((e.key === 'Delete' || e.key === 'Backspace') && this.state.selectedId) {
-                // Jangan hapus jika sedang mengetik di input text
-                if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
-                    return;
-                }
+                return;
+            }
+
+            if (isTyping) return;
+
+            // Delete / Backspace: Hapus objek terpilih
+            if ((e.key === 'Delete' || e.key === 'Backspace') && this.state.selectedId) {
                 this.deleteEntity(this.state.selectedId);
+            }
+            // Ctrl+C / Cmd+C: Copy objek terpilih
+            else if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
+                e.preventDefault();
+                this.copySelectedEntity();
+            }
+            // Ctrl+V / Cmd+V: Paste objek yang disalin
+            else if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
+                e.preventDefault();
+                this.pasteEntity();
+            }
+            // Ctrl+D / Cmd+D: Duplikasi langsung (Standard Unity/Blender)
+            else if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
+                e.preventDefault();
+                if (this.state.selectedId) {
+                    this.duplicateEntity(this.state.selectedId);
+                }
             }
         };
         window.addEventListener('keydown', this._escHandler);
