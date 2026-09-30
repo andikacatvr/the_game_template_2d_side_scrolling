@@ -222,6 +222,134 @@ export class HTMLGameHUD {
                     transform: scale(1.3);
                 }
 
+                /* C. STRIP RADAR RAMPING DI TENGAH (SELALU TAMPIL LIVE) */
+                .gt-hud-center {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    pointer-events: auto;
+                    flex: 1;
+                    max-width: 480px;
+                    margin: 0 14px;
+                }
+
+                .gt-hud-radar-strip {
+                    width: 100%;
+                    height: 52px;
+                    background: rgba(9, 14, 23, 0.94);
+                    border: 1px solid #1e293b;
+                    border-radius: 8px;
+                    padding: 4px 8px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65), 0 0 16px rgba(56, 189, 248, 0.15);
+                    backdrop-filter: blur(12px);
+                    -webkit-backdrop-filter: blur(12px);
+                    cursor: pointer;
+                    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                    box-sizing: border-box;
+                    overflow: hidden;
+                    position: relative;
+                }
+
+                .gt-hud-radar-strip:hover {
+                    border-color: #38bdf8;
+                    box-shadow: 0 0 20px rgba(56, 189, 248, 0.35);
+                    transform: translateY(-1px);
+                }
+
+                .gt-hud-strip-top {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    height: 14px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    color: #e2e8f0;
+                    font-family: 'JetBrains Mono', monospace;
+                    line-height: 1;
+                }
+
+                .gt-hud-strip-title {
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                    color: #ffffff;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    max-width: 180px;
+                }
+
+                .gt-hud-strip-gps {
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                    font-size: 9.5px;
+                    color: #38bdf8;
+                }
+
+                .gt-strip-gps-dot {
+                    width: 5px;
+                    height: 5px;
+                    border-radius: 50%;
+                    background: #22c55e;
+                    box-shadow: 0 0 6px #22c55e;
+                    animation: gtGpsPulse 1.2s infinite;
+                }
+
+                .gt-hud-strip-prog {
+                    font-size: 10px;
+                    font-weight: 800;
+                    color: #22c55e;
+                }
+
+                .gt-hud-strip-canvas-wrap {
+                    width: 100%;
+                    height: 26px;
+                    border-radius: 4px;
+                    overflow: hidden;
+                    background: #040810;
+                    border: 1px solid rgba(30, 41, 59, 0.6);
+                }
+
+                #gt-hud-strip-canvas {
+                    width: 100%;
+                    height: 100%;
+                    display: block;
+                }
+
+                .gt-hud-strip-bar-track {
+                    width: 100%;
+                    height: 2.5px;
+                    background: #1e293b;
+                    border-radius: 1px;
+                    overflow: hidden;
+                }
+
+                .gt-hud-strip-bar-fill {
+                    height: 100%;
+                    background: linear-gradient(90deg, #38bdf8, #22c55e);
+                    border-radius: 1px;
+                    transition: width 0.2s ease;
+                }
+
+                @media (max-width: 860px) {
+                    .gt-hud-center {
+                        max-width: 280px;
+                    }
+                    .gt-hud-strip-gps {
+                        display: none;
+                    }
+                }
+
+                @media (max-width: 640px) {
+                    .gt-hud-center {
+                        display: none;
+                    }
+                }
+
                 /* LEVEL / LOCATION BUTTON (BETWEEN BAG & MENU) */
                 .gt-hud-btn-level {
                     height: 44px;
@@ -324,6 +452,29 @@ export class HTMLGameHUD {
                 </button>
             </div>
 
+            <!-- Strip Radar Ramping di Tengah (Selalu Tampil Live) -->
+            <div class="gt-hud-center">
+                <div class="gt-hud-radar-strip" id="gt-hud-radar-strip" title="Radar Peta Level Real-Time (Klik untuk Perbesar / Tekan M)">
+                    <div class="gt-hud-strip-top">
+                        <div class="gt-hud-strip-title">
+                            <span id="gt-strip-icon">❄️</span>
+                            <span id="gt-strip-name">Lv. 1 • Lembah Salju</span>
+                        </div>
+                        <div class="gt-hud-strip-gps">
+                            <span class="gt-strip-gps-dot"></span>
+                            <span id="gt-strip-coord">GPS LIVE</span>
+                        </div>
+                        <div class="gt-hud-strip-prog" id="gt-strip-prog">0%</div>
+                    </div>
+                    <div class="gt-hud-strip-canvas-wrap">
+                        <canvas id="gt-hud-strip-canvas" width="480" height="42"></canvas>
+                    </div>
+                    <div class="gt-hud-strip-bar-track">
+                        <div class="gt-hud-strip-bar-fill" id="gt-strip-bar-fill" style="width: 10%;"></div>
+                    </div>
+                </div>
+            </div>
+
             <div class="gt-hud-right">
                 <!-- Inventory Bag Button -->
                 <button class="gt-hud-btn gt-hud-btn-bag" id="gt-hud-btn-bag" title="Buka Tas / Inventaris">
@@ -337,9 +488,9 @@ export class HTMLGameHUD {
                 </button>
 
                 <!-- Level / Location Button Indicator (Tepat di Tengah Tombol Backpack & Hamburger) -->
-                <button class="gt-hud-btn gt-hud-btn-level" id="gt-hud-btn-level" title="Informasi Level &amp; Tempat (Klik untuk Detail)">
-                    <span class="gt-hud-level-icon" id="gt-hud-level-icon">📍</span>
-                    <span class="gt-hud-level-title" id="gt-hud-level-title">Level</span>
+                <button class="gt-hud-btn gt-hud-btn-level" id="gt-hud-btn-level" title="Informasi Level &amp; Tempat (Klik untuk Detail / Tekan M)">
+                    <span class="gt-hud-level-icon" id="gt-hud-level-icon">🗺️</span>
+                    <span class="gt-hud-level-title" id="gt-hud-level-title">Peta</span>
                 </button>
 
                 <!-- Menu Button (Hamburger Bar) -->
@@ -361,10 +512,20 @@ export class HTMLGameHUD {
         this.btnLevel = this.dom.querySelector('#gt-hud-btn-level');
         this.levelIcon = this.dom.querySelector('#gt-hud-level-icon');
         this.levelTitle = this.dom.querySelector('#gt-hud-level-title');
+        this.radarStrip = this.dom.querySelector('#gt-hud-radar-strip');
+        this.stripCanvas = this.dom.querySelector('#gt-hud-strip-canvas');
+        this.stripCtx = this.stripCanvas ? this.stripCanvas.getContext('2d') : null;
+        this.stripIcon = this.dom.querySelector('#gt-strip-icon');
+        this.stripName = this.dom.querySelector('#gt-strip-name');
+        this.stripCoord = this.dom.querySelector('#gt-strip-coord');
+        this.stripProg = this.dom.querySelector('#gt-strip-prog');
+        this.stripBarFill = this.dom.querySelector('#gt-strip-bar-fill');
         this.btnMenu = this.dom.querySelector('#gt-hud-btn-menu');
         this.bagBadge = this.dom.querySelector('#gt-hud-badge');
         this.hpText = this.dom.querySelector('#gt-hud-hp-text');
         this.heartsContainer = this.dom.querySelector('#gt-hud-hearts-container');
+
+        this.stripRadarAnimId = null;
 
         this.bindEvents();
         this.syncInitialState();
@@ -399,12 +560,33 @@ export class HTMLGameHUD {
             }
         });
 
-        // Level / Location Button Click
+        // Strip Radar Click (Buka Detail Radar Peta)
+        if (this.radarStrip) {
+            this.radarStrip.addEventListener('click', (e) => {
+                e.stopPropagation();
+                AudioManager.playClick();
+                this.showLevelInfoModal();
+            });
+        }
+
+        // Level / Location Button Click (Antara Bag & Menu)
         if (this.btnLevel) {
             this.btnLevel.addEventListener('click', (e) => {
                 e.stopPropagation();
                 AudioManager.playClick();
                 this.showLevelInfoModal();
+            });
+        }
+
+        // Shortcut Keyboard [M] untuk Buka/Tutup Radar Peta
+        if (this.scene && this.scene.input && this.scene.input.keyboard) {
+            this.scene.input.keyboard.on('keydown-M', () => {
+                const existing = document.getElementById('gt-hud-level-modal');
+                if (existing) {
+                    existing.remove();
+                } else {
+                    this.showLevelInfoModal();
+                }
             });
         }
 
@@ -432,6 +614,156 @@ export class HTMLGameHUD {
         const invCount = Array.isArray(this.scene.inventory) ? this.scene.inventory.length : 0;
         this.updateInventoryBadge(invCount);
         this.updateLevelBadge();
+        this.startStripRadarLoop();
+    }
+
+    startStripRadarLoop() {
+        if (!this.stripCanvas || !this.stripCtx) return;
+        if (this.stripRadarAnimId) cancelAnimationFrame(this.stripRadarAnimId);
+
+        const canvas = this.stripCanvas;
+        const ctx = this.stripCtx;
+        const scene = this.scene;
+
+        let animTime = 0;
+
+        const loop = () => {
+            if (!this.dom || !document.getElementById('gt-html-game-hud')) return;
+            animTime += 0.04;
+
+            const worldW = (scene && scene.physics && scene.physics.world && scene.physics.world.bounds) 
+                ? scene.physics.world.bounds.width 
+                : ((scene && scene.worldData && scene.worldData.worldWidth) || 1400);
+            const worldH = (scene && scene.physics && scene.physics.world && scene.physics.world.bounds) 
+                ? scene.physics.world.bounds.height 
+                : ((scene && scene.worldData && scene.worldData.worldHeight) || 450);
+
+            const curPx = (scene && scene.player) ? scene.player.x : 100;
+            const curPy = (scene && scene.player) ? scene.player.y : 350;
+
+            const W = canvas.width;
+            const H = canvas.height;
+            const scaleX = W / Math.max(800, worldW);
+            const scaleY = H / Math.max(300, worldH);
+
+            ctx.clearRect(0, 0, W, H);
+
+            // 1. Background & subtle Blueprint grid
+            ctx.fillStyle = '#060a14';
+            ctx.fillRect(0, 0, W, H);
+
+            ctx.lineWidth = 0.8;
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
+            for (let wx = 0; wx <= worldW; wx += 200) {
+                const rx = wx * scaleX;
+                ctx.beginPath();
+                ctx.moveTo(rx, 0);
+                ctx.lineTo(rx, H);
+                ctx.stroke();
+            }
+
+            // 2. Ground Baseline
+            const groundY = (worldH > 500 ? 400 : (worldH - 50)) * scaleY;
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, groundY, W, H - groundY);
+            ctx.strokeStyle = '#0284c7';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.moveTo(0, groundY);
+            ctx.lineTo(W, groundY);
+            ctx.stroke();
+
+            // 3. Platforms
+            if (scene && scene.platforms && typeof scene.platforms.getChildren === 'function') {
+                ctx.fillStyle = '#1e293b';
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 1;
+                scene.platforms.getChildren().forEach(p => {
+                    if (!p || !p.body) return;
+                    const bw = p.displayWidth || p.width || 50;
+                    const bh = p.displayHeight || p.height || 20;
+                    const bx = (p.x - bw / 2) * scaleX;
+                    const by = (p.y - bh / 2) * scaleY;
+                    ctx.fillRect(bx, by, bw * scaleX, Math.max(2, bh * scaleY));
+                    ctx.strokeRect(bx, by, bw * scaleX, Math.max(2, bh * scaleY));
+                });
+            }
+
+            // 4. Coins
+            if (scene && scene.coins && typeof scene.coins.getChildren === 'function') {
+                ctx.fillStyle = '#f59e0b';
+                scene.coins.getChildren().forEach(c => {
+                    if (!c || !c.active) return;
+                    ctx.beginPath();
+                    ctx.arc(c.x * scaleX, c.y * scaleY, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+
+            // 5. Hazards
+            if (scene && scene.hazards && typeof scene.hazards.getChildren === 'function') {
+                ctx.fillStyle = '#ef4444';
+                scene.hazards.getChildren().forEach(h => {
+                    if (!h) return;
+                    ctx.fillRect((h.x - 10) * scaleX, (h.y - 5) * scaleY, 20 * scaleX, 5 * scaleY);
+                });
+            }
+
+            // 6. Portal Finish
+            let goalX = worldW - 150, goalY = 375;
+            if (scene && scene.portalExit) goalX = scene.portalExit.x, goalY = scene.portalExit.y;
+            else if (scene && scene.portal) goalX = scene.portal.x, goalY = scene.portal.y;
+            else if (scene && scene.worldData && Array.isArray(scene.worldData.entities)) {
+                const pf = scene.worldData.entities.find(e => e.type === 'portal');
+                if (pf) goalX = (pf.col !== undefined) ? (pf.col * 50 + 25) : pf.x;
+            }
+
+            const gx = goalX * scaleX;
+            const gy = goalY * scaleY;
+            ctx.fillStyle = '#a855f7';
+            ctx.beginPath();
+            ctx.arc(gx, gy, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#e9d5ff';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // 7. Player Beacon & Wave Pulse
+            const px = curPx * scaleX;
+            const py = curPy * scaleY;
+
+            const pulseR = 3 + ((animTime * 1.6) % 1) * 10;
+            const pulseAlpha = Math.max(0, 1 - ((animTime * 1.6) % 1));
+            ctx.strokeStyle = `rgba(56, 189, 248, ${pulseAlpha})`;
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.arc(px, py, pulseR, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.fillStyle = '#fde047';
+            ctx.beginPath();
+            ctx.arc(px, py, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#0284c7';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // 8. Update Live Texts & Progress Bar
+            if (this.stripCoord) {
+                this.stripCoord.textContent = `X:${Math.round(curPx)} Y:${Math.round(curPy)}`;
+            }
+            const prog = Math.min(100, Math.max(0, Math.round((curPx / Math.max(1, goalX)) * 100)));
+            if (this.stripProg) {
+                this.stripProg.textContent = `${prog}%`;
+            }
+            if (this.stripBarFill) {
+                this.stripBarFill.style.width = `${prog}%`;
+            }
+
+            this.stripRadarAnimId = requestAnimationFrame(loop);
+        };
+
+        this.stripRadarAnimId = requestAnimationFrame(loop);
     }
 
     getLevelInfo() {
@@ -502,12 +834,13 @@ export class HTMLGameHUD {
     }
 
     updateLevelBadge() {
-        if (!this.levelTitle || !this.levelIcon) return;
         const info = this.getLevelInfo();
-        this.levelIcon.textContent = info.icon;
-        this.levelTitle.textContent = info.fullName;
+        if (this.levelIcon) this.levelIcon.textContent = info.icon;
+        if (this.levelTitle) this.levelTitle.textContent = info.fullName;
+        if (this.stripIcon) this.stripIcon.textContent = info.icon;
+        if (this.stripName) this.stripName.textContent = info.fullName;
         if (this.btnLevel) {
-            this.btnLevel.title = `${info.fullName} (${info.type}) • Klik untuk Detail`;
+            this.btnLevel.title = `${info.fullName} (${info.type}) • Klik untuk Detail / Tekan M`;
         }
     }
 
@@ -1122,6 +1455,10 @@ export class HTMLGameHUD {
     }
 
     destroy() {
+        if (this.stripRadarAnimId) {
+            cancelAnimationFrame(this.stripRadarAnimId);
+            this.stripRadarAnimId = null;
+        }
         if (this.dom) {
             this.dom.remove();
             this.dom = null;
