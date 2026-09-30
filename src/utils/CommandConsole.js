@@ -635,10 +635,9 @@ export class CommandConsole {
                 <div class="gt-console-header">
                     <div class="gt-header-left">
                         <span class="gt-mini-badge">CHAT</span>
-                        <span class="gt-header-title">CHAT &amp; COMMAND CONSOLE</span>
                     </div>
                     <div class="gt-header-actions">
-                        <button class="gt-btn-tool" id="gt-btn-quick-create" style="background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%); font-weight: 800;" title="Buka World & Scene Builder">+ Create</button>
+                        <button class="gt-btn-tool" id="gt-btn-quick-create" style="background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%); font-weight: 800;" title="Buka World & Scene Builder">Create</button>
                         <button class="gt-btn-tool" id="gt-btn-quick-inspect" style="background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);">Inspect</button>
                         <button class="gt-btn-tool" id="gt-btn-quick-learn">Learn</button>
                         <button class="gt-btn-tool" id="gt-btn-quick-help">Help</button>
