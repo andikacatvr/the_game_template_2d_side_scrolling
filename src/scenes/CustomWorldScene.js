@@ -155,12 +155,12 @@ export class CustomWorldScene extends Phaser.Scene {
         if (hasCustom) {
             this.worldData.entities.filter(e => e.type === 'water').forEach(w => {
                 const s = w.col * 50;
-                const e = (w.col + (w.wTiles || 3)) * 50;
+                const e = (w.col + (w.wTiles || 1)) * 50;
                 waterRanges.push([s, e]);
             });
             this.worldData.entities.filter(e => e.type === 'lava').forEach(l => {
                 const s = l.col * 50;
-                const e = (l.col + (l.wTiles || 3)) * 50;
+                const e = (l.col + (l.wTiles || 1)) * 50;
                 lavaRanges.push([s, e]);
             });
         } else {
@@ -171,20 +171,17 @@ export class CustomWorldScene extends Phaser.Scene {
         for (let i = 0; i < tileCount; i++) {
             const x = -64 + i * 32 + 16;
 
-            // Lewati tanah jika berada di kolam air atau lava
+            // Cek apakah permukaan tile ini berada di petak air atau lava
             const inWater = waterRanges.some(([s, e]) => x >= s && x <= e);
             const inLava = lavaRanges.some(([s, e]) => x >= s && x <= e);
 
             if (inWater) {
-                // Kolam Air
+                // Kolam Air 1x1
                 const waterBlock = this.add.rectangle(x, groundY + 6, 32, 28, 0x0284c7, 0.65).setDepth(5);
                 this.physics.add.existing(waterBlock, true);
                 this.waterBodies.add(waterBlock);
-                continue;
-            }
-
-            if (inLava) {
-                // Kolam Lava Panas Membara
+            } else if (inLava) {
+                // Kolam Lava 1x1
                 const lavaBlock = this.add.rectangle(x, groundY + 6, 32, 28, 0xef4444, 0.9).setDepth(5);
                 lavaBlock.setStrokeStyle(1.5, 0xf97316);
                 this.physics.add.existing(lavaBlock, true);
@@ -202,16 +199,15 @@ export class CustomWorldScene extends Phaser.Scene {
                         ease: 'Sine.easeOut'
                     });
                 }
-                continue;
+            } else {
+                // Lantai Permukaan Tanah Biasa
+                const topTile = this.add.rectangle(x, groundY, 32, 32, surfaceColor).setDepth(4);
+                topTile.setStrokeStyle(1, 0x000000, 0.25);
+                this.physics.add.existing(topTile, true);
+                this.platforms.add(topTile);
             }
 
-            // Lantai Utama
-            const topTile = this.add.rectangle(x, groundY, 32, 32, surfaceColor).setDepth(4);
-            topTile.setStrokeStyle(1, 0x000000, 0.25);
-            this.physics.add.existing(topTile, true);
-            this.platforms.add(topTile);
-
-            // Bawah Tanah Solid: Subsoil Dirt -> Deep Cavern Stone -> Bedrock
+            // Bawah Tanah Solid (SELALU ADA, TIDAK DIBOBOL/KOSONG): Subsoil Dirt -> Deep Cavern Stone -> Bedrock
             const worldHeight = this.worldData.worldHeight || 850;
             const maxSubY = worldHeight - 32;
             for (let dy = 32; groundY + dy <= maxSubY; dy += 32) {

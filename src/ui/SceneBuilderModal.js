@@ -1650,12 +1650,9 @@ export class SceneBuilderModal {
                     const ent = this.canvasDragEntity;
                     ent.col = col;
                     ent.x = col * 50 + 25;
-                    if (ent.type === 'platforms' || ent.type === 'coins') {
-                        ent.row = Math.max(1, Math.min(10, row));
+                    if (ent.type === 'platforms' || ent.type === 'coins' || ent.cat === 'fluid') {
+                        ent.row = Math.max(0, Math.min(13, row));
                         ent.y = ent.row * 50 + 25;
-                    } else if (ent.cat === 'fluid') {
-                        ent.row = 8;
-                        ent.y = 400;
                     }
                     this.renderInspector();
                 }
@@ -1759,12 +1756,9 @@ export class SceneBuilderModal {
                     if (ent) {
                         ent.col = col;
                         ent.x = col * 50 + 25;
-                        if (ent.type === 'platforms' || ent.type === 'coins') {
-                            ent.row = Math.max(1, Math.min(10, row));
+                        if (ent.type === 'platforms' || ent.type === 'coins' || ent.cat === 'fluid') {
+                            ent.row = Math.max(0, Math.min(13, row));
                             ent.y = ent.row * 50 + 25;
-                        } else if (ent.cat === 'fluid') {
-                            ent.row = 8;
-                            ent.y = 400;
                         } else {
                             ent.row = 7;
                             ent.y = 400;
@@ -1976,84 +1970,131 @@ export class SceneBuilderModal {
             stoneColor = '#0f172a';
         }
 
-        // Cari semua zona water dan lava dari entities dinamis (Unit 1x1 Auto-Merged)
-        const waterEntities = this.state.entities.filter(e => e.type === 'water');
-        const lavaEntities = this.state.entities.filter(e => e.type === 'lava');
-
-        const waterCols = new Set();
+        // Peta Petak 1x1 Spesifik [col, row] untuk Cairan (Water & Lava)
+        const waterTileMap = new Set();
         waterEntities.forEach(e => {
             const w = e.wTiles || 1;
-            for (let c = e.col; c < e.col + w; c++) waterCols.add(c);
+            const h = e.hTiles || 1;
+            for (let c = e.col; c < e.col + w; c++) {
+                for (let r = e.row; r < e.row + h; r++) {
+                    waterTileMap.add(`${c},${r}`);
+                }
+            }
         });
 
-        const lavaCols = new Set();
+        const lavaTileMap = new Set();
         lavaEntities.forEach(e => {
             const w = e.wTiles || 1;
-            for (let c = e.col; c < e.col + w; c++) lavaCols.add(c);
+            const h = e.hTiles || 1;
+            for (let c = e.col; c < e.col + w; c++) {
+                for (let r = e.row; r < e.row + h; r++) {
+                    lavaTileMap.add(`${c},${r}`);
+                }
+            }
         });
 
-        const isWaterCol = (col) => waterCols.has(col);
-        const isLavaCol = (col) => lavaCols.has(col);
+        const isWaterTile = (c, r) => waterTileMap.has(`${c},${r}`);
+        const isLavaTile = (c, r) => lavaTileMap.has(`${c},${r}`);
 
-        const poolDepthRow = Math.min(11, bedrockRow - 1);
-
-        // 5. MENGGAMBAR STRATA BAWAH TANAH (DIRT ➔ STONE ➔ BEDROCK)
+        // 4b. GAMBAR BLOK AIR/LAVA DI LANGIT (Rows 0..7) JIKA ADA
         for (let col = 0; col < 36; col++) {
             const rx = toX(col * 50);
             const rw = cellSize + 0.5;
+            for (let r = 0; r < groundRow; r++) {
+                const ry = toY(r * 50);
+                const rh = cellSize + 0.5;
+                if (isWaterTile(col, r)) {
+                    const hasAbove = isWaterTile(col, r - 1);
+                    const waveY = (!hasAbove) ? (ry + Math.sin(t * 3 + col * 0.8) * 3) : ry;
+                    ctx.fillStyle = '#0284c7';
+                    ctx.fillRect(rx, waveY, rw, rh + (ry - waveY));
+                    if (!hasAbove) {
+                        ctx.fillStyle = '#7dd3fc';
+                        ctx.fillRect(rx, waveY, rw, 3);
+                    }
+                    if (this.state.showGrid && isWaterTile(col + 1, r)) {
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(rx + rw, ry);
+                        ctx.lineTo(rx + rw, ry + rh);
+                        ctx.stroke();
+                    }
+                } else if (isLavaTile(col, r)) {
+                    const hasAbove = isLavaTile(col, r - 1);
+                    const lavaWaveY = (!hasAbove) ? (ry + Math.sin(t * 2 + col * 0.9) * 2) : ry;
+                    ctx.fillStyle = '#ef4444';
+                    ctx.fillRect(rx, lavaWaveY, rw, rh + (ry - lavaWaveY));
+                    if (!hasAbove) {
+                        ctx.fillStyle = '#f97316';
+                        ctx.fillRect(rx, lavaWaveY, rw, 3);
+                    }
+                    if (this.state.showGrid && isLavaTile(col + 1, r)) {
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(rx + rw, ry);
+                        ctx.lineTo(rx + rw, ry + rh);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
 
-            const inWater = isWaterCol(col);
-            const inLava = isLavaCol(col);
+        // 5. MENGGAMBAR STRATA TANAH & PETAK CAIRAN (SETIAP PETAK 1x1 MURNI)
+        for (let col = 0; col < 36; col++) {
+            const rx = toX(col * 50);
+            const rw = cellSize + 0.5;
 
             for (let r = groundRow; r < totalRows; r++) {
                 const ry = toY(r * 50);
                 const rh = cellSize + 0.5;
 
-                // A. KASUS JURANG CAIRAN (Row 8 s/d poolDepthRow)
-                if (r <= poolDepthRow) {
-                    if (inWater) {
-                        const waveY = (r === groundRow) ? (groundY + Math.sin(t * 3 + col * 0.8) * 3) : ry;
-                        ctx.fillStyle = '#0284c7';
-                        ctx.fillRect(rx, waveY, rw, rh + (ry - waveY));
-                        if (r === groundRow) {
-                            ctx.fillStyle = '#7dd3fc';
-                            ctx.fillRect(rx, waveY, rw, 3);
-                        }
-                        // Jika blok di kanannya juga air, gambarkan sambungan mulus
-                        if (this.state.showGrid && isWaterCol(col + 1)) {
-                            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-                            ctx.lineWidth = 1;
-                            ctx.beginPath();
-                            ctx.moveTo(rx + rw, ry);
-                            ctx.lineTo(rx + rw, ry + rh);
-                            ctx.stroke();
-                        }
-                        continue;
+                // A. JIKA PETAK INI [col, r] ADALAH AIR 1x1
+                if (isWaterTile(col, r)) {
+                    const hasAbove = isWaterTile(col, r - 1);
+                    const waveY = (!hasAbove) ? (ry + Math.sin(t * 3 + col * 0.8) * 3) : ry;
+                    ctx.fillStyle = '#0284c7';
+                    ctx.fillRect(rx, waveY, rw, rh + (ry - waveY));
+                    if (!hasAbove) {
+                        ctx.fillStyle = '#7dd3fc';
+                        ctx.fillRect(rx, waveY, rw, 3);
                     }
-                    if (inLava) {
-                        const lavaWaveY = (r === groundRow) ? (groundY + Math.sin(t * 2 + col * 0.9) * 2) : ry;
-                        ctx.fillStyle = '#ef4444';
-                        ctx.fillRect(rx, lavaWaveY, rw, rh + (ry - lavaWaveY));
-                        if (r === groundRow) {
-                            ctx.fillStyle = '#f97316';
-                            ctx.fillRect(rx, lavaWaveY, rw, 3);
-                            // Gelembung lava
-                            const bubbleY = lavaWaveY - Math.abs(Math.sin(t * 4 + col)) * 8;
-                            ctx.fillStyle = '#fbbf24';
-                            ctx.beginPath();
-                            ctx.arc(rx + rw / 2, bubbleY, 3, 0, Math.PI * 2);
-                            ctx.fill();
-                        }
-                        if (this.state.showGrid && isLavaCol(col + 1)) {
-                            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-                            ctx.lineWidth = 1;
-                            ctx.beginPath();
-                            ctx.moveTo(rx + rw, ry);
-                            ctx.lineTo(rx + rw, ry + rh);
-                            ctx.stroke();
-                        }
-                        continue;
+                    if (this.state.showGrid && isWaterTile(col + 1, r)) {
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(rx + rw, ry);
+                        ctx.lineTo(rx + rw, ry + rh);
+                        ctx.stroke();
                     }
+                    continue;
+                }
+
+                // B. JIKA PETAK INI [col, r] ADALAH LAVA 1x1
+                if (isLavaTile(col, r)) {
+                    const hasAbove = isLavaTile(col, r - 1);
+                    const lavaWaveY = (!hasAbove) ? (ry + Math.sin(t * 2 + col * 0.9) * 2) : ry;
+                    ctx.fillStyle = '#ef4444';
+                    ctx.fillRect(rx, lavaWaveY, rw, rh + (ry - lavaWaveY));
+                    if (!hasAbove) {
+                        ctx.fillStyle = '#f97316';
+                        ctx.fillRect(rx, lavaWaveY, rw, 3);
+                        const bubbleY = lavaWaveY - Math.abs(Math.sin(t * 4 + col)) * 6;
+                        ctx.fillStyle = '#fbbf24';
+                        ctx.beginPath();
+                        ctx.arc(rx + rw / 2, bubbleY, 3, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    if (this.state.showGrid && isLavaTile(col + 1, r)) {
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(rx + rw, ry);
+                        ctx.lineTo(rx + rw, ry + rh);
+                        ctx.stroke();
+                    }
+                    continue;
                 }
 
                 // B. ROW BEDROCK PALING DASAR (Row bedrockRow)
