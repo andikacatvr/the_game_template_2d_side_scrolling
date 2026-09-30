@@ -7,7 +7,10 @@ export class SceneBuilderModal {
         this._isOpen = false;
         this.animFrameId = null;
 
-        // Default State (100% matched with CustomWorldScene & Unity Inspector)
+        // Default State (100% STANDARDIZED TILE MATRIX SNAP)
+        // Setip tile adalah 50x50px.
+        // Kolom 0..35 (Total 36 kolom = 1800px).
+        // Baris 0..7 = Langit, Baris 8 = Permukaan Tanah (y = 400px), Baris 9+ = Bawah Tanah & Bedrock.
         this.state = {
             name: 'Gurun Api Tengkorak',
             biome: 'desert', // 'dirt' | 'snow' | 'desert' | 'cave'
@@ -28,21 +31,21 @@ export class SceneBuilderModal {
             hasCoins: true,
             hasPortal: true,
             worldWidth: 1800,
-            worldHeight: 850, // Expanded world height: Row 0..7 sky, Row 8 ground (400px), Rows 9..16 dirt, stone & bedrock
+            worldHeight: 850,
 
-            // Entity Transforms (Snapped to 50px Grid)
+            // Entity Transforms (Standar Cell-Center: x = col * 50 + 25, y = 400 untuk ground)
             positions: {
-                player: { x: 100, y: 400, label: 'Player Spawn (Col 2)', cat: 'creature', icon: '👤' },
-                npc: { x: 300, y: 400, label: 'NPC Guide (Col 6)', cat: 'creature', icon: '🧙' },
-                water: { x: 625, y: 400, label: 'Kolam Air (550-700)', cat: 'fluid', icon: '🌊' },
-                platforms: { x: 650, y: 250, label: 'Pijakan Melayang (x5)', cat: 'solid', icon: '🧱' },
-                coins: { x: 650, y: 200, label: 'Koin Emas (x5)', cat: 'solid', icon: '🪙' },
-                slime: { x: 500, y: 400, label: 'Monster Slime (Col 10)', cat: 'creature', icon: '🟢' },
-                spikes: { x: 375, y: 400, label: 'Rintangan Duri (x3)', cat: 'solid', icon: '⚠️' },
-                chest: { x: 750, y: 400, label: 'Peti Harta Karun (Col 15)', cat: 'solid', icon: '📦' },
-                lava: { x: 1075, y: 400, label: 'Kolam Lava (1000-1150)', cat: 'fluid', icon: '🌋' },
-                skeleton: { x: 1500, y: 400, label: 'Monster Skeleton (Col 30)', cat: 'creature', icon: '💀' },
-                portal: { x: 1700, y: 400, label: 'Goal Portal (Col 34)', cat: 'solid', icon: '🌀' }
+                player: { col: 2, row: 7, x: 125, y: 400, label: 'Player Spawn', cat: 'creature', icon: '👤', wTiles: 1, hTiles: 1 },
+                npc: { col: 6, row: 7, x: 325, y: 400, label: 'NPC Guide', cat: 'creature', icon: '🧙', wTiles: 1, hTiles: 1 },
+                spikes: { col: 7, row: 7, x: 375, y: 400, label: 'Rintangan Duri (x3)', cat: 'solid', icon: '⚠️', wTiles: 1, hTiles: 1 },
+                slime: { col: 10, row: 7, x: 525, y: 400, label: 'Monster Slime', cat: 'creature', icon: '🟢', wTiles: 1, hTiles: 1 },
+                water: { col: 11, row: 8, x: 625, y: 400, label: 'Kolam Air (3 Tiles)', cat: 'fluid', icon: '🌊', wTiles: 3, hTiles: 3 },
+                platforms: { col: 12, row: 5, x: 650, y: 250, label: 'Pijakan Melayang (x5)', cat: 'solid', icon: '🧱', wTiles: 2, hTiles: 1 },
+                coins: { col: 12, row: 4, x: 650, y: 200, label: 'Koin Emas (x5)', cat: 'solid', icon: '🪙', wTiles: 1, hTiles: 1 },
+                chest: { col: 15, row: 7, x: 775, y: 400, label: 'Peti Harta Karun', cat: 'solid', icon: '📦', wTiles: 1, hTiles: 1 },
+                lava: { col: 20, row: 8, x: 1075, y: 400, label: 'Kolam Lava (3 Tiles)', cat: 'fluid', icon: '🌋', wTiles: 3, hTiles: 3 },
+                skeleton: { col: 30, row: 7, x: 1525, y: 400, label: 'Monster Skeleton', cat: 'creature', icon: '💀', wTiles: 1, hTiles: 1 },
+                portal: { col: 34, row: 7, x: 1725, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 }
             }
         };
 
@@ -313,7 +316,7 @@ export class SceneBuilderModal {
 
                 /* --- LEFT: HIERARCHY PANEL --- */
                 .gt-sb-hierarchy {
-                    width: 220px;
+                    width: 230px;
                     background: #141417;
                     border-right: 1px solid #27272a;
                     display: flex;
@@ -357,7 +360,7 @@ export class SceneBuilderModal {
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    padding: 5px 10px;
+                    padding: 6px 10px;
                     font-size: 11.5px;
                     font-weight: 600;
                     color: #d4d4d8;
@@ -386,8 +389,11 @@ export class SceneBuilderModal {
 
                 .gt-sb-tree-coord {
                     font-size: 9.5px;
-                    color: #71717a;
+                    color: #38bdf8;
                     font-family: 'JetBrains Mono', monospace;
+                    background: rgba(56, 189, 248, 0.1);
+                    padding: 1px 5px;
+                    border-radius: 3px;
                 }
 
                 /* --- CENTER: SCENE VIEWPORT & MINIATURE GRID --- */
@@ -768,19 +774,19 @@ export class SceneBuilderModal {
                     <!-- Top Left Badge -->
                     <div class="gt-sb-stage-badge-topleft">
                         <div class="gt-sb-live-dot"></div>
-                        <span class="gt-sb-stage-badge-title">SCENE VIEW (FULL VIEWPORT + BEDROCK)</span>
+                        <span class="gt-sb-stage-badge-title">SCENE VIEW (CELL-CENTER SNAPPED)</span>
                     </div>
 
                     <!-- Top Right Badge -->
                     <div class="gt-sb-stage-badge-topright">
-                        <span id="gt-sb-grid-info">GRID: 50px PERSEGI | FULL DEPTH &amp; BEDROCK</span>
+                        <span id="gt-sb-grid-info">GRID: 50px PERSEGI | CELL-CENTER SNAP READY</span>
                     </div>
 
                     <!-- Bottom Scale Ruler Track -->
                     <div class="gt-sb-stage-ruler">
-                        <div style="color: #38bdf8;"><span>🏁</span> <span>[x: 100, Col 2] SPAWN</span></div>
-                        <div style="color: #64748b;"><span>────── FULL VIEWPORT MAP (SKY ➔ GROUND ➔ BEDROCK) ──────</span></div>
-                        <div style="color: #a855f7;"><span>🌀</span> <span>[x: 1700, Col 34] FINISH</span></div>
+                        <div style="color: #38bdf8;"><span>🏁</span> <span>[Col 2: 125px] SPAWN</span></div>
+                        <div style="color: #64748b;"><span>────── 50px TILE MATRIX (CELL-CENTER SNAPPED) ──────</span></div>
+                        <div style="color: #a855f7;"><span>🌀</span> <span>[Col 34: 1725px] FINISH</span></div>
                     </div>
                 </div>
 
@@ -906,14 +912,13 @@ export class SceneBuilderModal {
             if (!isVisible) continue;
 
             const isSelected = this.state.selectedId === key;
-            const col = Math.round(obj.x / 50);
             html += `
                 <div class="gt-sb-tree-item ${isSelected ? 'active' : ''}" data-id="${key}">
                     <div class="gt-sb-tree-left">
                         <span>${obj.icon}</span>
                         <span>${obj.label}</span>
                     </div>
-                    <span class="gt-sb-tree-coord">Col ${col}</span>
+                    <span class="gt-sb-tree-coord">Col ${obj.col}</span>
                 </div>
             `;
         }
@@ -958,16 +963,13 @@ export class SceneBuilderModal {
                         <span class="gt-sb-prop-val" style="color: #94a3b8;">⬛ BEDROCK (Indestructible)</span>
                     </div>
                     <div class="gt-sb-prop-row">
-                        <span class="gt-sb-prop-label">Gravity Y</span>
-                        <span class="gt-sb-prop-val">900 px/s²</span>
+                        <span class="gt-sb-prop-label">Snap Mode</span>
+                        <span class="gt-sb-prop-val" style="color: #38bdf8;">Cell-Center (+25px)</span>
                     </div>
                 </div>
             `;
             return;
         }
-
-        const col = Math.round(obj.x / 50);
-        const row = Math.round(obj.y / 50);
 
         this.inspectorContent.innerHTML = `
             <div class="gt-sb-inspector-card">
@@ -980,20 +982,20 @@ export class SceneBuilderModal {
                     <span class="gt-sb-prop-val" style="color: #a855f7;">${obj.cat.toUpperCase()}</span>
                 </div>
                 <div class="gt-sb-prop-row">
-                    <span class="gt-sb-prop-label">Grid Tile (Col, Row)</span>
-                    <span class="gt-sb-prop-val" style="color: #38bdf8;">[Col: ${col}, Row: ${row}]</span>
+                    <span class="gt-sb-prop-label">Grid Tile [Col, Row]</span>
+                    <span class="gt-sb-prop-val" style="color: #38bdf8;">[Col: ${obj.col}, Row: ${obj.row}]</span>
                 </div>
                 <div class="gt-sb-prop-row">
-                    <span class="gt-sb-prop-label">Transform X</span>
-                    <input type="number" class="gt-sb-prop-input" id="gt-sb-inp-x" value="${obj.x}" step="50" />
+                    <span class="gt-sb-prop-label">Tile Center X</span>
+                    <input type="number" class="gt-sb-prop-input" id="gt-sb-inp-col" value="${obj.col}" min="0" max="35" step="1" title="Geser Kolom Grid (0..35)" />
                 </div>
                 <div class="gt-sb-prop-row">
-                    <span class="gt-sb-prop-label">Transform Y</span>
-                    <input type="number" class="gt-sb-prop-input" id="gt-sb-inp-y" value="${obj.y}" step="50" />
+                    <span class="gt-sb-prop-label">World Pos (X, Y)</span>
+                    <span class="gt-sb-prop-val">(${obj.x}, ${obj.y})</span>
                 </div>
                 <div class="gt-sb-prop-row">
-                    <span class="gt-sb-prop-label">Grid Snap (50px)</span>
-                    <span class="gt-sb-prop-val" style="color: #22c55e;">Enabled (Square)</span>
+                    <span class="gt-sb-prop-label">Cell Snap Mode</span>
+                    <span class="gt-sb-prop-val" style="color: #22c55e;">Cell-Center (+25px)</span>
                 </div>
             </div>
 
@@ -1004,34 +1006,25 @@ export class SceneBuilderModal {
                     <span class="gt-sb-prop-val" style="color: #22c55e;">● Active</span>
                 </div>
                 <div class="gt-sb-prop-row">
-                    <span class="gt-sb-prop-label">Ground Alignment</span>
-                    <span class="gt-sb-prop-val" style="color: #f59e0b;">Row 8 (Ground Y: 400)</span>
+                    <span class="gt-sb-prop-label">Tile Footprint</span>
+                    <span class="gt-sb-prop-val">${obj.wTiles || 1} x ${obj.hTiles || 1} Tile</span>
                 </div>
                 <div class="gt-sb-prop-row">
-                    <span class="gt-sb-prop-label">Collision Layer</span>
-                    <span class="gt-sb-prop-val">Default</span>
+                    <span class="gt-sb-prop-label">Ground Alignment</span>
+                    <span class="gt-sb-prop-val" style="color: #f59e0b;">Row 8 (Ground Y: 400)</span>
                 </div>
             </div>
         `;
 
-        const inpX = this.inspectorContent.querySelector('#gt-sb-inp-x');
-        const inpY = this.inspectorContent.querySelector('#gt-sb-inp-y');
-
-        if (inpX) {
-            inpX.addEventListener('input', (e) => {
+        const inpCol = this.inspectorContent.querySelector('#gt-sb-inp-col');
+        if (inpCol) {
+            inpCol.addEventListener('input', (e) => {
                 const val = parseInt(e.target.value, 10);
-                if (!isNaN(val)) {
-                    obj.x = Math.max(0, Math.min(1800, val));
+                if (!isNaN(val) && val >= 0 && val <= 35) {
+                    obj.col = val;
+                    obj.x = val * 50 + 25;
                     this.renderHierarchy();
-                }
-            });
-        }
-        if (inpY) {
-            inpY.addEventListener('input', (e) => {
-                const val = parseInt(e.target.value, 10);
-                if (!isNaN(val)) {
-                    obj.y = Math.max(50, Math.min(850, val));
-                    this.renderHierarchy();
+                    this.renderInspector();
                 }
             });
         }
@@ -1198,7 +1191,7 @@ export class SceneBuilderModal {
                         else if (row > 11 && row < Math.floor(this.canvas.height / (50 * scale)) - 1) layerName = 'CAVERN (STONE)';
                         else if (row >= Math.floor(this.canvas.height / (50 * scale)) - 1) layerName = 'BEDROCK';
 
-                        this.gridInfoEl.textContent = `GRID: 50px | TILE: [Col: ${col}, Row: ${row}] | LAYER: ${layerName}`;
+                        this.gridInfoEl.textContent = `TILE: [Col: ${col}, Row: ${row}] (Center: ${col * 50 + 25}px) | ${layerName}`;
                     }
                 } else {
                     this.hoverTile = null;
@@ -1208,11 +1201,11 @@ export class SceneBuilderModal {
             this.canvas.addEventListener('mouseleave', () => {
                 this.hoverTile = null;
                 if (this.gridInfoEl) {
-                    this.gridInfoEl.textContent = `GRID: 50px PERSEGI | FULL DEPTH & BEDROCK`;
+                    this.gridInfoEl.textContent = `GRID: 50px PERSEGI | CELL-CENTER SNAP READY`;
                 }
             });
 
-            // Canvas Click for raycasting selection
+            // Canvas Click for Tile Selection / Object Focus
             this.canvas.addEventListener('click', (e) => {
                 const rect = this.canvas.getBoundingClientRect();
                 const mouseX = e.clientX - rect.left;
@@ -1220,21 +1213,22 @@ export class SceneBuilderModal {
                 const worldW = this.state.worldWidth || 1800;
                 const scale = W / worldW;
                 const worldClickX = mouseX / scale;
+                const clickedCol = Math.floor(worldClickX / 50);
 
-                // Cari objek terdekat
-                let closestId = null;
-                let minDist = 100; // threshold
+                // Cari objek yang menempati kolom ini
+                let matchedId = null;
                 for (const [k, obj] of Object.entries(this.state.positions)) {
-                    const dist = Math.abs(obj.x - worldClickX);
-                    if (dist < minDist) {
-                        minDist = dist;
-                        closestId = k;
+                    const startCol = obj.col;
+                    const endCol = obj.col + (obj.wTiles || 1) - 1;
+                    if (clickedCol >= startCol && clickedCol <= endCol) {
+                        matchedId = k;
+                        break;
                     }
                 }
 
-                if (closestId) {
+                if (matchedId) {
                     AudioManager.playClick();
-                    this.state.selectedId = closestId;
+                    this.state.selectedId = matchedId;
                     this.renderHierarchy();
                     this.renderInspector();
                 }
@@ -1319,7 +1313,7 @@ export class SceneBuilderModal {
     }
 
     // ===============================================================
-    // TRUE MINIATURE MAP ENGINE (FULL VIEWPORT DEPTH & BEDROCK)
+    // TRUE MINIATURE MAP ENGINE (STANDARDIZED CELL-CENTER MATRIX)
     // ===============================================================
     startPreviewLoop() {
         if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
@@ -1340,9 +1334,8 @@ export class SceneBuilderModal {
         const H = this.canvas.height;
         const t = this.animTime;
 
-        // 1. UNIFORM SCALE SEHINGGA MENUTUPI PENUH TINGGI DAN LEBAR (NO VOID!)
+        // 1. UNIFORM SCALE (LEBAR PENUH & TINGGI PENUH VIEWPORT)
         const worldW = this.state.worldWidth || 1800;
-        // Skala uniform berdasarkan lebar dunia:
         const scale = W / worldW;
         const cellSize = 50 * scale; // Ukuran kotak persegi 100% 1:1
 
@@ -1364,7 +1357,7 @@ export class SceneBuilderModal {
 
         ctx.clearRect(0, 0, W, H);
 
-        // 2. SKY GRADIENT MEMBENTANG PENUH DARI ATAS (Row 0) SAMPAI GROUND (Row 8) (NO VOID AT TOP!)
+        // 2. SKY GRADIENT BERSIH (MEMBENTANG PENUH DARI ROW 0 KE ROW 8)
         let skyGradient = ctx.createLinearGradient(0, 0, 0, groundY);
         if (this.state.biome === 'snow') {
             skyGradient.addColorStop(0, '#0369a1');
@@ -1389,9 +1382,9 @@ export class SceneBuilderModal {
 
         // 3. CELESTIAL SUN / MOON (Lingkaran Sempurna)
         if (this.state.biome !== 'cave') {
-            const sunX = toX(280);
+            const sunX = toX(275); // Center Col 5.5
             const sunY = toY(80);
-            const sunR = Math.max(14, 28 * scale);
+            const sunR = Math.max(14, 26 * scale);
 
             ctx.fillStyle = this.state.biome === 'snow' ? '#f8fafc' : '#fef08a';
             ctx.beginPath();
@@ -1405,9 +1398,7 @@ export class SceneBuilderModal {
             ctx.stroke();
         }
 
-        // 4. PENENTUAN WARNA BIOME STRATA (Bersih tanpa siluet gunung yang menumpuk)
-
-        // 5. PENENTUAN WARNA BIOME STRATA
+        // 4. PENENTUAN WARNA BIOME STRATA
         let surfaceColor = '#15803d'; // Forest rumput
         let dirtColor = '#78350f';    // Subsoil cokelat
         let stoneColor = '#334155';   // Deep cavern slate stone
@@ -1427,27 +1418,23 @@ export class SceneBuilderModal {
         }
 
         // Zona Bahaya Snap Presisi Grid 50px:
-        // Water: 550..700 (Cols 11, 12, 13 = 3 kotak penuh)
-        // Lava: 1000..1150 (Cols 20, 21, 22 = 3 kotak penuh)
-        const waterStart = 550;
-        const waterEnd = 700;
-        const lavaStart = 1000;
-        const lavaEnd = 1150;
+        // Water: Cols 11, 12, 13 (x = 550..700, 3 kotak penuh)
+        // Lava: Cols 20, 21, 22 (x = 1000..1150, 3 kotak penuh)
+        const waterStartCol = 11;
+        const waterEndCol = 13;
+        const lavaStartCol = 20;
+        const lavaEndCol = 22;
 
-        // Kedalaman Kolam Cairan (Menghujam ke dalam tanah sampai Row 11)
         const poolDepthRow = Math.min(11, bedrockRow - 1);
-        const poolBottomY = toY(poolDepthRow * 50 + 50);
 
-        // 6. MENGGAMBAR LAPISAN BAWAH TANAH (STRATA GEOLOGI LENGKAP: DIRT ➔ STONE ➔ BEDROCK)
-        for (let gx = 0; gx < worldW; gx += 50) {
-            const col = Math.floor(gx / 50);
-            const rx = toX(gx);
+        // 5. MENGGAMBAR STRATA BAWAH TANAH (DIRT ➔ STONE ➔ BEDROCK)
+        for (let col = 0; col < 36; col++) {
+            const rx = toX(col * 50);
             const rw = cellSize + 0.5;
 
-            const inWater = this.state.hasWater && gx >= waterStart && gx < waterEnd;
-            const inLava = this.state.hasLava && gx >= lavaStart && gx < lavaEnd;
+            const inWater = this.state.hasWater && col >= waterStartCol && col <= waterEndCol;
+            const inLava = this.state.hasLava && col >= lavaStartCol && col <= lavaEndCol;
 
-            // Gambar Strata dari Row 8 hingga totalRows
             for (let r = groundRow; r < totalRows; r++) {
                 const ry = toY(r * 50);
                 const rh = cellSize + 0.5;
@@ -1455,8 +1442,7 @@ export class SceneBuilderModal {
                 // A. KASUS JURANG CAIRAN (Row 8 s/d poolDepthRow)
                 if (r <= poolDepthRow) {
                     if (inWater) {
-                        // Kolam Air Dalam
-                        const waveY = (r === groundRow) ? (groundY + Math.sin(t * 3 + gx * 0.05) * 3) : ry;
+                        const waveY = (r === groundRow) ? (groundY + Math.sin(t * 3 + col * 0.8) * 3) : ry;
                         ctx.fillStyle = '#0284c7';
                         ctx.fillRect(rx, waveY, rw, rh + (ry - waveY));
                         if (r === groundRow) {
@@ -1466,15 +1452,14 @@ export class SceneBuilderModal {
                         continue;
                     }
                     if (inLava) {
-                        // Kolam Lava Dalam
-                        const lavaWaveY = (r === groundRow) ? (groundY + Math.sin(t * 2 + gx * 0.08) * 2) : ry;
+                        const lavaWaveY = (r === groundRow) ? (groundY + Math.sin(t * 2 + col * 0.9) * 2) : ry;
                         ctx.fillStyle = '#ef4444';
                         ctx.fillRect(rx, lavaWaveY, rw, rh + (ry - lavaWaveY));
                         if (r === groundRow) {
                             ctx.fillStyle = '#f97316';
                             ctx.fillRect(rx, lavaWaveY, rw, 3);
-                            // Gelembung mini lava
-                            const bubbleY = lavaWaveY - Math.abs(Math.sin(t * 4 + gx)) * 8;
+                            // Gelembung lava
+                            const bubbleY = lavaWaveY - Math.abs(Math.sin(t * 4 + col)) * 8;
                             ctx.fillStyle = '#fbbf24';
                             ctx.beginPath();
                             ctx.arc(rx + rw / 2, bubbleY, 3, 0, Math.PI * 2);
@@ -1484,13 +1469,11 @@ export class SceneBuilderModal {
                     }
                 }
 
-                // B. ROW PALING DASAR (Row bedrockRow): BEDROCK TAK TERTEMBUS
+                // B. ROW BEDROCK PALING DASAR (Row bedrockRow)
                 if (r === bedrockRow) {
-                    // Balok Obsidian Gelap Tak Tertembus
                     ctx.fillStyle = '#05070a';
                     ctx.fillRect(rx, ry, rw, rh);
 
-                    // Pola Tekstur Bedrock Klasik (Bongkahan Slate & Garis Retak Basalt)
                     ctx.fillStyle = '#0f172a';
                     ctx.fillRect(rx + 3 * scale, ry + 3 * scale, rw - 6 * scale, rh - 6 * scale);
 
@@ -1498,7 +1481,6 @@ export class SceneBuilderModal {
                     ctx.fillRect(rx + 8 * scale, ry + 8 * scale, 14 * scale, 14 * scale);
                     ctx.fillRect(rx + rw - 22 * scale, ry + rh - 22 * scale, 14 * scale, 14 * scale);
 
-                    // Garis silang diagonal Bedrock
                     ctx.strokeStyle = 'rgba(2, 6, 23, 0.9)';
                     ctx.lineWidth = 1.5;
                     ctx.beginPath();
@@ -1527,7 +1509,6 @@ export class SceneBuilderModal {
                 if (r <= 11) {
                     ctx.fillStyle = dirtColor;
                     ctx.fillRect(rx, ry, rw, rh);
-                    // Bintik kerikil tanah
                     if ((col + r) % 3 === 0) {
                         ctx.fillStyle = 'rgba(0,0,0,0.2)';
                         ctx.fillRect(rx + 12 * scale, ry + 14 * scale, 6 * scale, 4 * scale);
@@ -1539,14 +1520,14 @@ export class SceneBuilderModal {
                 ctx.fillStyle = stoneColor;
                 ctx.fillRect(rx, ry, rw, rh);
 
-                // Urat Mineral Kristal Terpendam di Dalam Batu
+                // Urat Mineral Kristal Terpendam
                 if ((col * 7 + r * 13) % 9 === 0) {
-                    ctx.fillStyle = '#38bdf8'; // Urat Kristal Safir
+                    ctx.fillStyle = '#38bdf8'; // Kristal Safir
                     ctx.beginPath();
                     ctx.arc(rx + rw / 2, ry + rh / 2, 4 * scale, 0, Math.PI * 2);
                     ctx.fill();
                 } else if ((col * 3 + r * 11) % 8 === 0) {
-                    ctx.fillStyle = '#f59e0b'; // Urat Emas Tambang
+                    ctx.fillStyle = '#f59e0b'; // Emas
                     ctx.fillRect(rx + rw / 2 - 3 * scale, ry + rh / 2 - 3 * scale, 6 * scale, 6 * scale);
                 }
             }
@@ -1558,21 +1539,21 @@ export class SceneBuilderModal {
         ctx.textAlign = 'left';
         ctx.fillText('⬛ BEDROCK (DASAR BUMI TAK TERTEMBUS)', toX(20), bedrockY + cellSize * 0.65);
 
-        // 7. PIJAKAN MELAYANG (FLOATING PLATFORMS TEPAT DI ATAS GRID LINES)
+        // 6. PIJAKAN MELAYANG (MODULAR 2-TILE PLATFORMS DI ROW 5 & 6)
         if (this.state.hasPlatforms) {
             const platforms = [
-                { x: 400, y: 300, w: 100 }, // Cols 8-10, Row 6 (2 tiles)
-                { x: 600, y: 250, w: 100 }, // Cols 12-14, Row 5 (Jembatan air)
-                { x: 850, y: 300, w: 100 }, // Cols 17-19, Row 6 (2 tiles)
-                { x: 1050, y: 250, w: 100 }, // Cols 21-23, Row 5 (Jembatan lava)
-                { x: 1350, y: 300, w: 100 }  // Cols 27-29, Row 6 (2 tiles)
+                { col: 8, row: 6, wTiles: 2 },  // Cols 8..9 (x: 400..500)
+                { col: 12, row: 5, wTiles: 2 }, // Cols 12..13 (x: 600..700, jembatan air)
+                { col: 17, row: 6, wTiles: 2 }, // Cols 17..18 (x: 850..950)
+                { col: 21, row: 5, wTiles: 2 }, // Cols 21..22 (x: 1050..1150, jembatan lava)
+                { col: 27, row: 6, wTiles: 2 }  // Cols 27..28 (x: 1350..1450)
             ];
 
             platforms.forEach((p, idx) => {
-                const px = toX(p.x);
-                const py = toY(p.y);
-                const pw = p.w * scale; // exactly 2 grid cells wide
-                const ph = Math.max(6, 16 * scale);
+                const px = toX(p.col * 50);
+                const py = toY(p.row * 50);
+                const pw = p.wTiles * cellSize;
+                const ph = Math.max(6, 18 * scale);
 
                 // Pijakan Balok Sempurna Menempel Garis Grid
                 ctx.fillStyle = '#1e293b';
@@ -1581,10 +1562,10 @@ export class SceneBuilderModal {
                 ctx.lineWidth = 2;
                 ctx.strokeRect(px, py, pw, ph);
 
-                // Koin Emas Berputar di Atas Pijakan
+                // Koin Emas Berputar di Atas Pijakan (Tepat di Tile Tengah atas Platform)
                 if (this.state.hasCoins) {
                     const coinX = px + pw / 2;
-                    const coinY = py - 15 * scale;
+                    const coinY = py - 18 * scale;
                     const coinW = Math.max(4, Math.abs(Math.sin(t * 3 + idx)) * (8 * scale));
 
                     ctx.fillStyle = '#f59e0b';
@@ -1598,13 +1579,13 @@ export class SceneBuilderModal {
             });
         }
 
-        // 8. RINTANGAN DURI (SPIKES TEPAT 1 TILE 50px DI ATAS GROUND ROW 8)
+        // 7. RINTANGAN DURI (SPIKES TEPAT DI TENGAH TILE 50px DI ROW 7, KAKI DI ROW 8)
         if (this.state.hasSpikes) {
-            const spikeXList = [350, 800, 1300]; // Cols 7, 16, 26
-            spikeXList.forEach(spX => {
-                const px = toX(spX);
+            const spikeCols = [7, 16, 26];
+            spikeCols.forEach(col => {
+                const px = toX(col * 50);
                 const py = groundY;
-                const sw = cellSize; // 1 full tile wide
+                const sw = cellSize;
                 const sh = Math.max(10, 32 * scale);
 
                 ctx.fillStyle = '#dc2626';
@@ -1622,34 +1603,34 @@ export class SceneBuilderModal {
             });
         }
 
-        // 9. PETI HARTA (CHEST BERDIRI DI ATAS GROUND ROW 8)
+        // 8. PETI HARTA (CHEST CENTERED DI TILE COL 15, ROW 7)
         if (this.state.hasChest) {
-            const chestObj = this.state.positions.chest || { x: 750 };
-            const cx = toX(chestObj.x);
-            const cw = Math.max(12, 32 * scale);
+            const chestObj = this.state.positions.chest || { col: 15, x: 775 };
+            const cx = toX(chestObj.col * 50 + 25);
+            const cw = Math.max(12, 30 * scale);
             const ch = Math.max(10, 24 * scale);
             const cy = groundY - ch;
 
             ctx.fillStyle = '#b45309';
-            ctx.fillRect(cx, cy, cw, ch);
+            ctx.fillRect(cx - cw / 2, cy, cw, ch);
             ctx.strokeStyle = '#fde047';
             ctx.lineWidth = 1.5;
-            ctx.strokeRect(cx, cy, cw, ch);
+            ctx.strokeRect(cx - cw / 2, cy, cw, ch);
             // Kunci emas tengah
             ctx.fillStyle = '#fde047';
-            ctx.fillRect(cx + cw / 2 - 2, cy + ch / 2 - 2, 4, 4);
+            ctx.fillRect(cx - 2, cy + ch / 2 - 2, 4, 4);
 
             // Label mini "CHEST"
             ctx.fillStyle = '#fbbf24';
             ctx.font = `bold ${Math.max(8, 9 * scale)}px 'JetBrains Mono'`;
             ctx.textAlign = 'center';
-            ctx.fillText('CHEST', cx + cw / 2, cy - 4);
+            ctx.fillText('CHEST', cx, cy - 4);
         }
 
-        // 10. KARAKTER NPC (PENJELAJAH ROH MENAPAK DI ATAS GROUND ROW 8)
+        // 9. KARAKTER NPC (CENTERED DI TILE COL 6, ROW 7)
         if (this.state.hasNpc) {
-            const npcObj = this.state.positions.npc || { x: 300 };
-            const npcX = toX(npcObj.x);
+            const npcObj = this.state.positions.npc || { col: 6, x: 325 };
+            const npcX = toX(npcObj.col * 50 + 25);
             const nw = Math.max(10, 24 * scale);
             const nh = Math.max(14, 38 * scale);
             const npcY = groundY - nh;
@@ -1678,11 +1659,11 @@ export class SceneBuilderModal {
             ctx.fillText('[E]', npcX, bubbleY - 1);
         }
 
-        // 11. MONSTER SLIME (PATROLI MELOMPAT TEPAT DI ATAS GROUND ROW 8)
+        // 10. MONSTER SLIME (CENTERED DI TILE COL 10, ROW 7)
         if (this.state.hasSlime) {
-            const slimeObj = this.state.positions.slime || { x: 500 };
-            const slimeBaseX = toX(slimeObj.x);
-            const patrolOffset = Math.sin(t * 1.5) * (30 * scale);
+            const slimeObj = this.state.positions.slime || { col: 10, x: 525 };
+            const slimeBaseX = toX(slimeObj.col * 50 + 25);
+            const patrolOffset = Math.sin(t * 1.5) * (14 * scale); // Patroli di dalam petak
             const jumpOffset = Math.abs(Math.sin(t * 3)) * (20 * scale);
             const smX = slimeBaseX + patrolOffset;
             const smR = Math.max(7, 14 * scale);
@@ -1702,11 +1683,11 @@ export class SceneBuilderModal {
             ctx.fillRect(smX + 2, smY - 3, 3, 4);
         }
 
-        // 12. MONSTER SKELETON (PATROLI BERJALAN TEPAT DI ATAS GROUND ROW 8)
+        // 11. MONSTER SKELETON (CENTERED DI TILE COL 30, ROW 7)
         if (this.state.hasSkeleton) {
-            const skelObj = this.state.positions.skeleton || { x: 1500 };
-            const skelBaseX = toX(skelObj.x);
-            const patrolOffset = Math.sin(t * 1.2) * (40 * scale);
+            const skelObj = this.state.positions.skeleton || { col: 30, x: 1525 };
+            const skelBaseX = toX(skelObj.col * 50 + 25);
+            const patrolOffset = Math.sin(t * 1.2) * (16 * scale);
             const skX = skelBaseX + patrolOffset;
             const skW = Math.max(9, 22 * scale);
             const skH = Math.max(14, 38 * scale);
@@ -1724,9 +1705,9 @@ export class SceneBuilderModal {
             ctx.fillRect(skX + 2, skY + 6, 3, 3);
         }
 
-        // 13. PLAYER AVATAR (TITIK START SPAWN KAKI MENAPAK GROUND ROW 8)
-        const playerObj = this.state.positions.player || { x: 100 };
-        const playerX = toX(playerObj.x);
+        // 12. PLAYER AVATAR (CENTERED DI TILE COL 2, ROW 7, KAKI DI ROW 8)
+        const playerObj = this.state.positions.player || { col: 2, x: 125 };
+        const playerX = toX(playerObj.col * 50 + 25);
         const pw = Math.max(10, 24 * scale);
         const ph = Math.max(14, 38 * scale);
         const playerY = groundY - ph;
@@ -1749,12 +1730,12 @@ export class SceneBuilderModal {
         ctx.textAlign = 'center';
         ctx.fillText('SPAWN', playerX, playerY - 4);
 
-        // 14. FINISH EXIT PORTAL (PUSARAN PORTAL BERDIRI TEPAT DI ATAS GROUND ROW 8)
+        // 13. FINISH EXIT PORTAL (CENTERED DI TILE COL 34, ROW 7)
         if (this.state.hasPortal) {
-            const portalObj = this.state.positions.portal || { x: 1700 };
-            const portalX = toX(portalObj.x);
-            const portalR = Math.max(14, 26 * scale);
-            const portalY = groundY - portalR - 6;
+            const portalObj = this.state.positions.portal || { col: 34, x: 1725 };
+            const portalX = toX(portalObj.col * 50 + 25);
+            const portalR = Math.max(14, 24 * scale);
+            const portalY = groundY - cellSize / 2;
 
             ctx.save();
             ctx.translate(portalX, portalY);
@@ -1790,29 +1771,29 @@ export class SceneBuilderModal {
         }
 
         // ===============================================================
-        // 15. MINIATURE SQUARE GRID OVERLAY (100% KOTAK PERSEGI PRESISI)
+        // 14. MINIATURE SQUARE GRID OVERLAY (100% KOTAK PERSEGI PRESISI)
         // ===============================================================
         if (this.state.showGrid) {
             ctx.save();
             ctx.lineWidth = 1;
 
-            // Garis Vertikal (Setiap 50px dari x = 0 hingga 1800)
-            for (let gx = 0; gx <= worldW; gx += 50) {
-                const rx = toX(gx);
-                const isMajor = (gx % 250) === 0;
+            // Garis Vertikal (Setiap 50px dari Col 0 sampai Col 36)
+            for (let col = 0; col <= 36; col++) {
+                const rx = toX(col * 50);
+                const isMajor = (col % 5) === 0;
 
-                ctx.strokeStyle = isMajor ? 'rgba(56, 189, 248, 0.28)' : 'rgba(255, 255, 255, 0.08)';
+                ctx.strokeStyle = isMajor ? 'rgba(56, 189, 248, 0.3)' : 'rgba(255, 255, 255, 0.08)';
                 ctx.beginPath();
                 ctx.moveTo(rx, 0);
                 ctx.lineTo(rx, H);
                 ctx.stroke();
 
                 // Indikator Kolom Grid pada Garis Utama
-                if (isMajor && gx >= 0 && gx <= worldW) {
+                if (isMajor && col >= 0 && col <= 36) {
                     ctx.fillStyle = 'rgba(56, 189, 248, 0.75)';
                     ctx.font = "8.5px 'JetBrains Mono'";
                     ctx.textAlign = 'center';
-                    ctx.fillText(`${gx}`, rx, 14);
+                    ctx.fillText(`${col * 50}`, rx, 14);
                 }
             }
 
@@ -1868,46 +1849,48 @@ export class SceneBuilderModal {
         }
 
         // ===============================================================
-        // 16. UNITY TRANSFORM GIZMOS & SELECTION HIGHLIGHT
+        // 15. UNITY TRANSFORM GIZMOS & CELL-CENTER HIGHLIGHT
         // ===============================================================
         if (this.state.showGizmos && this.state.selectedId) {
             const selId = this.state.selectedId;
             const selObj = this.state.positions[selId];
             if (selObj) {
-                const ox = toX(selObj.x);
-                const oy = groundY - 20 * scale;
+                // Selalu membungkus petak tile [col, row] yang tepat
+                const boxX = toX(selObj.col * 50);
+                const boxY = toY(selObj.row * 50);
+                const boxW = (selObj.wTiles || 1) * cellSize;
+                const boxH = (selObj.hTiles || 1) * cellSize;
 
                 ctx.save();
-                // Bounding selection box
+                // Bounding selection box tepat di batas sel grid
                 ctx.strokeStyle = '#38bdf8';
                 ctx.lineWidth = 2;
                 ctx.setLineDash([4, 4]);
-                ctx.strokeRect(ox - cellSize / 2, oy - cellSize / 2, cellSize, cellSize);
+                ctx.strokeRect(boxX, boxY, boxW, boxH);
                 ctx.setLineDash([]);
 
-                // Transform handles (Corner squares)
+                // Transform handles (Corner squares di sudut petak)
                 ctx.fillStyle = '#ffffff';
                 const corners = [
-                    [ox - cellSize / 2, oy - cellSize / 2],
-                    [ox + cellSize / 2, oy - cellSize / 2],
-                    [ox - cellSize / 2, oy + cellSize / 2],
-                    [ox + cellSize / 2, oy + cellSize / 2]
+                    [boxX, boxY],
+                    [boxX + boxW, boxY],
+                    [boxX, boxY + boxH],
+                    [boxX + boxW, boxY + boxH]
                 ];
                 corners.forEach(([cx, cy]) => {
                     ctx.fillRect(cx - 3, cy - 3, 6, 6);
                 });
 
                 // Coordinate Tag Badge
-                const col = Math.round(selObj.x / 50);
-                ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
-                ctx.fillRect(ox - 32, oy - cellSize / 2 - 18, 64, 16);
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+                ctx.fillRect(boxX, boxY - 18, Math.max(70, boxW), 16);
                 ctx.strokeStyle = '#38bdf8';
-                ctx.strokeRect(ox - 32, oy - cellSize / 2 - 18, 64, 16);
+                ctx.strokeRect(boxX, boxY - 18, Math.max(70, boxW), 16);
 
                 ctx.fillStyle = '#38bdf8';
                 ctx.font = "bold 9px 'JetBrains Mono'";
                 ctx.textAlign = 'center';
-                ctx.fillText(`Col ${col} (${Math.round(selObj.x)})`, ox, oy - cellSize / 2 - 6);
+                ctx.fillText(`Col ${selObj.col}, Row ${selObj.row} (${selObj.x})`, boxX + Math.max(70, boxW) / 2, boxY - 6);
 
                 ctx.restore();
             }

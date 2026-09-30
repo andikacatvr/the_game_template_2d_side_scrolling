@@ -273,7 +273,7 @@ export class CustomWorldScene extends Phaser.Scene {
     // ===============================================================
     createPlayer() {
         const playerTexture = this.textures.exists('custom_player') ? 'custom_player' : 'skeleton_player';
-        this.player = this.physics.add.sprite(120, 360, playerTexture).setDepth(10);
+        this.player = this.physics.add.sprite(125, 360, playerTexture).setDepth(10);
         this.player.setCollideWorldBounds(true);
         this.physics.add.collider(this.player, this.platforms);
 
@@ -303,9 +303,9 @@ export class CustomWorldScene extends Phaser.Scene {
     // 4. PEMBUATAN MONSTER (SLIME & SKELETON)
     // ===============================================================
     buildMonsters() {
-        // Monster Slime Melompat (Col 10: x=500)
+        // Monster Slime Melompat (Col 10 center: x=525)
         if (this.worldData.hasSlime) {
-            const slimeX = 500;
+            const slimeX = 525;
             const slime = this.physics.add.sprite(slimeX, 390, null).setDepth(8);
             const sG = this.add.graphics();
             sG.fillStyle(0x22c55e, 1);
@@ -343,9 +343,9 @@ export class CustomWorldScene extends Phaser.Scene {
             this.physics.add.overlap(this.player, slimeVisual, () => this.handleHazardDamage());
         }
 
-        // Monster Skeleton Berpatroli (Col 30: x=1500)
+        // Monster Skeleton Berpatroli (Col 30 center: x=1525)
         if (this.worldData.hasSkeleton) {
-            const skelX = 1500;
+            const skelX = 1525;
             const skelVisual = this.add.rectangle(skelX, 390, 26, 38, 0x7f1d1d).setDepth(8);
             skelVisual.setStrokeStyle(1.5, 0xfca5a5);
             this.physics.add.existing(skelVisual);
@@ -365,7 +365,7 @@ export class CustomWorldScene extends Phaser.Scene {
     // ===============================================================
     buildInteractions() {
         if (this.worldData.hasNpc) {
-            const npcX = 300;
+            const npcX = 325; // Col 6 center
             this.npc = this.add.rectangle(npcX, 390, 28, 42, 0xa855f7).setDepth(8);
             this.npc.setStrokeStyle(1.5, 0xd8b4fe);
             this.physics.add.existing(this.npc, true);
@@ -384,7 +384,7 @@ export class CustomWorldScene extends Phaser.Scene {
         }
 
         if (this.worldData.hasChest) {
-            const chestX = 750; // Col 15
+            const chestX = 775; // Col 15 center
             this.chest = this.add.rectangle(chestX, 400, 26, 20, 0xb45309).setDepth(7);
             this.chest.setStrokeStyle(1.5, 0xfde047);
             this.physics.add.existing(this.chest, true);
@@ -402,8 +402,8 @@ export class CustomWorldScene extends Phaser.Scene {
     // 6. PORTAL KELUAR KE MENU / HUB
     // ===============================================================
     createPortal(worldWidth) {
-        const portalX = worldWidth - 100;
-        const portalY = 376;
+        const portalX = 1725; // Col 34 center
+        const portalY = 360;
         this.portalEnd = this.add.container(portalX, portalY).setDepth(12);
 
         const ring = this.add.circle(0, 0, 24, 0x0284c7, 0.3).setStrokeStyle(2.5, 0x38bdf8);
