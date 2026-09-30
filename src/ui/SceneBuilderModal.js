@@ -1,4 +1,5 @@
 import { AudioManager } from '../utils/AudioManager.js';
+import { ProjectManager } from '../utils/ProjectManager.js';
 
 // Katalog Item Template untuk World Builder (Setiap Objek adalah Unit Kotak 1x1)
 export const ITEM_TEMPLATES = {
@@ -20,6 +21,8 @@ export class SceneBuilderModal {
     constructor(scene, options = {}) {
         this.scene = scene;
         this.options = options;
+        this.projectId = options.projectId || null;
+        this.sceneId = options.sceneId || null;
         this._isOpen = false;
         this.animFrameId = null;
 
@@ -2492,7 +2495,23 @@ export class SceneBuilderModal {
             terrainTiles: this.state.terrainTiles ? Array.from(this.state.terrainTiles) : null
         };
 
-        // Simpan ke localStorage agar bisa diakses di Projects Hub
+        let targetProjectId = this.projectId;
+        if (!targetProjectId) {
+            const projects = ProjectManager.getProjects();
+            targetProjectId = (projects && projects[0]) ? projects[0].id : ProjectManager.createProject('Project Kreasiku').id;
+        }
+
+        let targetSceneId = this.sceneId || worldData.id;
+        worldData.id = targetSceneId;
+
+        if (this.sceneId) {
+            ProjectManager.updateSceneInProject(targetProjectId, this.sceneId, worldData);
+        } else {
+            const created = ProjectManager.addSceneToProject(targetProjectId, worldData);
+            if (created) targetSceneId = created.id;
+        }
+
+        // Simpan juga ke legacy localStorage agar backward compatibility tetap terjaga
         try {
             const raw = localStorage.getItem('gt_custom_worlds');
             const list = raw ? JSON.parse(raw) : [];
@@ -2504,11 +2523,11 @@ export class SceneBuilderModal {
 
         this.hide();
 
-        // Teleportasi Instan ke CustomWorldScene
+        // Teleportasi Instan ke CustomWorldScene dengan project context
         if (this.scene && this.scene.scene) {
-            this.scene.scene.start('CustomWorldScene', { worldData });
+            this.scene.scene.start('CustomWorldScene', { worldData, projectId: targetProjectId, sceneId: targetSceneId });
         } else if (window.__templateGame && window.__templateGame.scene) {
-            window.__templateGame.scene.start('CustomWorldScene', { worldData });
+            window.__templateGame.scene.start('CustomWorldScene', { worldData, projectId: targetProjectId, sceneId: targetSceneId });
         }
     }
 
@@ -3312,6 +3331,30 @@ export class SceneBuilderModal {
 
             ctx.restore();
         }
+    }
+
+    loadWorldData(data, projectId = null, sceneId = null) {
+        if (!data) return;
+        if (projectId) this.projectId = projectId;
+        if (sceneId) this.sceneId = sceneId;
+        else if (data.id) this.sceneId = data.id;
+
+        if (data.name) this.state.name = data.name;
+        if (data.biome) this.state.biome = data.biome;
+        if (data.timeOfDay) this.state.timeOfDay = data.timeOfDay;
+        if (data.worldWidth) this.state.worldWidth = data.worldWidth;
+        if (data.worldHeight) this.state.worldHeight = data.worldHeight;
+        if (Array.isArray(data.entities)) {
+            this.state.entities = JSON.parse(JSON.stringify(data.entities));
+        }
+        if (data.terrainTiles) {
+            this.state.terrainTiles = new Set(data.terrainTiles);
+        }
+
+        // Render ulang bila DOM sudah terbentuk
+        if (this.titleInput) this.titleInput.value = this.state.name;
+        if (typeof this.renderHierarchy === 'function') this.renderHierarchy();
+        if (typeof this.renderInspector === 'function') this.renderInspector();
     }
 
     show() {

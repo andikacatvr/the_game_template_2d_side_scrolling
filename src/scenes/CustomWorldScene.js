@@ -13,6 +13,7 @@ import { HTMLGameHUD } from '../ui/HTMLGameHUD.js';
 import { HTMLInteractPrompt } from '../ui/HTMLInteractPrompt.js';
 import { QuestModal } from '../ui/QuestModal.js';
 import { GridSystem } from '../utils/GridSystem.js';
+import { ProjectManager } from '../utils/ProjectManager.js';
 
 export class CustomWorldScene extends Phaser.Scene {
     constructor() {
@@ -20,6 +21,9 @@ export class CustomWorldScene extends Phaser.Scene {
     }
 
     init(data = {}) {
+        this.projectId = data.projectId || null;
+        this.sceneId = data.sceneId || (data.worldData ? data.worldData.id : null);
+        this.isLevelTransitioning = false;
         this.worldData = data.worldData || {
             name: 'Dunia Kreasiku #1',
             biome: 'dirt',
@@ -680,11 +684,38 @@ export class CustomWorldScene extends Phaser.Scene {
         const portalSensor = this.add.rectangle(portalX, portalY, 40, 60, 0x000000, 0);
         this.physics.add.existing(portalSensor, true);
         this.physics.add.overlap(this.player, portalSensor, () => {
-            this.showWorldBanner('🎉 SELAMAT! Kamu Menyelesaikan Level Ini!', '#10b981');
+            if (this.isLevelTransitioning) return;
+            this.isLevelTransitioning = true;
             AudioManager.playCoin();
-            this.time.delayedCall(2000, () => {
-                this.scene.start('TitleScene');
-            });
+
+            // Cek apakah scene ini merupakan bagian dari sebuah multi-scene Project
+            let nextScene = null;
+            let project = null;
+            if (this.projectId) {
+                project = ProjectManager.getProject(this.projectId);
+                if (project && Array.isArray(project.scenes)) {
+                    nextScene = ProjectManager.getNextScene(this.projectId, this.sceneId);
+                }
+            }
+
+            if (nextScene) {
+                this.showWorldBanner(`🎉 LEVEL SELESAI! Menuju Level Berikutnya: "${nextScene.name}"...`, '#10b981');
+                this.time.delayedCall(1800, () => {
+                    this.scene.start('CustomWorldScene', {
+                        worldData: nextScene,
+                        projectId: this.projectId,
+                        sceneId: nextScene.id,
+                        hp: this.hp,
+                        inventory: this.inventory
+                    });
+                });
+            } else {
+                const projTitle = project ? project.name : (this.worldData.name || 'Dunia Kreasiku');
+                this.showWorldBanner(`🏆 SELAMAT! Kamu Menyelesaikan Seluruh Project "${projTitle}"!`, '#10b981');
+                this.time.delayedCall(2400, () => {
+                    this.scene.start('TitleScene');
+                });
+            }
         });
     }
 

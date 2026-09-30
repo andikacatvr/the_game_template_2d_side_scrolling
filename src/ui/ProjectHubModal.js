@@ -1,6 +1,7 @@
 import { AudioManager } from '../utils/AudioManager.js';
 import { ExportGameModal } from './ExportGameModal.js';
 import { SceneBuilderModal } from './SceneBuilderModal.js';
+import { ProjectManager } from '../utils/ProjectManager.js';
 
 export class ProjectHubModal {
     constructor(scene, options = {}) {
@@ -8,6 +9,7 @@ export class ProjectHubModal {
         this.options = options;
         this._isOpen = false;
         this.currentTab = 'projects'; // 'projects' | 'templates' | 'tutorials' | 'learn'
+        this.selectedProjectId = null; // null = Project List, string = Scene Manager for that Project
         this.searchQuery = '';
         this.createDOM();
     }
@@ -416,6 +418,73 @@ export class ProjectHubModal {
                     border: 1px solid rgba(168, 85, 247, 0.3);
                 }
 
+                .gt-uhub-back-btn {
+                    height: 32px;
+                    padding: 0 12px;
+                    background: #202020;
+                    border: 1px solid #383838;
+                    border-radius: 6px;
+                    color: #94a3b8;
+                    font-size: 12px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    transition: all 0.15s ease;
+                }
+
+                .gt-uhub-back-btn:hover {
+                    background: #2b2b2b;
+                    color: #38bdf8;
+                    border-color: #0284c7;
+                }
+
+                .gt-badge-count {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4px;
+                    padding: 2px 8px;
+                    border-radius: 4px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    background: rgba(56, 189, 248, 0.12);
+                    color: #38bdf8;
+                    border: 1px solid rgba(56, 189, 248, 0.3);
+                }
+
+                .gt-badge-start-pill {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4px;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-size: 10px;
+                    font-weight: 700;
+                    background: rgba(34, 197, 94, 0.18);
+                    color: #22c55e;
+                    border: 1px solid rgba(34, 197, 94, 0.35);
+                    margin-left: 6px;
+                }
+
+                .gt-badge-next {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4px;
+                    font-size: 11px;
+                    color: #94a3b8;
+                    font-family: 'JetBrains Mono', monospace;
+                }
+
+                .gt-badge-final {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    color: #eab308;
+                }
+
                 .gt-uhub-col-action {
                     display: flex;
                     align-items: center;
@@ -645,40 +714,44 @@ export class ProjectHubModal {
     }
 
     renderProjectsTab(container) {
-        let customWorlds = [];
-        try {
-            const raw = localStorage.getItem('gt_custom_worlds');
-            if (raw) customWorlds = JSON.parse(raw);
-        } catch (e) {}
+        if (!this.selectedProjectId) {
+            this.renderProjectsList(container);
+        } else {
+            this.renderProjectDetailScenes(container, this.selectedProjectId);
+        }
+    }
 
-        const customRowsHTML = customWorlds.map((cw, idx) => {
-            const biomeIcons = {
-                desert: '🏜️ Gurun',
-                snow: '❄️ Salju',
-                dirt: '🌲 Hutan',
-                cave: '🌋 Gua'
-            };
-            const biomeLabel = biomeIcons[cw.biome] || '🌍 Kustom';
+    renderProjectsList(container) {
+        const projects = ProjectManager.getProjects();
+
+        const projectRowsHTML = projects.map((proj) => {
+            const scenesCount = (proj.scenes || []).length;
+            const startScene = (proj.scenes || []).find(s => s.id === proj.startingSceneId) || (proj.scenes || [])[0];
+            const startSceneName = startScene ? startScene.name : 'Belum ada level';
+
             return `
-                <div class="gt-uhub-row" data-name="${(cw.name || '').toLowerCase()}">
+                <div class="gt-uhub-row" data-name="${(proj.name || '').toLowerCase()}">
                     <div class="gt-uhub-col-name">
                         <span class="gt-uhub-project-name">
-                            <span>🎮</span> ${cw.name || 'Dunia Kreasiku'}
+                            <span>📁</span> ${proj.name || 'Project Tanpa Judul'}
                         </span>
-                        <span class="gt-uhub-project-path">Custom World (${cw.worldWidth || 1800}px)</span>
+                        <span class="gt-uhub-project-path">${proj.desc || 'Game Multi-Scene'} • Start: ${startSceneName}</span>
                     </div>
                     <div>
-                        <span class="gt-uhub-badge-tag gt-tag-sandbox">${biomeLabel}</span>
+                        <span class="gt-badge-count">📦 ${scenesCount} Scenes</span>
                     </div>
                     <div class="gt-uhub-badge-platform">
-                        <span>● Scene Kustom</span>
+                        <span>● Project Game</span>
                     </div>
                     <div class="gt-uhub-col-action" style="display: flex; gap: 6px; justify-content: flex-end;">
-                        <button class="gt-uhub-btn-edit btn-edit-custom-world" data-index="${idx}" style="background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8; padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer;">
-                            <span>✏️</span> Edit
+                        <button class="gt-uhub-btn-open btn-open-project" data-id="${proj.id}" style="background: #1e293b; border-color: #0284c7; color: #38bdf8;">
+                            <span>📂</span> Buka Project
                         </button>
-                        <button class="gt-uhub-btn-open btn-open-custom-world" data-index="${idx}">
+                        <button class="gt-uhub-btn-open btn-play-project" data-id="${proj.id}">
                             <span>▶</span> Play
+                        </button>
+                        <button class="btn-delete-project" data-id="${proj.id}" title="Hapus Project" style="background: transparent; border: 1px solid #451a1a; color: #f87171; border-radius: 5px; padding: 4px 8px; cursor: pointer; font-size: 12px;">
+                            🗑️
                         </button>
                     </div>
                 </div>
@@ -687,41 +760,44 @@ export class ProjectHubModal {
 
         container.innerHTML = `
             <div class="gt-uhub-content-header">
-                <h1 class="gt-uhub-content-title">Projects</h1>
+                <div>
+                    <h1 class="gt-uhub-content-title">Projects</h1>
+                    <p style="font-size: 12px; color: #94a3b8; margin: 4px 0 0 0;">Kelola game kamu. Setiap project dapat menampung banyak scene/level berurutan.</p>
+                </div>
                 <div class="gt-uhub-header-actions">
                     <div class="gt-uhub-search-box">
                         <span class="gt-uhub-search-icon">🔍</span>
                         <input type="text" class="gt-uhub-search-input" id="gt-uhub-search" placeholder="Search projects..." value="${this.searchQuery}" />
                     </div>
                     <button class="gt-uhub-btn-primary" id="gt-uhub-btn-new-project">
-                        <span>+</span> Buat Scene Baru
+                        <span>+</span> Buat Project Baru
                     </button>
                 </div>
             </div>
 
             <div class="gt-uhub-table-container">
                 <div class="gt-uhub-table-header">
-                    <div>Name</div>
-                    <div>Type</div>
+                    <div>Project Name</div>
+                    <div>Scenes</div>
                     <div>Status</div>
                     <div style="text-align: right;">Action</div>
                 </div>
 
-                ${customRowsHTML}
+                ${projectRowsHTML}
 
-                <!-- Row 1: Sandbox World (Scene 3) -->
+                <!-- Sandbox World (Scene 3) -->
                 <div class="gt-uhub-row" data-name="sandbox world scene 3">
                     <div class="gt-uhub-col-name">
                         <span class="gt-uhub-project-name">
                             <span>🌟</span> Sandbox World (Scene 3)
                         </span>
-                        <span class="gt-uhub-project-path">src/scenes/Scene3.js</span>
+                        <span class="gt-uhub-project-path">src/scenes/Scene3.js • Lab Koding Bebas</span>
                     </div>
                     <div>
                         <span class="gt-uhub-badge-tag gt-tag-sandbox">Creative Canvas</span>
                     </div>
                     <div class="gt-uhub-badge-platform">
-                        <span>● Siap Diedit</span>
+                        <span>● Standalone</span>
                     </div>
                     <div class="gt-uhub-col-action">
                         <button class="gt-uhub-btn-open" id="btn-open-scene3">
@@ -734,45 +810,50 @@ export class ProjectHubModal {
 
         // Search filter
         const searchInput = container.querySelector('#gt-uhub-search');
-        searchInput.addEventListener('input', (e) => {
-            this.searchQuery = e.target.value.toLowerCase();
-            container.querySelectorAll('.gt-uhub-row').forEach(row => {
-                const name = row.getAttribute('data-name');
-                row.style.display = name.includes(this.searchQuery) ? 'grid' : 'none';
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.searchQuery = e.target.value.toLowerCase();
+                container.querySelectorAll('.gt-uhub-row').forEach(row => {
+                    const name = row.getAttribute('data-name') || '';
+                    row.style.display = name.includes(this.searchQuery) ? 'grid' : 'none';
+                });
+            });
+        }
+
+        // Buka Project (Drilldown)
+        container.querySelectorAll('.btn-open-project').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const projId = btn.getAttribute('data-id');
+                AudioManager.playClick();
+                this.selectedProjectId = projId;
+                this.renderContent();
             });
         });
 
-        // Edit buttons for custom scenes
-        container.querySelectorAll('.btn-edit-custom-world').forEach(btn => {
+        // Mainkan Project langsung
+        container.querySelectorAll('.btn-play-project').forEach(btn => {
             btn.addEventListener('click', () => {
-                const idx = parseInt(btn.getAttribute('data-index'), 10);
-                const targetWorld = customWorlds[idx];
-                if (targetWorld) {
-                    this.hide();
+                const projId = btn.getAttribute('data-id');
+                const proj = ProjectManager.getProject(projId);
+                if (proj) this.playProject(proj);
+            });
+        });
+
+        // Hapus Project
+        container.querySelectorAll('.btn-delete-project').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const projId = btn.getAttribute('data-id');
+                const proj = ProjectManager.getProject(projId);
+                const pName = proj ? proj.name : 'project ini';
+                if (confirm(`Yakin ingin menghapus ${pName}? Semua scene di dalamnya akan ikut terhapus.`)) {
+                    ProjectManager.deleteProject(projId);
                     AudioManager.playClick();
-                    const builder = new SceneBuilderModal(this.scene);
-                    builder.loadWorldData(targetWorld);
-                    builder.show();
+                    this.renderContent();
                 }
             });
         });
 
-        // Launch buttons for custom worlds
-        container.querySelectorAll('.btn-open-custom-world').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const idx = parseInt(btn.getAttribute('data-index'), 10);
-                const targetWorld = customWorlds[idx];
-                if (targetWorld) {
-                    this.hide();
-                    AudioManager.playClick();
-                    if (this.scene && this.scene.scene) {
-                        this.scene.scene.start('CustomWorldScene', { worldData: targetWorld });
-                    }
-                }
-            });
-        });
-
-        // Launch buttons
+        // Buka Scene 3
         const btnScene3 = container.querySelector('#btn-open-scene3');
         if (btnScene3) {
             btnScene3.addEventListener('click', () => {
@@ -780,10 +861,264 @@ export class ProjectHubModal {
             });
         }
 
-        // New Project Wizard / Visual Builder
-        container.querySelector('#gt-uhub-btn-new-project').addEventListener('click', () => {
-            this.showNewProjectWizard();
+        // Buat Project Baru Dialog
+        const btnNewProj = container.querySelector('#gt-uhub-btn-new-project');
+        if (btnNewProj) {
+            btnNewProj.addEventListener('click', () => {
+                this.showCreateProjectDialog();
+            });
+        }
+    }
+
+    renderProjectDetailScenes(container, projectId) {
+        const project = ProjectManager.getProject(projectId);
+        if (!project) {
+            this.selectedProjectId = null;
+            this.renderProjectsList(container);
+            return;
+        }
+
+        const biomeIcons = {
+            desert: '🏜️ Gurun',
+            snow: '❄️ Salju',
+            dirt: '🌲 Hutan',
+            cave: '🌋 Gua'
+        };
+
+        const sceneRowsHTML = (project.scenes || []).map((scene, idx) => {
+            const isStart = (scene.id === project.startingSceneId) || (!project.startingSceneId && idx === 0);
+            const nextScene = (project.scenes || [])[idx + 1];
+            const biomeLabel = biomeIcons[scene.biome] || '🌍 Kustom';
+
+            return `
+                <div class="gt-uhub-row" data-name="${(scene.name || '').toLowerCase()}">
+                    <div class="gt-uhub-col-name">
+                        <span class="gt-uhub-project-name">
+                            <span style="font-size: 12px; color: #38bdf8; font-family: 'JetBrains Mono', monospace;">#${idx + 1}</span>
+                            <span>🎮</span> ${scene.name || 'Level ' + (idx + 1)}
+                            ${isStart ? '<span class="gt-badge-start-pill">🏁 Start Level</span>' : ''}
+                        </span>
+                        <span class="gt-uhub-project-path">Ukuran Dunia: ${scene.worldWidth || 1800}px • ID: ${scene.id}</span>
+                    </div>
+                    <div>
+                        <span class="gt-uhub-badge-tag gt-tag-sandbox">${biomeLabel}</span>
+                    </div>
+                    <div>
+                        ${nextScene ? `<span class="gt-badge-next">Portal → Level ${idx + 2}</span>` : `<span class="gt-badge-final">🏆 Final Stage</span>`}
+                    </div>
+                    <div class="gt-uhub-col-action" style="display: flex; gap: 6px; justify-content: flex-end;">
+                        <button class="gt-uhub-btn-edit btn-edit-scene" data-scene-id="${scene.id}" style="background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8; padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                            <span>✏️</span> Edit
+                        </button>
+                        <button class="gt-uhub-btn-open btn-test-scene" data-scene-id="${scene.id}">
+                            <span>▶</span> Test
+                        </button>
+                        ${!isStart ? `
+                            <button class="btn-set-start-scene" data-scene-id="${scene.id}" title="Jadikan Level Awal" style="background: #14281e; border: 1px solid #16a34a; color: #4ade80; padding: 4px 8px; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer;">
+                                🏁 Start
+                            </button>
+                        ` : ''}
+                        ${(project.scenes.length > 1) ? `
+                            <button class="btn-delete-scene" data-scene-id="${scene.id}" title="Hapus Scene Ini" style="background: transparent; border: 1px solid #451a1a; color: #f87171; border-radius: 5px; padding: 4px 8px; cursor: pointer; font-size: 12px;">
+                                🗑️
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        container.innerHTML = `
+            <div class="gt-uhub-content-header">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <button class="gt-uhub-back-btn" id="btn-back-to-projects">
+                        <span>←</span> Kembali
+                    </button>
+                    <div>
+                        <h1 class="gt-uhub-content-title" style="display: flex; align-items: center; gap: 8px;">
+                            <span>📁</span> ${project.name}
+                        </h1>
+                        <p style="font-size: 12px; color: #94a3b8; margin: 4px 0 0 0;">
+                            ${project.desc || 'Game Multi-Scene'} • <b>${(project.scenes || []).length} Scene</b> terhubung otomatis via portal finish
+                        </p>
+                    </div>
+                </div>
+                <div class="gt-uhub-header-actions">
+                    <button class="gt-uhub-btn-primary" id="btn-add-scene-to-proj" style="background: #0284c7;">
+                        <span>+</span> Tambah Scene Baru
+                    </button>
+                    <button class="gt-uhub-btn-primary" id="btn-play-full-project" style="background: #16a34a;">
+                        <span>▶</span> Mainkan Project Ini
+                    </button>
+                </div>
+            </div>
+
+            <div class="gt-uhub-table-container">
+                <div class="gt-uhub-table-header">
+                    <div>Level &amp; Scene Name</div>
+                    <div>Biome / Tema</div>
+                    <div>Alur Portal</div>
+                    <div style="text-align: right;">Action</div>
+                </div>
+
+                ${sceneRowsHTML}
+            </div>
+        `;
+
+        // Tombol Kembali
+        container.querySelector('#btn-back-to-projects').addEventListener('click', () => {
+            AudioManager.playClick();
+            this.selectedProjectId = null;
+            this.renderContent();
         });
+
+        // Mainkan Full Project
+        container.querySelector('#btn-play-full-project').addEventListener('click', () => {
+            this.playProject(project);
+        });
+
+        // Tambah Scene Baru ke Project
+        container.querySelector('#btn-add-scene-to-proj').addEventListener('click', () => {
+            this.hide();
+            AudioManager.playClick();
+            const builder = new SceneBuilderModal(this.scene, { projectId: project.id });
+            builder.show();
+        });
+
+        // Edit Scene di Scene Builder
+        container.querySelectorAll('.btn-edit-scene').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const sId = btn.getAttribute('data-scene-id');
+                const targetScene = (project.scenes || []).find(s => s.id === sId);
+                if (targetScene) {
+                    this.hide();
+                    AudioManager.playClick();
+                    const builder = new SceneBuilderModal(this.scene, { projectId: project.id, sceneId: sId });
+                    builder.loadWorldData(targetScene, project.id, sId);
+                    builder.show();
+                }
+            });
+        });
+
+        // Test Scene Tunggal
+        container.querySelectorAll('.btn-test-scene').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const sId = btn.getAttribute('data-scene-id');
+                const targetScene = (project.scenes || []).find(s => s.id === sId);
+                if (targetScene) {
+                    this.hide();
+                    AudioManager.playClick();
+                    if (this.scene && this.scene.scene) {
+                        this.scene.scene.start('CustomWorldScene', { worldData: targetScene, projectId: project.id, sceneId: sId });
+                    }
+                }
+            });
+        });
+
+        // Set Start Scene
+        container.querySelectorAll('.btn-set-start-scene').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const sId = btn.getAttribute('data-scene-id');
+                ProjectManager.setStartingScene(project.id, sId);
+                AudioManager.playClick();
+                this.renderContent();
+            });
+        });
+
+        // Hapus Scene
+        container.querySelectorAll('.btn-delete-scene').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const sId = btn.getAttribute('data-scene-id');
+                const targetScene = (project.scenes || []).find(s => s.id === sId);
+                const sName = targetScene ? targetScene.name : 'scene ini';
+                if (confirm(`Hapus ${sName} dari project ${project.name}?`)) {
+                    ProjectManager.deleteSceneFromProject(project.id, sId);
+                    AudioManager.playClick();
+                    this.renderContent();
+                }
+            });
+        });
+    }
+
+    showCreateProjectDialog() {
+        const oldDialog = document.getElementById('gt-uhub-create-proj-dialog');
+        if (oldDialog) oldDialog.remove();
+
+        const dialog = document.createElement('div');
+        dialog.id = 'gt-uhub-create-proj-dialog';
+        dialog.className = 'gt-uhub-wizard-overlay';
+        dialog.innerHTML = `
+            <div class="gt-uhub-wizard-card">
+                <div class="gt-uhub-wizard-title">✨ Buat Project Baru</div>
+                <div class="gt-uhub-wizard-desc">
+                    Project adalah wadah game utuh yang dapat berisi banyak scene/level berurutan.
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 6px;">
+                    <div>
+                        <label style="display: block; font-size: 11px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">NAMA PROJECT</label>
+                        <input type="text" id="gt-new-proj-name" placeholder="Misal: Petualangan Ksatria Naga" style="width: 100%; height: 36px; background: #141414; border: 1px solid #3b4252; border-radius: 6px; padding: 0 12px; color: #fff; font-size: 13px; box-sizing: border-box; outline: none;" value="Petualangan Baru" />
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 11px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">DESKRIPSI (OPSIONAL)</label>
+                        <input type="text" id="gt-new-proj-desc" placeholder="Game platformer 2D dengan beberapa stage tantangan" style="width: 100%; height: 36px; background: #141414; border: 1px solid #3b4252; border-radius: 6px; padding: 0 12px; color: #fff; font-size: 13px; box-sizing: border-box; outline: none;" value="Game petualangan multi-scene" />
+                    </div>
+                </div>
+                <div class="gt-uhub-wizard-actions">
+                    <button class="gt-uhub-btn-cancel" id="btn-cancel-create-proj">Batal</button>
+                    <button class="gt-uhub-btn-primary" id="btn-submit-create-proj" style="padding: 0 20px;">
+                        <span>✓</span> Buat &amp; Buka Project
+                    </button>
+                </div>
+            </div>
+        `;
+
+        this.overlay.querySelector('.gt-uhub-window').appendChild(dialog);
+
+        const inputName = dialog.querySelector('#gt-new-proj-name');
+        inputName.focus();
+        inputName.select();
+
+        const cancelBtn = dialog.querySelector('#btn-cancel-create-proj');
+        cancelBtn.addEventListener('click', () => {
+            dialog.remove();
+        });
+
+        const submitBtn = dialog.querySelector('#btn-submit-create-proj');
+        const doCreate = () => {
+            const name = inputName.value.trim() || 'Petualangan Baru';
+            const desc = dialog.querySelector('#gt-new-proj-desc').value.trim();
+            const newProj = ProjectManager.createProject(name, desc);
+            AudioManager.playClick();
+            dialog.remove();
+            this.selectedProjectId = newProj.id;
+            this.renderContent();
+        };
+
+        submitBtn.addEventListener('click', doCreate);
+        inputName.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') doCreate();
+            else if (e.key === 'Escape') dialog.remove();
+        });
+    }
+
+    playProject(project) {
+        if (!project || !Array.isArray(project.scenes) || project.scenes.length === 0) {
+            alert('Project ini belum memiliki scene!');
+            return;
+        }
+
+        const startScene = project.scenes.find(s => s.id === project.startingSceneId) || project.scenes[0];
+        if (startScene) {
+            this.hide();
+            AudioManager.playClick();
+            if (this.scene && this.scene.scene) {
+                this.scene.scene.start('CustomWorldScene', {
+                    worldData: startScene,
+                    projectId: project.id,
+                    sceneId: startScene.id
+                });
+            }
+        }
     }
 
     renderTemplatesTab(container) {
