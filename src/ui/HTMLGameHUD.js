@@ -10,6 +10,8 @@
 // ===============================================================
 
 import { AudioManager } from '../utils/AudioManager.js';
+import { ProjectHubModal } from './ProjectHubModal.js';
+import { CommandConsole } from '../utils/CommandConsole.js';
 
 export class HTMLGameHUD {
     constructor(scene, options = {}) {
@@ -220,6 +222,70 @@ export class HTMLGameHUD {
                     transform: scale(1.3);
                 }
 
+                /* LEVEL / LOCATION BUTTON (BETWEEN BAG & MENU) */
+                .gt-hud-btn-level {
+                    height: 44px;
+                    padding: 0 14px;
+                    gap: 8px;
+                    background: #181818;
+                    border: 1px solid #333333;
+                    border-radius: 8px;
+                    color: #f4f4f5;
+                    font-size: 13.5px;
+                    font-weight: 700;
+                    letter-spacing: 0.3px;
+                    display: flex;
+                    align-items: center;
+                    cursor: pointer;
+                    white-space: nowrap;
+                    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.03);
+                    backdrop-filter: blur(12px);
+                    -webkit-backdrop-filter: blur(12px);
+                    font-family: 'Jost', sans-serif;
+                }
+
+                .gt-hud-btn-level:hover {
+                    background: #222226;
+                    border-color: #38bdf8;
+                    color: #ffffff;
+                    box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+                    transform: translateY(-1px);
+                }
+
+                .gt-hud-btn-level:active {
+                    transform: translateY(1px);
+                }
+
+                .gt-hud-level-icon {
+                    font-size: 16px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .gt-hud-level-title {
+                    max-width: 170px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+
+                @media (max-width: 768px) {
+                    .gt-hud-level-title {
+                        max-width: 85px;
+                    }
+                }
+
+                @media (max-width: 520px) {
+                    .gt-hud-level-title {
+                        display: none;
+                    }
+                    .gt-hud-btn-level {
+                        padding: 0 11px;
+                    }
+                }
+
                 /* MENU / SETTINGS BUTTON (HAMBURGER BAR) */
                 .gt-hud-btn-menu {
                     width: 44px;
@@ -270,6 +336,12 @@ export class HTMLGameHUD {
                     <span class="gt-hud-badge" id="gt-hud-badge">0</span>
                 </button>
 
+                <!-- Level / Location Button Indicator (Tepat di Tengah Tombol Backpack & Hamburger) -->
+                <button class="gt-hud-btn gt-hud-btn-level" id="gt-hud-btn-level" title="Informasi Level &amp; Tempat (Klik untuk Detail)">
+                    <span class="gt-hud-level-icon" id="gt-hud-level-icon">📍</span>
+                    <span class="gt-hud-level-title" id="gt-hud-level-title">Level</span>
+                </button>
+
                 <!-- Menu Button (Hamburger Bar) -->
                 <button class="gt-hud-btn gt-hud-btn-menu" id="gt-hud-btn-menu" title="Menu Pengaturan (ESC)">
                     <svg class="gt-hud-menu-svg" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -286,6 +358,9 @@ export class HTMLGameHUD {
         // Bind DOM Elements
         this.btnQuest = this.dom.querySelector('#gt-hud-btn-quest');
         this.btnBag = this.dom.querySelector('#gt-hud-btn-bag');
+        this.btnLevel = this.dom.querySelector('#gt-hud-btn-level');
+        this.levelIcon = this.dom.querySelector('#gt-hud-level-icon');
+        this.levelTitle = this.dom.querySelector('#gt-hud-level-title');
         this.btnMenu = this.dom.querySelector('#gt-hud-btn-menu');
         this.bagBadge = this.dom.querySelector('#gt-hud-badge');
         this.hpText = this.dom.querySelector('#gt-hud-hp-text');
@@ -324,6 +399,15 @@ export class HTMLGameHUD {
             }
         });
 
+        // Level / Location Button Click
+        if (this.btnLevel) {
+            this.btnLevel.addEventListener('click', (e) => {
+                e.stopPropagation();
+                AudioManager.playClick();
+                this.showLevelInfoModal();
+            });
+        }
+
         // Menu Button Click
         this.btnMenu.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -347,6 +431,291 @@ export class HTMLGameHUD {
 
         const invCount = Array.isArray(this.scene.inventory) ? this.scene.inventory.length : 0;
         this.updateInventoryBadge(invCount);
+        this.updateLevelBadge();
+    }
+
+    getLevelInfo() {
+        const sceneKey = this.scene && this.scene.scene ? this.scene.scene.key : '';
+
+        if (sceneKey === 'GameScene') {
+            return {
+                icon: '❄️',
+                shortName: 'Lv. 1',
+                fullName: 'Lv. 1 • Lembah Salju',
+                type: 'Tutorial Campaign',
+                desc: 'Lembah bersalju tempat mempelajari dasar pergerakan, koin emas, dan portal petualangan.',
+                objective: 'Kumpulkan Koin Emas dan lewati rintangan duri menuju portal petualangan!'
+            };
+        }
+
+        if (sceneKey === 'HongKongScene' || sceneKey === 'Scene2') {
+            return {
+                icon: '🏙️',
+                shortName: 'Lv. 2',
+                fullName: 'Lv. 2 • Teluk Hong Kong',
+                type: 'Story Campaign',
+                desc: 'Pelabuhan malam Teluk Victoria dengan efek hujan rintik, kapal tongkang terapung, dan kapal feri ikonik.',
+                objective: 'Lintasi kapal tongkang terapung dan naiki Kapal Feri Bintang untuk menang!'
+            };
+        }
+
+        if (sceneKey === 'Scene3') {
+            return {
+                icon: '🌟',
+                shortName: 'Sandbox',
+                fullName: 'Sandbox • Lab Koding',
+                type: 'Creative Sandbox',
+                desc: 'Kanvas bebas murid untuk eksperimen koding JavaScript dan menguji balok kustom.',
+                objective: 'Tulis kode kreasimu di Scene3.js atau gunakan menu Add Object di atas!'
+            };
+        }
+
+        if (sceneKey === 'CustomWorldScene') {
+            const worldName = (this.scene.worldData && this.scene.worldData.name) 
+                ? this.scene.worldData.name 
+                : 'Scene Kreasiku';
+            const biome = (this.scene.worldData && this.scene.worldData.biome) || 'desert';
+            const biomeIcons = {
+                desert: '🏜️',
+                snow: '❄️',
+                dirt: '🌲',
+                cave: '🌋'
+            };
+            return {
+                icon: biomeIcons[biome] || '🎮',
+                shortName: 'Scene Live',
+                fullName: `${worldName}`,
+                type: 'Kreator Scene Baru',
+                desc: `Dunia modular buatanmu dengan tema biome ${biome}.`,
+                objective: 'Uji gameplay, kalahkan rintangan, atau tekan [F4] untuk kembali ke Visual Editor!'
+            };
+        }
+
+        return {
+            icon: '📍',
+            shortName: 'World',
+            fullName: sceneKey || 'Game World',
+            type: 'Petualangan',
+            desc: 'Dunia petualangan 2D.',
+            objective: 'Jelajahi dunia dan capai garis akhir!'
+        };
+    }
+
+    updateLevelBadge() {
+        if (!this.levelTitle || !this.levelIcon) return;
+        const info = this.getLevelInfo();
+        this.levelIcon.textContent = info.icon;
+        this.levelTitle.textContent = info.fullName;
+        if (this.btnLevel) {
+            this.btnLevel.title = `${info.fullName} (${info.type}) • Klik untuk Detail`;
+        }
+    }
+
+    showLevelInfoModal() {
+        const info = this.getLevelInfo();
+        const oldModal = document.getElementById('gt-hud-level-modal');
+        if (oldModal) {
+            oldModal.remove();
+            return;
+        }
+
+        const modal = document.createElement('div');
+        modal.id = 'gt-hud-level-modal';
+        modal.innerHTML = `
+            <style>
+                .gt-level-modal-overlay {
+                    position: fixed;
+                    inset: 0;
+                    background: rgba(0, 0, 0, 0.65);
+                    backdrop-filter: blur(8px);
+                    -webkit-backdrop-filter: blur(8px);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 99999;
+                    font-family: 'Jost', -apple-system, BlinkMacSystemFont, sans-serif;
+                    animation: gtFadeIn 0.15s ease-out;
+                }
+                @keyframes gtFadeIn {
+                    from { opacity: 0; transform: scale(0.96); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+                .gt-level-card {
+                    width: 420px;
+                    max-width: 90vw;
+                    background: #141416;
+                    border: 1px solid #27272a;
+                    border-radius: 12px;
+                    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 24px rgba(56, 189, 248, 0.2);
+                    padding: 24px;
+                    color: #e4e4e7;
+                    position: relative;
+                }
+                .gt-level-header {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    margin-bottom: 14px;
+                }
+                .gt-level-badge-icon {
+                    width: 44px;
+                    height: 44px;
+                    border-radius: 10px;
+                    background: #1e293b;
+                    border: 1px solid #38bdf8;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 22px;
+                }
+                .gt-level-header-text {
+                    flex: 1;
+                }
+                .gt-level-tag {
+                    font-size: 11px;
+                    font-weight: 800;
+                    letter-spacing: 0.8px;
+                    text-transform: uppercase;
+                    color: #38bdf8;
+                    font-family: 'JetBrains Mono', monospace;
+                }
+                .gt-level-name {
+                    font-size: 18px;
+                    font-weight: 800;
+                    color: #ffffff;
+                    margin-top: 2px;
+                }
+                .gt-level-desc {
+                    font-size: 13.5px;
+                    color: #a1a1aa;
+                    line-height: 1.5;
+                    margin-bottom: 16px;
+                }
+                .gt-level-box-objective {
+                    background: rgba(56, 189, 248, 0.08);
+                    border: 1px solid rgba(56, 189, 248, 0.25);
+                    border-radius: 8px;
+                    padding: 12px 14px;
+                    margin-bottom: 20px;
+                }
+                .gt-level-obj-title {
+                    font-size: 11px;
+                    font-weight: 800;
+                    color: #7dd3fc;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 4px;
+                }
+                .gt-level-obj-text {
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: #f0f9ff;
+                    line-height: 1.4;
+                }
+                .gt-level-actions {
+                    display: flex;
+                    gap: 8px;
+                    justify-content: flex-end;
+                }
+                .gt-level-btn {
+                    padding: 8px 16px;
+                    border-radius: 6px;
+                    font-size: 12.5px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    transition: all 0.15s ease;
+                    font-family: inherit;
+                }
+                .gt-level-btn-close {
+                    background: #27272a;
+                    border: 1px solid #3f3f46;
+                    color: #d4d4d8;
+                }
+                .gt-level-btn-close:hover {
+                    background: #3f3f46;
+                    color: #ffffff;
+                }
+                .gt-level-btn-action {
+                    background: #0284c7;
+                    border: 1px solid #38bdf8;
+                    color: #ffffff;
+                }
+                .gt-level-btn-action:hover {
+                    background: #0369a1;
+                    box-shadow: 0 0 14px rgba(56, 189, 248, 0.4);
+                }
+            </style>
+            <div class="gt-level-modal-overlay" id="gt-level-overlay">
+                <div class="gt-level-card">
+                    <div class="gt-level-header">
+                        <div class="gt-level-badge-icon">${info.icon}</div>
+                        <div class="gt-level-header-text">
+                            <div class="gt-level-tag">${info.type}</div>
+                            <div class="gt-level-name">${info.fullName}</div>
+                        </div>
+                    </div>
+                    <div class="gt-level-desc">${info.desc}</div>
+                    <div class="gt-level-box-objective">
+                        <div class="gt-level-obj-title">🎯 Objektif Utama</div>
+                        <div class="gt-level-obj-text">${info.objective}</div>
+                    </div>
+                    <div class="gt-level-actions">
+                        ${(this.scene && (this.scene.scene.key === 'CustomWorldScene' || this.scene.scene.key === 'Scene3')) ? `
+                            <button class="gt-level-btn gt-level-btn-action" id="gt-btn-modal-edit">
+                                <span>🛠️</span> Edit Scene
+                            </button>
+                        ` : `
+                            <button class="gt-level-btn gt-level-btn-action" id="gt-btn-modal-hub">
+                                <span>📁</span> Project Hub
+                            </button>
+                        `}
+                        <button class="gt-level-btn gt-level-btn-close" id="gt-btn-modal-close">
+                            Tutup
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const overlay = modal.querySelector('#gt-level-overlay');
+        const closeBtn = modal.querySelector('#gt-btn-modal-close');
+        const editBtn = modal.querySelector('#gt-btn-modal-edit');
+        const hubBtn = modal.querySelector('#gt-btn-modal-hub');
+
+        const closeModal = () => {
+            AudioManager.playClick();
+            modal.remove();
+        };
+
+        if (closeBtn) closeBtn.addEventListener('click', closeModal);
+        if (overlay) {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) closeModal();
+            });
+        }
+
+        if (editBtn) {
+            editBtn.addEventListener('click', () => {
+                closeModal();
+                if (typeof this.scene.openSceneBuilder === 'function') {
+                    this.scene.openSceneBuilder();
+                } else if (CommandConsole.instance) {
+                    CommandConsole.instance.openSceneBuilder();
+                }
+            });
+        }
+
+        if (hubBtn) {
+            hubBtn.addEventListener('click', () => {
+                closeModal();
+                new ProjectHubModal(this.scene).show();
+            });
+        }
     }
 
     updateHP(hp, maxHp = 3) {
