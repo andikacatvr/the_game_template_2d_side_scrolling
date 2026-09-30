@@ -327,6 +327,60 @@ export class SceneBuilderModal {
                     border-color: #38bdf8;
                     color: #38bdf8;
                     box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+                /* Backpack Categories Navigation (Growtopia Style) */
+                .gt-sb-category-bar {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    margin-bottom: 10px;
+                    overflow-x: auto;
+                    padding-bottom: 2px;
+                }
+
+                .gt-sb-cat-btn {
+                    padding: 5px 12px;
+                    border-radius: 6px;
+                    background: #18181b;
+                    border: 1px solid #27272a;
+                    color: #a1a1aa;
+                    font-size: 11.5px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    transition: all 0.15s ease;
+                    white-space: nowrap;
+                    font-family: inherit;
+                }
+
+                .gt-sb-cat-btn:hover {
+                    background: #202024;
+                    color: #ffffff;
+                    border-color: #3f3f46;
+                }
+
+                .gt-sb-cat-btn.active {
+                    background: #1e293b;
+                    color: #38bdf8;
+                    border-color: #38bdf8;
+                    box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+                }
+
+                .gt-sb-cat-count {
+                    font-size: 10px;
+                    font-family: 'JetBrains Mono', monospace;
+                    padding: 1px 5px;
+                    border-radius: 4px;
+                    background: rgba(255, 255, 255, 0.08);
+                    color: #94a3b8;
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                }
+
+                .gt-sb-cat-btn.active .gt-sb-cat-count {
+                    background: rgba(56, 189, 248, 0.2);
+                    color: #7dd3fc;
+                    border-color: rgba(56, 189, 248, 0.3);
                 }
 
                 /* Palette Component Chips */
@@ -478,55 +532,77 @@ export class SceneBuilderModal {
                         </div>
                     </div>
 
-                    <!-- Row 2: Komponen Palette (The Unity Asset Drawer) -->
+                    <!-- Row 2: Backpack Komponen (Growtopia Style with Categories) -->
                     <div class="gt-sb-section">
                         <div class="gt-sb-section-title">
-                            <span>📦 Komponen Bahaya, Monster &amp; Objek (Klik untuk Tambah/Hapus)</span>
+                            <span>🎒 Backpack Komponen Dunia (Pilih &amp; Pasang)</span>
                         </div>
+
+                        <!-- Growtopia Category Tabs -->
+                        <div class="gt-sb-category-bar">
+                            <button class="gt-sb-cat-btn active" data-cat="all">
+                                <span>🎒</span>
+                                <span>Semua</span>
+                                <span class="gt-sb-cat-count" id="count-all">9/9</span>
+                            </button>
+                            <button class="gt-sb-cat-btn" data-cat="solid">
+                                <span>🧱</span>
+                                <span>Objek Padat</span>
+                                <span class="gt-sb-cat-count" id="count-solid">4/4</span>
+                            </button>
+                            <button class="gt-sb-cat-btn" data-cat="creature">
+                                <span>👥</span>
+                                <span>Karakter &amp; Makhluk</span>
+                                <span class="gt-sb-cat-count" id="count-creature">3/3</span>
+                            </button>
+                            <button class="gt-sb-cat-btn" data-cat="fluid">
+                                <span>🌊</span>
+                                <span>Cairan Bahaya</span>
+                                <span class="gt-sb-cat-count" id="count-fluid">2/2</span>
+                            </button>
+                        </div>
+
+                        <!-- Slots Grid -->
                         <div class="gt-sb-palette-grid">
-                            <!-- Lava -->
-                            <div class="gt-sb-chip ${this.state.hasLava ? 'active' : ''}" data-prop="hasLava">
-                                <div class="gt-sb-chip-left"><span>🌋</span><span>Kolam Lava</span></div>
-                                <div class="gt-sb-chip-check">✓</div>
-                            </div>
-                            <!-- Water -->
-                            <div class="gt-sb-chip ${this.state.hasWater ? 'active' : ''}" data-prop="hasWater">
-                                <div class="gt-sb-chip-left"><span>🌊</span><span>Kolam Air</span></div>
-                                <div class="gt-sb-chip-check">✓</div>
-                            </div>
-                            <!-- Spikes -->
-                            <div class="gt-sb-chip ${this.state.hasSpikes ? 'active' : ''}" data-prop="hasSpikes">
-                                <div class="gt-sb-chip-left"><span>⚠️</span><span>Rintangan Duri</span></div>
-                                <div class="gt-sb-chip-check">✓</div>
-                            </div>
-                            <!-- Platforms -->
-                            <div class="gt-sb-chip ${this.state.hasPlatforms ? 'active' : ''}" data-prop="hasPlatforms">
+                            <!-- Kategori: Objek Padat & Rintangan -->
+                            <div class="gt-sb-chip ${this.state.hasPlatforms ? 'active' : ''}" data-prop="hasPlatforms" data-cat="solid">
                                 <div class="gt-sb-chip-left"><span>🧱</span><span>Pijakan Melayang</span></div>
                                 <div class="gt-sb-chip-check">✓</div>
                             </div>
-                            <!-- Slime Monster -->
-                            <div class="gt-sb-chip ${this.state.hasSlime ? 'active' : ''}" data-prop="hasSlime">
-                                <div class="gt-sb-chip-left"><span>🟢</span><span>Monster Slime</span></div>
+                            <div class="gt-sb-chip ${this.state.hasSpikes ? 'active' : ''}" data-prop="hasSpikes" data-cat="solid">
+                                <div class="gt-sb-chip-left"><span>⚠️</span><span>Rintangan Duri</span></div>
                                 <div class="gt-sb-chip-check">✓</div>
                             </div>
-                            <!-- Skeleton Monster -->
-                            <div class="gt-sb-chip ${this.state.hasSkeleton ? 'active' : ''}" data-prop="hasSkeleton">
-                                <div class="gt-sb-chip-left"><span>💀</span><span>Monster Skeleton</span></div>
-                                <div class="gt-sb-chip-check">✓</div>
-                            </div>
-                            <!-- NPC Story -->
-                            <div class="gt-sb-chip ${this.state.hasNpc ? 'active' : ''}" data-prop="hasNpc">
-                                <div class="gt-sb-chip-left"><span>🧙</span><span>Karakter NPC</span></div>
-                                <div class="gt-sb-chip-check">✓</div>
-                            </div>
-                            <!-- Chest & Coins -->
-                            <div class="gt-sb-chip ${this.state.hasChest ? 'active' : ''}" data-prop="hasChest">
+                            <div class="gt-sb-chip ${this.state.hasChest ? 'active' : ''}" data-prop="hasChest" data-cat="solid">
                                 <div class="gt-sb-chip-left"><span>🪙</span><span>Koin &amp; Peti Harta</span></div>
                                 <div class="gt-sb-chip-check">✓</div>
                             </div>
-                            <!-- Portal Finish -->
-                            <div class="gt-sb-chip ${this.state.hasPortal ? 'active' : ''}" data-prop="hasPortal">
+                            <div class="gt-sb-chip ${this.state.hasPortal ? 'active' : ''}" data-prop="hasPortal" data-cat="solid">
                                 <div class="gt-sb-chip-left"><span>🌀</span><span>Portal Finish</span></div>
+                                <div class="gt-sb-chip-check">✓</div>
+                            </div>
+
+                            <!-- Kategori: Karakter & Makhluk Hidup -->
+                            <div class="gt-sb-chip ${this.state.hasNpc ? 'active' : ''}" data-prop="hasNpc" data-cat="creature">
+                                <div class="gt-sb-chip-left"><span>🧙</span><span>Karakter NPC</span></div>
+                                <div class="gt-sb-chip-check">✓</div>
+                            </div>
+                            <div class="gt-sb-chip ${this.state.hasSlime ? 'active' : ''}" data-prop="hasSlime" data-cat="creature">
+                                <div class="gt-sb-chip-left"><span>🟢</span><span>Monster Slime</span></div>
+                                <div class="gt-sb-chip-check">✓</div>
+                            </div>
+                            <div class="gt-sb-chip ${this.state.hasSkeleton ? 'active' : ''}" data-prop="hasSkeleton" data-cat="creature">
+                                <div class="gt-sb-chip-left"><span>💀</span><span>Monster Skeleton</span></div>
+                                <div class="gt-sb-chip-check">✓</div>
+                            </div>
+
+                            <!-- Kategori: Cairan Lingkungan & Bahaya -->
+                            <div class="gt-sb-chip ${this.state.hasLava ? 'active' : ''}" data-prop="hasLava" data-cat="fluid">
+                                <div class="gt-sb-chip-left"><span>🌋</span><span>Kolam Lava</span></div>
+                                <div class="gt-sb-chip-check">✓</div>
+                            </div>
+                            <div class="gt-sb-chip ${this.state.hasWater ? 'active' : ''}" data-prop="hasWater" data-cat="fluid">
+                                <div class="gt-sb-chip-left"><span>🌊</span><span>Kolam Air</span></div>
                                 <div class="gt-sb-chip-check">✓</div>
                             </div>
                         </div>
@@ -585,8 +661,60 @@ export class SceneBuilderModal {
             });
         });
 
+        // Growtopia Backpack Categories & Component Chips
+        const catButtons = overlay.querySelectorAll('.gt-sb-cat-btn');
+        const chips = overlay.querySelectorAll('.gt-sb-chip');
+
+        const updateCategoryCounts = () => {
+            const counts = {
+                all: { active: 0, total: chips.length },
+                solid: { active: 0, total: 0 },
+                creature: { active: 0, total: 0 },
+                fluid: { active: 0, total: 0 }
+            };
+
+            chips.forEach(chip => {
+                const cat = chip.getAttribute('data-cat');
+                const prop = chip.getAttribute('data-prop');
+                const isActive = !!this.state[prop];
+
+                if (counts[cat]) {
+                    counts[cat].total++;
+                    if (isActive) counts[cat].active++;
+                }
+                if (isActive) counts.all.active++;
+            });
+
+            for (const [k, v] of Object.entries(counts)) {
+                const el = overlay.querySelector(`#count-${k}`);
+                if (el) el.textContent = `${v.active}/${v.total}`;
+            }
+        };
+
+        // Hitung status awal
+        updateCategoryCounts();
+
+        // Kategori Filter Tab Click
+        catButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                AudioManager.playClick();
+                catButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const selectedCat = btn.getAttribute('data-cat');
+
+                chips.forEach(chip => {
+                    const cat = chip.getAttribute('data-cat');
+                    if (selectedCat === 'all' || cat === selectedCat) {
+                        chip.style.display = 'flex';
+                    } else {
+                        chip.style.display = 'none';
+                    }
+                });
+            });
+        });
+
         // Component Palette Toggle Chips
-        overlay.querySelectorAll('.gt-sb-chip').forEach(chip => {
+        chips.forEach(chip => {
             chip.addEventListener('click', () => {
                 AudioManager.playClick();
                 const prop = chip.getAttribute('data-prop');
@@ -596,6 +724,7 @@ export class SceneBuilderModal {
                 } else {
                     chip.classList.remove('active');
                 }
+                updateCategoryCounts();
             });
         });
 
