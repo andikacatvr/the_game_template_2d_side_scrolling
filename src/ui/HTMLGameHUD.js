@@ -817,6 +817,17 @@ export class HTMLGameHUD {
         });
     }
 
+    syncInitialState() {
+        const hp = this.scene.hp !== undefined ? this.scene.hp : 3;
+        const maxHp = this.scene.maxHp !== undefined ? this.scene.maxHp : 3;
+        this.updateHP(hp, maxHp);
+
+        const invCount = Array.isArray(this.scene.inventory) ? this.scene.inventory.length : 0;
+        this.updateInventoryBadge(invCount);
+        this.updateLevelBadge();
+        this.startStripRadarLoop();
+    }
+
     startStripRadarLoop() {
         if (!this.stripCanvas || !this.stripCtx) return;
         if (this.stripRadarAnimId) cancelAnimationFrame(this.stripRadarAnimId);
