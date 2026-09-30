@@ -281,21 +281,6 @@ class GridSystemClass {
                     to { opacity: 1; transform: translate(-50%, 0); }
                 }
 
-                .gt-grid-drag-handle {
-                    font-size: 15px;
-                    color: #a855f7;
-                    cursor: grab;
-                    line-height: 1;
-                    opacity: 0.85;
-                    margin-right: -1px;
-                    transition: color 0.15s ease, opacity 0.15s ease;
-                }
-
-                .gt-grid-hud:hover .gt-grid-drag-handle {
-                    color: #c084fc;
-                    opacity: 1;
-                }
-
                 .gt-grid-hud-title {
                     display: flex;
                     align-items: center;
@@ -425,7 +410,6 @@ class GridSystemClass {
             </style>
 
             <div class="gt-grid-hud-title" title="Tahan dan geser untuk memindahkan toolbar (Drag to move)">
-                <span class="gt-grid-drag-handle">⠿</span>
                 <span>▦</span>
                 <span>GRID:</span>
                 <span id="gt-grid-size-label" style="color: #ffffff; font-weight: 800;">50px</span>

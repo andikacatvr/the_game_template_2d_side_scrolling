@@ -389,9 +389,9 @@ export class EngineMenuBar {
                     <span>🎛️</span> Inspect
                 </button>
 
-                <!-- Quick Button: /create chips -->
-                <button class="gt-mb-tool-btn gt-mb-btn-create" id="gt-mb-btn-create" title="Buka Builder Template di Console">
-                    <span>+</span> /create
+                <!-- Quick Button: Create World & Scene -->
+                <button class="gt-mb-tool-btn gt-mb-btn-create" id="gt-mb-btn-create" title="Buka World & Scene Builder">
+                    <span>+</span> Create
                 </button>
 
                 <!-- Quick Button: Grid System (Unity/Godot/Tiled Style) -->

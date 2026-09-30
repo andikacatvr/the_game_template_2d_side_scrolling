@@ -638,10 +638,10 @@ export class CommandConsole {
                         <span class="gt-header-title">CHAT &amp; COMMAND CONSOLE</span>
                     </div>
                     <div class="gt-header-actions">
-                        <button class="gt-btn-tool" id="gt-btn-quick-create" style="background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%); font-weight: 800;" title="Buka World & Scene Builder">+/create</button>
-                        <button class="gt-btn-tool" id="gt-btn-quick-inspect" style="background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);">/inspect</button>
-                        <button class="gt-btn-tool" id="gt-btn-quick-learn">/learn</button>
-                        <button class="gt-btn-tool" id="gt-btn-quick-help">/help</button>
+                        <button class="gt-btn-tool" id="gt-btn-quick-create" style="background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%); font-weight: 800;" title="Buka World & Scene Builder">+ Create</button>
+                        <button class="gt-btn-tool" id="gt-btn-quick-inspect" style="background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);">Inspect</button>
+                        <button class="gt-btn-tool" id="gt-btn-quick-learn">Learn</button>
+                        <button class="gt-btn-tool" id="gt-btn-quick-help">Help</button>
                         <button class="gt-btn-tool" id="gt-btn-clear">Clear</button>
                         <button class="gt-btn-tool" id="gt-btn-minimize" title="Minimize / Perkecil chat box">−</button>
                         <button class="gt-btn-tool" id="gt-btn-toggle" title="Tutup Command Console">X</button>

@@ -89,9 +89,9 @@ export class EngineUITourModal {
             {
                 id: 'step_create',
                 selector: '#gt-mb-btn-create',
-                title: '✨ Quick /create Builder',
+                title: '✨ Quick Create Builder',
                 badge: 'Langkah 7 dari 7',
-                npcSpeech: 'Terakhir, tombol <b>+ /create</b> ini adalah jalan pintas cepat untuk mengambil template kode instan di console (platform, dialog, duri, dll). Nah, sekarang kamu sudah paham seluruh fungsi tombolnya!',
+                npcSpeech: 'Terakhir, tombol <b>+ Create</b> ini adalah jalan pintas cepat untuk membuka World & Scene Builder visual (membangun biome, monster, platform, dll). Nah, sekarang kamu sudah paham seluruh fungsi tombolnya!',
                 arrowDir: 'up'
             }
         ];
