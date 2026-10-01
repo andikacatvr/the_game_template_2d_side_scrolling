@@ -535,19 +535,6 @@ export class EngineMenuBar {
                     <span class="gt-mb-kbd">G</span>
                 </button>
 
-                <!-- Quick Button: Gali / Hapus Balok (Growtopia/Terraria Style) -->
-                <button class="gt-mb-tool-btn gt-mb-btn-dig" id="gt-mb-btn-dig" title="Mode Gali &amp; Hapus Balok / Objek (Shortcut: X)">
-                    <span>⛏️</span>
-                    <span>Gali</span>
-                    <span class="gt-mb-kbd">X</span>
-                </button>
-
-                <!-- Quick Button: Pasang Balok Modular -->
-                <button class="gt-mb-tool-btn gt-mb-btn-build" id="gt-mb-btn-build" title="Mode Pasang Balok Lego Modular (Shortcut: B)">
-                    <span>🧱</span>
-                    <span>Pasang</span>
-                    <span class="gt-mb-kbd">B</span>
-                </button>
             </div>
 
             <div class="gt-mb-right">
@@ -782,21 +769,6 @@ export class EngineMenuBar {
             });
         }
 
-        // Quick Button: Gali / Hapus
-        const digBtn = this.bar.querySelector('#gt-mb-btn-dig');
-        if (digBtn) {
-            digBtn.addEventListener('click', () => {
-                GridSystem.setToolMode('dig');
-            });
-        }
-
-        // Quick Button: Pasang Balok
-        const buildBtn = this.bar.querySelector('#gt-mb-btn-build');
-        if (buildBtn) {
-            buildBtn.addEventListener('click', () => {
-                GridSystem.setToolMode('build');
-            });
-        }
 
         // Collapse / Expand Menu Bar
         const toggleBtn = this.bar.querySelector('#gt-mb-btn-toggle');
