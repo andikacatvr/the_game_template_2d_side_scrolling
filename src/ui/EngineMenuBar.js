@@ -418,6 +418,74 @@ export class EngineMenuBar {
                     transform: translateY(-50%) translateX(2px);
                 }
 
+                /* Build Picker Sub-Panel (muncul ke kanan dari tombol Build) */
+                .gt-build-picker {
+                    position: absolute;
+                    left: 42px;
+                    top: 0;
+                    background: rgba(24, 24, 27, 0.92);
+                    backdrop-filter: blur(14px);
+                    -webkit-backdrop-filter: blur(14px);
+                    border: 1px solid rgba(255, 255, 255, 0.14);
+                    border-radius: 6px;
+                    padding: 4px;
+                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+                    display: none;
+                    flex-direction: column;
+                    gap: 2px;
+                    z-index: 100006;
+                    min-width: 140px;
+                    animation: gtFadeSlideDown 0.12s ease;
+                }
+
+                .gt-build-picker.show {
+                    display: flex;
+                }
+
+                .gt-build-picker-title {
+                    font-size: 9px;
+                    font-weight: 800;
+                    color: rgba(255, 255, 255, 0.4);
+                    text-transform: uppercase;
+                    letter-spacing: 0.8px;
+                    padding: 3px 8px 2px;
+                    pointer-events: none;
+                }
+
+                .gt-build-picker-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 5px 8px;
+                    border-radius: 4px;
+                    border: none;
+                    background: transparent;
+                    color: #d1d5db;
+                    font-size: 11.5px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.1s ease;
+                    white-space: nowrap;
+                    text-align: left;
+                    width: 100%;
+                    box-sizing: border-box;
+                }
+
+                .gt-build-picker-item:hover {
+                    background: rgba(34, 197, 94, 0.18);
+                    color: #86efac;
+                }
+
+                .gt-build-picker-item:active {
+                    transform: scale(0.97);
+                }
+
+                .gt-build-picker-divider {
+                    height: 1px;
+                    background: rgba(255, 255, 255, 0.08);
+                    margin: 2px 4px;
+                }
+
                 /* Right Status & Controls */
                 .gt-mb-right {
                     display: flex;
@@ -488,24 +556,6 @@ export class EngineMenuBar {
                     </div>
                 </div>
 
-                <!-- Dropdown 2: Add Object -->
-                <div class="gt-mb-dropdown">
-                    <button class="gt-mb-btn-menu" id="gt-mb-btn-add">
-                        Add Object <span style="font-size: 9px;">▾</span>
-                    </button>
-                    <div class="gt-mb-menu-dropdown-content" id="gt-mb-dd-add">
-                        <div class="gt-mb-menu-item" data-create="tile">🧱 Platform / Lantai</div>
-                        <div class="gt-mb-menu-item" data-create="npc">🧙 Karakter NPC</div>
-                        <div class="gt-mb-menu-item" data-create="coin">🪙 Koin Harta Karun</div>
-                        <div class="gt-mb-menu-item" data-create="obstacle">⚠️ Duri & Rintangan</div>
-                        <div class="gt-mb-menu-item" data-create="portal">🌀 Portal Hub Aman</div>
-                        <div class="gt-mb-divider"></div>
-                        <div class="gt-mb-menu-item" data-create="dialogue">💬 Dialog Percakapan</div>
-                        <div class="gt-mb-menu-item" data-create="quest">📋 Misi & Quest</div>
-                        <div class="gt-mb-menu-item" data-create="parallax">🌄 Parallax Background</div>
-                    </div>
-                </div>
-
                 <div class="gt-mb-v-divider"></div>
 
                 <!-- Quick Button: Edit (Growtopia Tools: Punch & Wrench) -->
@@ -569,13 +619,24 @@ export class EngineMenuBar {
             </button>
 
             <!-- Kotak 2: Build (Pasang Balok Modular) -->
-            <button class="gt-blender-tool-btn build-tool" id="gt-card-tool-build" type="button" title="Build (Pasang Balok Modular) [B]">
-                <span>🧱</span>
-                <div class="gt-blender-tooltip">
-                    <span>🧱 Build</span>
-                    <span class="gt-blender-tooltip-badge">Pasang Balok [B]</span>
+            <div style="position: relative;">
+                <button class="gt-blender-tool-btn build-tool" id="gt-card-tool-build" type="button" title="Build (Pasang Balok Modular) [B]">
+                    <span>🧱</span>
+                    <div class="gt-blender-tooltip">
+                        <span>🧱 Build</span>
+                        <span class="gt-blender-tooltip-badge">Pasang Balok [B]</span>
+                    </div>
+                </button>
+                <!-- Build Picker Sub-Panel -->
+                <div class="gt-build-picker" id="gt-build-picker">
+                    <div class="gt-build-picker-title">Pilih Objek</div>
+                    <button class="gt-build-picker-item" data-build="tile">🧱 Platform / Lantai</button>
+                    <button class="gt-build-picker-item" data-build="npc">🧙 Karakter NPC</button>
+                    <button class="gt-build-picker-item" data-build="coin">🪙 Koin</button>
+                    <button class="gt-build-picker-item" data-build="obstacle">⚠️ Duri & Rintangan</button>
+                    <button class="gt-build-picker-item" data-build="portal">🌀 Portal</button>
                 </div>
-            </button>
+            </div>
 
             <!-- Kotak 3: Wrench (Edit Dialog NPC) -->
             <button class="gt-blender-tool-btn wrench-tool" id="gt-card-tool-wrench" type="button" title="Wrench (Edit Dialog NPC)">
@@ -594,28 +655,18 @@ export class EngineMenuBar {
     bindEvents() {
         const fileBtn = this.bar.querySelector('#gt-mb-btn-file');
         const fileDd = this.bar.querySelector('#gt-mb-dd-file');
-        const addBtn = this.bar.querySelector('#gt-mb-btn-add');
-        const addDd = this.bar.querySelector('#gt-mb-dd-add');
         const editBtn = this.bar.querySelector('#gt-mb-btn-edit');
 
         // Toggle Dropdowns
         fileBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            addDd.classList.remove('show');
             fileDd.classList.toggle('show');
-        });
-
-        addBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            fileDd.classList.remove('show');
-            addDd.classList.toggle('show');
         });
 
         if (editBtn && this.editFloatingPanel) {
             editBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 fileDd.classList.remove('show');
-                addDd.classList.remove('show');
                 this.updateFloatingPanelPosition();
                 const willShow = !this.editFloatingPanel.classList.contains('show');
                 this.editFloatingPanel.classList.toggle('show', willShow);
@@ -640,10 +691,41 @@ export class EngineMenuBar {
             }
 
             const buildCard = document.getElementById('gt-card-tool-build');
+            const buildPicker = document.getElementById('gt-build-picker');
             if (buildCard) {
                 buildCard.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    this.selectTool(this.currentTool === 'build' ? 'none' : 'build');
+                    // Toggle build picker visibility
+                    if (buildPicker) {
+                        const isShown = buildPicker.classList.contains('show');
+                        buildPicker.classList.toggle('show', !isShown);
+                        if (!isShown) {
+                            // Activate build mode
+                            this.selectTool('build');
+                        }
+                    } else {
+                        this.selectTool(this.currentTool === 'build' ? 'none' : 'build');
+                    }
+                });
+            }
+
+            // Build picker item selection
+            if (buildPicker) {
+                buildPicker.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                });
+                buildPicker.querySelectorAll('.gt-build-picker-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const target = item.getAttribute('data-build');
+                        buildPicker.classList.remove('show');
+                        // Enter placement mode on the scene
+                        if (this.scene && typeof this.scene.enterPlacementMode === 'function') {
+                            this.scene.enterPlacementMode(target);
+                        } else if (this.scene && this.scene.showFloatingToast) {
+                            this.scene.showFloatingToast(`Pasang ${target.toUpperCase()} — mode build aktif`, 0x22c55e);
+                        }
+                    });
                 });
             }
 
@@ -659,7 +741,8 @@ export class EngineMenuBar {
         // Close dropdowns on outside click
         window.addEventListener('click', () => {
             fileDd.classList.remove('show');
-            addDd.classList.remove('show');
+            const bp = document.getElementById('gt-build-picker');
+            if (bp) bp.classList.remove('show');
         });
 
         window.addEventListener('resize', () => {
@@ -705,49 +788,7 @@ export class EngineMenuBar {
             });
         }
 
-        // Dropdown actions: Add Object
-        this.bar.querySelectorAll('#gt-mb-dd-add .gt-mb-menu-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const target = item.getAttribute('data-create');
-                addDd.classList.remove('show');
 
-                // 1. Dialog Percakapan -> Langsung buka GUI Editor Dialog NPC (Wrench)
-                if (target === 'dialogue') {
-                    this.openNPCDialogEditor();
-                    return;
-                }
-
-                // 2. Misi & Quest -> Langsung buka HTML Active Quest Modal
-                if (target === 'quest') {
-                    if (this.scene && typeof this.scene.toggleQuestModal === 'function') {
-                        this.scene.toggleQuestModal(true);
-                    } else if (this.scene && this.scene.questModal) {
-                        this.scene.questModal.show();
-                    }
-                    return;
-                }
-
-                // 3. Parallax Background -> Ganti tema background live
-                if (target === 'parallax') {
-                    if (this.scene && typeof this.scene.cycleParallaxBackground === 'function') {
-                        this.scene.cycleParallaxBackground();
-                    } else if (this.scene && this.scene.showFloatingToast) {
-                        this.scene.showFloatingToast('🌄 Parallax Background aktif pada scene ini!', 0x38bdf8);
-                    }
-                    return;
-                }
-
-                // Jika tipe visual didukung spawner langsung di kanvas:
-                if (['tile', 'npc', 'coin', 'obstacle', 'portal'].includes(target) && this.scene && typeof this.scene.enterPlacementMode === 'function') {
-                    this.scene.enterPlacementMode(target);
-                } else {
-                    CommandConsole.show();
-                    if (CommandConsole.instance) {
-                        CommandConsole.instance.runCommand(`/create ${target}`);
-                    }
-                }
-            });
-        });
 
 
         // Quick Buttons
