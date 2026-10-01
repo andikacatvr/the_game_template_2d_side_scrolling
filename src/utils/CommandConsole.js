@@ -718,7 +718,7 @@ export class CommandConsole {
         // Setup Window Drag & Multi-Resizer (Kiri, Atas, Pojok)
         this.setupWindowDrag();
         this.setupResizer();
-        // printWelcome dihapus agar console tampil bersih tanpa pesan awal
+        this.printWelcome();
     }
 
     setupWindowDrag() {
@@ -1283,7 +1283,11 @@ export class CommandConsole {
     }
 
     printWelcome() {
-        this.logPlayerChat('System', '\\9Ketik pesan biasa atau gunakan command (\\w/help\\9, \\w/inspect\\9, \\w/tp\\9, \\w/god\\9).');
+        const line = document.createElement('div');
+        line.className = 'gt-log-line';
+        const parsedHTML = this.parseGTColorCodes('\\9Ketik pesan biasa atau gunakan command (\\w/help\\9, \\w/inspect\\9, \\w/tp\\9, \\w/god\\9).');
+        line.innerHTML = `<span class="gt-chat-text">${parsedHTML}</span>`;
+        this.appendLog(line);
     }
 
     getActiveScene() {
