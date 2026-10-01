@@ -4,11 +4,10 @@
 // Bilah menu profesional di atas layar game (Height: 34px):
 // 1. File Dropdown: Open Hub, Save Game, Export Game
 // 2. Add Object Dropdown: Platform, NPC, Hazard, Parallax
-// 3. Tombol Cepat: [📜 Scripting], [🎛️ Inspect], [+/create]
+// 3. Tombol Cepat: [🎛️ Inspect], [Preview]
 // 4. Status Badge Engine & Mode Sandbox
 // ===============================================================
 
-import { ScriptingWorkspace } from './ScriptingWorkspace.js';
 import { ExportGameModal } from './ExportGameModal.js';
 import { NPCDialogEditorModal } from './NPCDialogEditorModal.js';
 import { CodeInspector } from '../utils/CodeInspector.js';
@@ -26,8 +25,9 @@ export class EngineMenuBar {
         }
         EngineMenuBar.instance = this;
         this.scene = scene;
-        this.scriptingWorkspace = new ScriptingWorkspace();
         this.isCollapsed = true;
+        this.isEditMode = false;
+        this.currentTool = 'none'; // 'none' | 'punch' | 'wrench'
         this.createDOM();
     }
 
@@ -159,131 +159,263 @@ export class EngineMenuBar {
                     margin: 4px 0;
                 }
 
-                /* Quick Tool Action Buttons */
+                .gt-mb-v-divider {
+                    width: 1px;
+                    height: 16px;
+                    background: rgba(255, 255, 255, 0.12);
+                    margin: 0 3px;
+                }
+
+                .gt-mb-kbd {
+                    font-size: 9px;
+                    line-height: 1;
+                    padding: 1.5px 3.5px;
+                    border-radius: 3px;
+                    background: rgba(255, 255, 255, 0.08);
+                    color: rgba(255, 255, 255, 0.55);
+                    font-family: inherit;
+                    font-weight: 700;
+                    margin-left: 2px;
+                }
+
+                /* Quick Tool Action Buttons: Minimalist, Cohesive & Sleek Dark */
                 .gt-mb-tool-btn {
-                    padding: 3px 10px;
+                    padding: 3px 8px;
                     border-radius: 4px;
-                    border: 1px solid transparent;
-                    font-size: 11.5px;
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    background: rgba(255, 255, 255, 0.04);
+                    color: #d1d5db;
+                    font-size: 11px;
                     font-weight: 600;
                     cursor: pointer;
-                    display: flex;
+                    display: inline-flex;
                     align-items: center;
                     gap: 5px;
-                    transition: all 0.12s ease;
+                    line-height: 1.2;
+                    transition: all 0.14s ease;
+                    user-select: none;
+                    box-sizing: border-box;
+                    height: 25px;
                 }
 
-                .gt-mb-btn-scripting {
-                    background: rgba(56, 189, 248, 0.15);
-                    border-color: rgba(56, 189, 248, 0.35);
-                    color: #7dd3fc;
-                }
-
-                .gt-mb-btn-scripting:hover {
-                    background: #0284c7;
+                .gt-mb-tool-btn:hover {
+                    background: rgba(255, 255, 255, 0.1);
+                    border-color: rgba(255, 255, 255, 0.18);
                     color: #ffffff;
                 }
 
-                .gt-mb-btn-inspect {
-                    background: rgba(245, 158, 11, 0.15);
-                    border-color: rgba(245, 158, 11, 0.35);
-                    color: #fde047;
+                .gt-mb-tool-btn:active {
+                    transform: translateY(1px);
                 }
 
-                .gt-mb-btn-inspect:hover {
-                    background: #d97706;
-                    color: #ffffff;
-                }
-
-                .gt-mb-btn-create {
-                    background: rgba(16, 185, 129, 0.15);
-                    border-color: rgba(16, 185, 129, 0.35);
-                    color: #6ee7b7;
-                }
-
-                .gt-mb-btn-create:hover {
-                    background: #059669;
-                    color: #ffffff;
-                }
-
-                /* Grid System Button (Tiled / Growtopia / Unity Style) */
-                .gt-mb-btn-grid {
-                    background: rgba(168, 85, 247, 0.15);
-                    border-color: rgba(168, 85, 247, 0.35);
-                    color: #c084fc;
-                }
-
-                .gt-mb-btn-grid:hover {
-                    background: #9333ea;
-                    color: #ffffff;
-                }
-
+                /* Individual Subtle Accents for Active States */
                 .gt-mb-btn-grid.active {
-                    background: #a855f7 !important;
-                    color: #ffffff !important;
-                    font-weight: 800 !important;
-                    border-color: #c084fc !important;
-                    box-shadow: 0 0 14px rgba(168, 85, 247, 0.6) !important;
+                    background: rgba(168, 85, 247, 0.18) !important;
+                    color: #e9d5ff !important;
+                    border-color: rgba(168, 85, 247, 0.5) !important;
+                    box-shadow: 0 0 8px rgba(168, 85, 247, 0.25) !important;
                 }
-
-                /* World Manipulation: Dig / Break Button */
-                .gt-mb-btn-dig {
-                    background: rgba(239, 68, 68, 0.15);
-                    border-color: rgba(239, 68, 68, 0.35);
-                    color: #f87171;
-                }
-
-                .gt-mb-btn-dig:hover {
-                    background: #dc2626;
+                .gt-mb-btn-grid.active .gt-mb-kbd {
+                    background: rgba(168, 85, 247, 0.35);
                     color: #ffffff;
                 }
 
                 .gt-mb-btn-dig.active-dig {
-                    background: #ef4444 !important;
-                    color: #ffffff !important;
-                    font-weight: 800 !important;
-                    border-color: #f87171 !important;
-                    box-shadow: 0 0 12px rgba(239, 68, 68, 0.6) !important;
+                    background: rgba(239, 68, 68, 0.18) !important;
+                    color: #fca5a5 !important;
+                    border-color: rgba(239, 68, 68, 0.5) !important;
+                    box-shadow: 0 0 8px rgba(239, 68, 68, 0.25) !important;
                 }
-
-                /* World Manipulation: Build / Place Button */
-                .gt-mb-btn-build {
-                    background: rgba(34, 197, 94, 0.15);
-                    border-color: rgba(34, 197, 94, 0.35);
-                    color: #4ade80;
-                }
-
-                .gt-mb-btn-build:hover {
-                    background: #16a34a;
+                .gt-mb-btn-dig.active-dig .gt-mb-kbd {
+                    background: rgba(239, 68, 68, 0.35);
                     color: #ffffff;
                 }
 
                 .gt-mb-btn-build.active-build {
-                    background: #22c55e !important;
-                    color: #ffffff !important;
-                    font-weight: 800 !important;
-                    border-color: #4ade80 !important;
-                    box-shadow: 0 0 12px rgba(34, 197, 94, 0.6) !important;
+                    background: rgba(34, 197, 94, 0.18) !important;
+                    color: #86efac !important;
+                    border-color: rgba(34, 197, 94, 0.5) !important;
+                    box-shadow: 0 0 8px rgba(34, 197, 94, 0.25) !important;
                 }
-
-                /* Wrench Edit Button (Growtopia Style) */
-                .gt-mb-btn-edit {
-                    background: rgba(245, 158, 11, 0.15);
-                    border-color: rgba(245, 158, 11, 0.35);
-                    color: #fbbf24;
-                }
-
-                .gt-mb-btn-edit:hover {
-                    background: #d97706;
+                .gt-mb-btn-build.active-build .gt-mb-kbd {
+                    background: rgba(34, 197, 94, 0.35);
                     color: #ffffff;
                 }
 
-                .gt-mb-btn-edit.active {
-                    background: #f59e0b !important;
-                    color: #0f172a !important;
-                    font-weight: 800 !important;
+                .gt-mb-btn-edit.active,
+                .gt-mb-btn-edit.active-wrench {
+                    background: rgba(245, 158, 11, 0.18) !important;
+                    color: #fde047 !important;
+                    border-color: rgba(245, 158, 11, 0.5) !important;
+                    box-shadow: 0 0 8px rgba(245, 158, 11, 0.25) !important;
+                }
+
+                .gt-mb-btn-edit.active-punch {
+                    background: rgba(239, 68, 68, 0.18) !important;
+                    color: #fca5a5 !important;
+                    border-color: rgba(239, 68, 68, 0.5) !important;
+                    box-shadow: 0 0 8px rgba(239, 68, 68, 0.25) !important;
+                }
+
+                .gt-mb-btn-edit.active-build {
+                    background: rgba(34, 197, 94, 0.18) !important;
+                    color: #86efac !important;
+                    border-color: rgba(34, 197, 94, 0.5) !important;
+                    box-shadow: 0 0 8px rgba(34, 197, 94, 0.25) !important;
+                }
+
+                /* Blender Style Slim Vertical Toolbar Melebar ke Bawah Agak Transparan di Bawah HP Bar */
+                .gt-mb-edit-floating-panel {
+                    position: fixed;
+                    top: 70px;
+                    left: 20px;
+                    width: 38px;
+                    background: rgba(24, 24, 27, 0.85);
+                    backdrop-filter: blur(14px);
+                    -webkit-backdrop-filter: blur(14px);
+                    border: 1px solid rgba(255, 255, 255, 0.16);
+                    border-radius: 6px;
+                    padding: 3px;
+                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+                    display: none;
+                    flex-direction: column;
+                    gap: 3px;
+                    z-index: 99990;
+                    box-sizing: border-box;
+                    transition: top 0.2s cubic-bezier(0.16, 1, 0.3, 1), left 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.14s ease;
+                    animation: gtFadeSlideDown 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+
+                .gt-mb-edit-floating-panel.show {
+                    display: flex;
+                }
+
+                @keyframes gtFadeSlideDown {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-6px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+
+                /* Blender Tool Square Button (Persis Kotak-Kotak Kecil di Screenshot) */
+                .gt-blender-tool-btn {
+                    position: relative;
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 4px;
+                    background: transparent;
+                    border: 1px solid transparent;
+                    color: #d4d4d8;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    font-size: 16px;
+                    transition: all 0.12s ease;
+                    user-select: none;
+                    padding: 0;
+                    box-sizing: border-box;
+                }
+
+                .gt-blender-tool-btn:hover {
+                    background: rgba(255, 255, 255, 0.12);
+                    border-color: rgba(255, 255, 255, 0.22);
+                    color: #ffffff;
+                }
+
+                /* Aksen Segitiga Mungil di Sudut Bawah-Kanan Khas Blender */
+                .gt-blender-tool-btn::after {
+                    content: '';
+                    position: absolute;
+                    right: 2px;
+                    bottom: 2px;
+                    width: 0;
+                    height: 0;
+                    border-style: solid;
+                    border-width: 0 0 4px 4px;
+                    border-color: transparent transparent rgba(255, 255, 255, 0.45) transparent;
+                }
+
+                /* Keadaan Aktif Punch (Growtopia Red / Blender Style) */
+                .gt-blender-tool-btn.active-punch,
+                .gt-blender-tool-btn.active.punch-tool {
+                    background: #dc2626 !important;
+                    border-color: #f87171 !important;
+                    color: #ffffff !important;
+                    box-shadow: 0 0 10px rgba(239, 68, 68, 0.6) !important;
+                }
+
+                .gt-blender-tool-btn.active-punch::after {
+                    border-color: transparent transparent #ffffff transparent;
+                }
+
+                /* Keadaan Aktif Build (Modular Green / Blender Style) */
+                .gt-blender-tool-btn.active-build,
+                .gt-blender-tool-btn.active.build-tool {
+                    background: #16a34a !important;
+                    border-color: #4ade80 !important;
+                    color: #ffffff !important;
+                    box-shadow: 0 0 10px rgba(34, 197, 94, 0.6) !important;
+                }
+
+                .gt-blender-tool-btn.active-build::after {
+                    border-color: transparent transparent #ffffff transparent;
+                }
+
+                /* Keadaan Aktif Wrench (Growtopia Gold / Blender Style) */
+                .gt-blender-tool-btn.active-wrench,
+                .gt-blender-tool-btn.active.wrench-tool {
+                    background: #d97706 !important;
                     border-color: #fbbf24 !important;
-                    box-shadow: 0 0 14px rgba(245, 158, 11, 0.6) !important;
+                    color: #ffffff !important;
+                    box-shadow: 0 0 10px rgba(245, 158, 11, 0.6) !important;
+                }
+
+                .gt-blender-tool-btn.active-wrench::after {
+                    border-color: transparent transparent #ffffff transparent;
+                }
+
+                /* Floating Tooltip ke Kanan saat Mouse Hover */
+                .gt-blender-tooltip {
+                    position: absolute;
+                    left: 40px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: #18181b;
+                    border: 1px solid #3f3f46;
+                    color: #f4f4f5;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    white-space: nowrap;
+                    pointer-events: none;
+                    opacity: 0;
+                    visibility: hidden;
+                    transition: opacity 0.12s ease, transform 0.12s ease;
+                    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+                    z-index: 100005;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                }
+
+                .gt-blender-tooltip-badge {
+                    font-size: 9.5px;
+                    padding: 1px 4px;
+                    border-radius: 3px;
+                    background: rgba(255, 255, 255, 0.15);
+                    color: #e4e4e7;
+                }
+
+                .gt-blender-tool-btn:hover .gt-blender-tooltip {
+                    opacity: 1;
+                    visibility: visible;
+                    transform: translateY(-50%) translateX(2px);
                 }
 
                 /* Right Status & Controls */
@@ -374,39 +506,47 @@ export class EngineMenuBar {
                     </div>
                 </div>
 
-                <!-- Quick Button: Edit / Wrench (Growtopia Style) -->
-                <button class="gt-mb-tool-btn gt-mb-btn-edit" id="gt-mb-btn-edit" title="Mode Edit Wrench: Klik NPC untuk mengedit percakapan &amp; nama">
-                    <span>🔧</span> Edit
-                </button>
+                <div class="gt-mb-v-divider"></div>
 
-                <!-- Quick Button: Scripting (Blender Style) -->
-                <button class="gt-mb-tool-btn gt-mb-btn-scripting" id="gt-mb-btn-scripting" title="Buka Editor Koding di Browser">
-                    <span>📜</span> Scripting
+                <!-- Quick Button: Edit (Growtopia Tools: Punch & Wrench) -->
+                <button class="gt-mb-tool-btn gt-mb-btn-edit" id="gt-mb-btn-edit" title="Buka Toolbar Tools di Bawah HP (Punch &amp; Wrench)">
+                    <span id="gt-mb-edit-icon">🔧</span>
+                    <span id="gt-mb-edit-label">Edit</span>
                 </button>
 
                 <!-- Quick Button: Inspect -->
                 <button class="gt-mb-tool-btn gt-mb-btn-inspect" id="gt-mb-btn-inspect" title="Buka Live Parameter Sliders">
-                    <span>🎛️</span> Inspect
+                    <span>🎛️</span>
+                    <span>Inspect</span>
                 </button>
 
-                <!-- Quick Button: Create World & Scene -->
-                <button class="gt-mb-tool-btn gt-mb-btn-create" id="gt-mb-btn-create" title="Buka World & Scene Builder">
-                    Create
+                <!-- Quick Button: Preview / Scene Builder -->
+                <button class="gt-mb-tool-btn gt-mb-btn-create" id="gt-mb-btn-create" title="Buka Preview World &amp; Scene Builder">
+                    <span>👁️</span>
+                    <span>Preview</span>
                 </button>
+
+                <div class="gt-mb-v-divider"></div>
 
                 <!-- Quick Button: Grid System (Unity/Godot/Tiled Style) -->
                 <button class="gt-mb-tool-btn gt-mb-btn-grid" id="gt-mb-btn-grid" title="Toggle Grid System 50px (Shortcut: G)">
-                    <span>▦</span> Grid
+                    <span>▦</span>
+                    <span>Grid</span>
+                    <span class="gt-mb-kbd">G</span>
                 </button>
 
                 <!-- Quick Button: Gali / Hapus Balok (Growtopia/Terraria Style) -->
                 <button class="gt-mb-tool-btn gt-mb-btn-dig" id="gt-mb-btn-dig" title="Mode Gali &amp; Hapus Balok / Objek (Shortcut: X)">
-                    <span>⛏️</span> Gali [X]
+                    <span>⛏️</span>
+                    <span>Gali</span>
+                    <span class="gt-mb-kbd">X</span>
                 </button>
 
                 <!-- Quick Button: Pasang Balok Modular -->
                 <button class="gt-mb-tool-btn gt-mb-btn-build" id="gt-mb-btn-build" title="Mode Pasang Balok Lego Modular (Shortcut: B)">
-                    <span>🧱</span> Pasang [B]
+                    <span>🧱</span>
+                    <span>Pasang</span>
+                    <span class="gt-mb-kbd">B</span>
                 </button>
             </div>
 
@@ -421,8 +561,45 @@ export class EngineMenuBar {
         this.pullTab = document.createElement('div');
         this.pullTab.className = 'gt-mb-pull-tab show';
         this.pullTab.innerHTML = '<span>🛠️</span> <span>ENGINE</span> <span style="font-size: 8px;">▼</span>';
-        this.pullTab.title = 'Buka Engine Menu Bar (File, Add Object, Edit, Scripting)';
+        this.pullTab.title = 'Buka Engine Menu Bar (File, Add Object, Edit, Inspect, Preview)';
         document.body.appendChild(this.pullTab);
+
+        // Floating Toolbar Blender melebar ke bawah tepat di bawah HP bar
+        const oldPanel = document.getElementById('gt-mb-dd-edit');
+        if (oldPanel) oldPanel.remove();
+
+        this.editFloatingPanel = document.createElement('div');
+        this.editFloatingPanel.className = 'gt-mb-edit-floating-panel';
+        this.editFloatingPanel.id = 'gt-mb-dd-edit';
+        this.editFloatingPanel.innerHTML = `
+            <!-- Kotak 1: Punch (Hancurkan Balok) -->
+            <button class="gt-blender-tool-btn punch-tool" id="gt-card-tool-punch" type="button" title="Punch (Hancurkan Balok) [X]">
+                <span>👊</span>
+                <div class="gt-blender-tooltip">
+                    <span>👊 Punch</span>
+                    <span class="gt-blender-tooltip-badge">Hancurkan Balok [X]</span>
+                </div>
+            </button>
+
+            <!-- Kotak 2: Build (Pasang Balok Modular) -->
+            <button class="gt-blender-tool-btn build-tool" id="gt-card-tool-build" type="button" title="Build (Pasang Balok Modular) [B]">
+                <span>🧱</span>
+                <div class="gt-blender-tooltip">
+                    <span>🧱 Build</span>
+                    <span class="gt-blender-tooltip-badge">Pasang Balok [B]</span>
+                </div>
+            </button>
+
+            <!-- Kotak 3: Wrench (Edit Dialog NPC) -->
+            <button class="gt-blender-tool-btn wrench-tool" id="gt-card-tool-wrench" type="button" title="Wrench (Edit Dialog NPC)">
+                <span>🔧</span>
+                <div class="gt-blender-tooltip">
+                    <span>🔧 Wrench</span>
+                    <span class="gt-blender-tooltip-badge">Edit Dialog NPC</span>
+                </div>
+            </button>
+        `;
+        document.body.appendChild(this.editFloatingPanel);
 
         this.bindEvents();
     }
@@ -432,6 +609,7 @@ export class EngineMenuBar {
         const fileDd = this.bar.querySelector('#gt-mb-dd-file');
         const addBtn = this.bar.querySelector('#gt-mb-btn-add');
         const addDd = this.bar.querySelector('#gt-mb-dd-add');
+        const editBtn = this.bar.querySelector('#gt-mb-btn-edit');
 
         // Toggle Dropdowns
         fileBtn.addEventListener('click', (e) => {
@@ -446,10 +624,59 @@ export class EngineMenuBar {
             addDd.classList.toggle('show');
         });
 
+        if (editBtn && this.editFloatingPanel) {
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                fileDd.classList.remove('show');
+                addDd.classList.remove('show');
+                this.updateFloatingPanelPosition();
+                const willShow = !this.editFloatingPanel.classList.contains('show');
+                this.editFloatingPanel.classList.toggle('show', willShow);
+                editBtn.classList.toggle('active', willShow);
+                if (willShow && this.currentTool === 'none') {
+                    if (this.scene && this.scene.showFloatingToast) {
+                        this.scene.showFloatingToast('🛠️ Toolbar Tools di Bawah HP: Pilih Punch [👊] atau Wrench [🔧]', 0x38bdf8);
+                    }
+                }
+            });
+
+            this.editFloatingPanel.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+
+            const punchCard = document.getElementById('gt-card-tool-punch');
+            if (punchCard) {
+                punchCard.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.selectTool(this.currentTool === 'punch' ? 'none' : 'punch');
+                });
+            }
+
+            const buildCard = document.getElementById('gt-card-tool-build');
+            if (buildCard) {
+                buildCard.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.selectTool(this.currentTool === 'build' ? 'none' : 'build');
+                });
+            }
+
+            const wrenchCard = document.getElementById('gt-card-tool-wrench');
+            if (wrenchCard) {
+                wrenchCard.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.selectTool(this.currentTool === 'wrench' ? 'none' : 'wrench');
+                });
+            }
+        }
+
         // Close dropdowns on outside click
         window.addEventListener('click', () => {
             fileDd.classList.remove('show');
             addDd.classList.remove('show');
+        });
+
+        window.addEventListener('resize', () => {
+            this.updateFloatingPanelPosition();
         });
 
         // Dropdown actions: File
@@ -535,19 +762,8 @@ export class EngineMenuBar {
             });
         });
 
-        // Quick Button: Edit / Wrench
-        const editBtn = this.bar.querySelector('#gt-mb-btn-edit');
-        if (editBtn) {
-            editBtn.addEventListener('click', () => {
-                this.toggleEditMode();
-            });
-        }
 
         // Quick Buttons
-        this.bar.querySelector('#gt-mb-btn-scripting').addEventListener('click', () => {
-            this.scriptingWorkspace.toggle(this.scene);
-        });
-
         this.bar.querySelector('#gt-mb-btn-inspect').addEventListener('click', () => {
             CodeInspector.toggleLive();
         });
@@ -593,6 +809,19 @@ export class EngineMenuBar {
         });
     }
 
+    updateFloatingPanelPosition() {
+        if (!this.editFloatingPanel) return;
+        const hpBox = document.querySelector('.gt-hud-hp-box');
+        if (hpBox) {
+            const rect = hpBox.getBoundingClientRect();
+            this.editFloatingPanel.style.left = `${Math.max(16, rect.left)}px`;
+            this.editFloatingPanel.style.top = `${rect.bottom + 10}px`;
+        } else {
+            this.editFloatingPanel.style.left = '20px';
+            this.editFloatingPanel.style.top = this.isCollapsed ? '70px' : '108px';
+        }
+    }
+
     collapse() {
         this.isCollapsed = true;
         this.bar.classList.add('collapsed');
@@ -600,6 +829,8 @@ export class EngineMenuBar {
         if (this.scene && this.scene.htmlHUD) {
             this.scene.htmlHUD.adjustForMenuBar(false);
         }
+        this.updateFloatingPanelPosition();
+        setTimeout(() => this.updateFloatingPanelPosition(), 220);
     }
 
     expand() {
@@ -609,23 +840,105 @@ export class EngineMenuBar {
         if (this.scene && this.scene.htmlHUD) {
             this.scene.htmlHUD.adjustForMenuBar(true);
         }
+        this.updateFloatingPanelPosition();
+        setTimeout(() => this.updateFloatingPanelPosition(), 220);
+    }
+
+    selectTool(tool) {
+        if (tool === this.currentTool) {
+            tool = 'none';
+        }
+        this.currentTool = tool;
+
+        const isPunch = (tool === 'punch');
+        const isBuild = (tool === 'build');
+        const isWrench = (tool === 'wrench');
+
+        // 1. Sinkronisasi GridSystem untuk Punch (Dig mode) & Build mode
+        if (isPunch) {
+            if (GridSystem.toolMode !== 'dig') {
+                GridSystem.setToolMode('dig');
+            }
+        } else if (isBuild) {
+            if (GridSystem.toolMode !== 'build') {
+                GridSystem.setToolMode('build');
+            }
+        } else {
+            if (GridSystem.toolMode === 'dig' || GridSystem.toolMode === 'build') {
+                GridSystem.setToolMode('none');
+            }
+        }
+
+        // 2. Sinkronisasi Wrench / Edit Mode untuk NPC
+        this.isEditMode = isWrench;
+        if (this.scene) {
+            this.scene.isEditMode = isWrench;
+            if (typeof this.scene.setEditMode === 'function') {
+                this.scene.setEditMode(isWrench);
+            }
+        }
+
+        // 3. Update Tampilan Tombol Kotak di Floating Toolbar
+        const punchCard = document.getElementById('gt-card-tool-punch');
+        const buildCard = document.getElementById('gt-card-tool-build');
+        const wrenchCard = document.getElementById('gt-card-tool-wrench');
+
+        if (punchCard) {
+            punchCard.classList.toggle('active', isPunch);
+            punchCard.classList.toggle('active-punch', isPunch);
+        }
+        if (buildCard) {
+            buildCard.classList.toggle('active', isBuild);
+            buildCard.classList.toggle('active-build', isBuild);
+        }
+        if (wrenchCard) {
+            wrenchCard.classList.toggle('active', isWrench);
+            wrenchCard.classList.toggle('active-wrench', isWrench);
+        }
+
+        // 4. Update Tampilan Tombol Utama Menu Bar
+        const editBtn = this.bar.querySelector('#gt-mb-btn-edit');
+        const editIcon = this.bar.querySelector('#gt-mb-edit-icon');
+        const editLabel = this.bar.querySelector('#gt-mb-edit-label');
+
+        if (editBtn) {
+            editBtn.classList.remove('active', 'active-punch', 'active-build', 'active-wrench');
+            if (isPunch) {
+                editBtn.classList.add('active-punch');
+                if (editIcon) editIcon.textContent = '👊';
+                if (editLabel) editLabel.textContent = 'Punch';
+            } else if (isBuild) {
+                editBtn.classList.add('active-build');
+                if (editIcon) editIcon.textContent = '🧱';
+                if (editLabel) editLabel.textContent = 'Build';
+            } else if (isWrench) {
+                editBtn.classList.add('active-wrench');
+                if (editIcon) editIcon.textContent = '🔧';
+                if (editLabel) editLabel.textContent = 'Wrench';
+            } else {
+                if (editIcon) editIcon.textContent = '🔧';
+                if (editLabel) editLabel.textContent = 'Edit';
+            }
+        }
+
+        // 5. Suara & Notifikasi Toast
+        AudioManager.playClick();
+        if (this.scene && this.scene.showFloatingToast) {
+            if (isPunch) {
+                this.scene.showFloatingToast('👊 Mode Punch AKTIF! Klik balok tanah / platform untuk menghancurkan.', 0xef4444);
+            } else if (isBuild) {
+                this.scene.showFloatingToast('🧱 Mode Build AKTIF! Klik petak kosong untuk memasang balok modular.', 0x22c55e);
+            } else if (isWrench) {
+                this.scene.showFloatingToast('🔧 Mode Wrench AKTIF! Klik NPC atau Papan Tanda untuk edit dialog.', 0xf59e0b);
+            } else {
+                this.scene.showFloatingToast('Mode Tool Dinonaktifkan.', 0x64748b);
+            }
+        }
     }
 
     toggleEditMode(forceState) {
-        this.isEditMode = (forceState !== undefined) ? forceState : !this.isEditMode;
-        const editBtn = this.bar.querySelector('#gt-mb-btn-edit');
-        if (editBtn) {
-            editBtn.classList.toggle('active', this.isEditMode);
-        }
-
-        if (this.scene) {
-            this.scene.isEditMode = this.isEditMode;
-            if (typeof this.scene.setEditMode === 'function') {
-                this.scene.setEditMode(this.isEditMode);
-            } else if (this.scene.showFloatingToast) {
-                this.scene.showFloatingToast(this.isEditMode ? '🔧 Mode Edit (Wrench) AKTIF! Dekati atau klik NPC untuk edit dialog.' : 'Mode Edit NONAKTIF.', this.isEditMode ? 0xf59e0b : 0x64748b);
-            }
-        }
+        const nextState = (forceState !== undefined) ? forceState : (this.currentTool !== 'wrench');
+        this.selectTool(nextState ? 'wrench' : 'none');
     }
 
     openNPCDialogEditor(npcRef = null) {
@@ -655,8 +968,8 @@ export class EngineMenuBar {
     hide() {
         this.bar.style.display = 'none';
         this.pullTab.classList.remove('show');
-        if (this.scriptingWorkspace) {
-            this.scriptingWorkspace.hide();
+        if (this.editFloatingPanel) {
+            this.editFloatingPanel.classList.remove('show');
         }
         if (this.npcDialogEditor) {
             this.npcDialogEditor.close();

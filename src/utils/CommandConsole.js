@@ -637,8 +637,6 @@ export class CommandConsole {
                         <span class="gt-mini-badge">COMMAND</span>
                     </div>
                     <div class="gt-header-actions">
-                        <button class="gt-btn-tool" id="gt-btn-quick-create" style="background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%); font-weight: 800;" title="Buka World & Scene Builder">Create</button>
-                        <button class="gt-btn-tool" id="gt-btn-quick-inspect" style="background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%);">Inspect</button>
                         <button class="gt-btn-tool" id="gt-btn-quick-help">Help</button>
                         <button class="gt-btn-tool" id="gt-btn-clear">Clear</button>
                         <button class="gt-btn-tool" id="gt-btn-minimize" title="Minimize / Perkecil chat box">−</button>
@@ -680,14 +678,6 @@ export class CommandConsole {
 
         // Event Buttons
         this.container.querySelector('#gt-btn-clear').addEventListener('click', () => this.clearLogs());
-        this.container.querySelector('#gt-btn-quick-inspect').addEventListener('click', () => {
-            if (this.isMinimized) this.toggleMinimize(false);
-            this.runCommand('/inspect');
-        });
-        this.container.querySelector('#gt-btn-quick-create').addEventListener('click', () => {
-            if (this.isMinimized) this.toggleMinimize(false);
-            this.openSceneBuilder();
-        });
         this.container.querySelector('#gt-btn-quick-help').addEventListener('click', () => {
             if (this.isMinimized) this.toggleMinimize(false);
             this.runCommand('/help');
@@ -728,7 +718,7 @@ export class CommandConsole {
         // Setup Window Drag & Multi-Resizer (Kiri, Atas, Pojok)
         this.setupWindowDrag();
         this.setupResizer();
-        this.printWelcome();
+        // printWelcome dihapus agar console tampil bersih tanpa pesan awal
     }
 
     setupWindowDrag() {

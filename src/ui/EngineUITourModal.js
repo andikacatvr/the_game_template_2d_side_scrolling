@@ -22,14 +22,14 @@ export class EngineUITourModal {
         this.resizeHandler = null;
 
         // Urutan alur tur yang dijelaskan langsung oleh Pemandu Engine:
-        // 1. Chat Bar -> 2. File -> 3. Add Object -> 4. Edit -> 5. Scripting -> 6. Inspect -> 7. Create
+        // 1. Chat Bar -> 2. File -> 3. Add Object -> 4. Edit -> 5. Inspect -> 6. Preview
         this.steps = [
             {
                 id: 'step_console',
                 selector: '#gt-floating-btn',
                 fallbackSelector: '#gt-floating-btn',
                 title: '💬 Tombol Command Console',
-                badge: 'Langkah 1 dari 7',
+                badge: 'Langkah 1 dari 6',
                 npcSpeech: 'Halo calon kreator game! Perhatikan panah yang menunjuk ke tombol <b>>_ Command</b> di pojok kanan bawah ini. Di sini kamu bisa mengetik perintah developer dan cheat seperti <code>/speed 350</code>, <code>/jump 550</code>, atau <code>/god</code> untuk kebal duri.',
                 arrowDir: 'down',
                 beforeStep: () => {
@@ -44,7 +44,7 @@ export class EngineUITourModal {
                 selector: '#gt-mb-btn-file',
                 fallbackSelector: '.gt-mb-dropdown:first-child',
                 title: '📁 Menu File',
-                badge: 'Langkah 2 dari 7',
+                badge: 'Langkah 2 dari 6',
                 npcSpeech: 'Sekarang lihat tanda panah yang terbang ke atas kiri! Ini adalah <b>Menu File</b>. Dari sini kamu bisa membuka Project Hub, menyimpan progres (*AutoSave*), dan <b>Mengekspor Game ke file .ZIP</b> siap main untuk dibagikan ke teman-temanmu!',
                 arrowDir: 'up',
                 beforeStep: () => {
@@ -58,7 +58,7 @@ export class EngineUITourModal {
                 selector: '#gt-mb-btn-add',
                 fallbackSelector: '.gt-mb-dropdown:nth-child(2)',
                 title: '🧱 Menu Add Object',
-                badge: 'Langkah 3 dari 7',
+                badge: 'Langkah 3 dari 6',
                 npcSpeech: 'Panah berpindah ke tombol <b>Add Object</b>. Klik tombol ini saat kamu ingin menaruh Platform lantai baru, Karakter NPC teman, Koin emas, Duri rintangan, atau Portal antar-level langsung ke dalam kanvas game!',
                 arrowDir: 'up'
             },
@@ -66,32 +66,24 @@ export class EngineUITourModal {
                 id: 'step_edit',
                 selector: '#gt-mb-btn-edit',
                 title: '🔧 Mode Edit (Growtopia Wrench)',
-                badge: 'Langkah 4 dari 7',
+                badge: 'Langkah 4 dari 6',
                 npcSpeech: 'Berikutnya adalah tombol <b>Mode Edit (Wrench)</b>. Saat tombol kunci inggris ini aktif, kamu cukup <b>mengklik NPC mana saja</b> di layar untuk langsung mengedit nama dan kalimat dialog bicaranya secara live tanpa koding!',
-                arrowDir: 'up'
-            },
-            {
-                id: 'step_scripting',
-                selector: '#gt-mb-btn-scripting',
-                title: '📜 Scripting Workspace',
-                badge: 'Langkah 5 dari 7',
-                npcSpeech: 'Tombol <b>Scripting</b> ini membuka editor koding internal browser bergaya Blender/VS Code. Kamu bisa melihat dan mengedit script JavaScript logika game secara langsung!',
                 arrowDir: 'up'
             },
             {
                 id: 'step_inspect',
                 selector: '#gt-mb-btn-inspect',
                 title: '🎛️ Live Inspector',
-                badge: 'Langkah 6 dari 7',
+                badge: 'Langkah 5 dari 6',
                 npcSpeech: 'Di <b>Live Inspector</b>, kamu bisa menguji dan merasakan fisika heromu secara langsung! Gunakan slider interaktif untuk mengatur kecepatan jalan (Speed), daya lompat (Jump Force), hingga gravitasi dunia.',
                 arrowDir: 'up'
             },
             {
                 id: 'step_create',
                 selector: '#gt-mb-btn-create',
-                title: '✨ Quick Create Builder',
-                badge: 'Langkah 7 dari 7',
-                npcSpeech: 'Terakhir, tombol <b>+ Create</b> ini adalah jalan pintas cepat untuk membuka World & Scene Builder visual (membangun biome, monster, platform, dll). Nah, sekarang kamu sudah paham seluruh fungsi tombolnya!',
+                title: '✨ Quick Preview Builder',
+                badge: 'Langkah 6 dari 6',
+                npcSpeech: 'Terakhir, tombol <b>Preview</b> ini adalah jalan pintas cepat untuk membuka World & Scene Builder visual (membangun biome, monster, platform, dll). Nah, sekarang kamu sudah paham seluruh fungsi tombolnya!',
                 arrowDir: 'up'
             }
         ];

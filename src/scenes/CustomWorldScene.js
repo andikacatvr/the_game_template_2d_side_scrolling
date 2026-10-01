@@ -94,7 +94,7 @@ export class CustomWorldScene extends Phaser.Scene {
         this.setupHUDAndControls();
 
         // Banner Notifikasi Selamat Datang Scene Baru
-        this.showWorldBanner(`🎬 Scene: "${this.worldData.name || 'Scene Kreasiku'}" • [F4 / Klik Edit] untuk Live Editor`);
+        this.showWorldBanner(`🎬 Scene: "${this.worldData.name || 'Scene Kreasiku'}" • [F4 / Tombol Preview] untuk Editor Visual`);
     }
 
     // ===============================================================
@@ -443,7 +443,10 @@ export class CustomWorldScene extends Phaser.Scene {
                     const bx = c * 50 + 25;
                     const by = r * 50 + 25;
                     const dirtTile = this.add.rectangle(bx, by, 50, 50, dirtColor).setDepth(4);
-                    this.add.rectangle(bx, by - 18, 50, 14, surfaceColor).setDepth(5);
+                    const hasAbove = terrainSet.has(`${c},${r - 1}`);
+                    if (!hasAbove) {
+                        this.add.rectangle(bx, by - 18, 50, 14, surfaceColor).setDepth(5);
+                    }
                     this.physics.add.existing(dirtTile, true);
                     this.platforms.add(dirtTile);
                 }
@@ -586,6 +589,27 @@ export class CustomWorldScene extends Phaser.Scene {
                 spawnY = (p.row !== undefined) ? (p.row * 50 + 22) : 370;
             }
         }
+
+        // Pintu Putih Kedatangan (White Spawn Door) tepat di titik spawn
+        const doorW = 36;
+        const doorH = 52;
+        const doorGroundY = spawnY + 22;
+        const spawnDoor = this.add.container(spawnX, doorGroundY - doorH / 2).setDepth(2);
+
+        const doorFrame = this.add.rectangle(0, 0, doorW + 4, doorH + 2, 0xffffff);
+        doorFrame.setStrokeStyle(1.8, 0xbae6fd);
+        const doorBody = this.add.rectangle(0, 0, doorW, doorH, 0xf8fafc);
+        const p1 = this.add.rectangle(-doorW * 0.23, -doorH * 0.24, doorW * 0.38, doorH * 0.4, 0xe2e8f0);
+        const p2 = this.add.rectangle(doorW * 0.23, -doorH * 0.24, doorW * 0.38, doorH * 0.4, 0xe2e8f0);
+        const p3 = this.add.rectangle(-doorW * 0.23, doorH * 0.24, doorW * 0.38, doorH * 0.4, 0xe2e8f0);
+        const p4 = this.add.rectangle(doorW * 0.23, doorH * 0.24, doorW * 0.38, doorH * 0.4, 0xe2e8f0);
+        const knob = this.add.circle(doorW / 2 - 5, 2, 2.5, 0xf59e0b);
+        knob.setStrokeStyle(1, 0xfde047);
+        const plakat = this.add.rectangle(0, -doorH / 2 + 5, 26, 8, 0x0284c7);
+        plakat.setStrokeStyle(1, 0x38bdf8);
+        const plakatTxt = this.add.text(0, -doorH / 2 + 5, 'SPAWN', { fontSize: '7px', fontFamily: 'monospace', fill: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
+
+        spawnDoor.add([doorFrame, doorBody, p1, p2, p3, p4, knob, plakat, plakatTxt]);
 
         this.player = this.physics.add.sprite(spawnX, spawnY, playerTexture).setDepth(15);
         this.player.setCollideWorldBounds(true);
@@ -732,6 +756,19 @@ export class CustomWorldScene extends Phaser.Scene {
                 fill: '#ffffff',
                 fontFamily: "'JetBrains Mono', monospace"
             }).setOrigin(0.5).setDepth(10);
+
+            // Klik NPC langsung buka editor jika dalam Edit Mode (Growtopia Wrench)
+            npc.setInteractive({ useHandCursor: true }).on('pointerdown', () => {
+                if (this.isEditMode) {
+                    if (this.engineMenuBar) this.engineMenuBar.openNPCDialogEditor(this.npc);
+                } else {
+                    this.dialogBox.showDialogue([
+                        `Halo pengelana! Selamat datang di ${this.worldData.name || 'Dunia Kreasimu'}.`,
+                        'Hati-hati dengan kolam lahar dan monster yang berpatroli!',
+                        'Capai portal di ujung kanan untuk menyelesaikan misi.'
+                    ]);
+                }
+            });
         };
 
         const spawnChest = (x, y = 400) => {
@@ -888,53 +925,101 @@ export class CustomWorldScene extends Phaser.Scene {
             }
         });
 
-        this.createEditorQuickButton();
+        this.input.on('pointerdown', (pointer) => this.handleWorldPointerDown(pointer));
     }
 
-    createEditorQuickButton() {
-        const old = document.getElementById('gt-live-edit-btn');
-        if (old) old.remove();
+    setEditMode(active) {
+        this.isEditMode = active;
+        if (this.game && this.game.canvas) {
+            this.game.canvas.style.cursor = active ? 'cell' : 'default';
+        }
+        if (this.showFloatingToast) {
+            this.showFloatingToast(active ? '🔧 Mode Edit (Wrench) AKTIF! Klik NPC untuk edit dialog.' : 'Mode Edit NONAKTIF.', active ? 0xf59e0b : 0x64748b);
+        }
+    }
 
-        const btn = document.createElement('button');
-        btn.id = 'gt-live-edit-btn';
-        btn.innerHTML = '<span>🛠️</span> <span>Edit Scene</span> <span style="font-size: 10px; opacity: 0.7;">[F4]</span>';
-        btn.style.position = 'fixed';
-        btn.style.top = '48px';
-        btn.style.right = '16px';
-        btn.style.zIndex = '99995';
-        btn.style.background = 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)';
-        btn.style.border = '1px solid #38bdf8';
-        btn.style.color = '#38bdf8';
-        btn.style.padding = '6px 14px';
-        btn.style.borderRadius = '6px';
-        btn.style.fontSize = '12px';
-        btn.style.fontWeight = '700';
-        btn.style.cursor = 'pointer';
-        btn.style.boxShadow = '0 4px 14px rgba(0, 0, 0, 0.4)';
-        btn.style.display = 'flex';
-        btn.style.alignItems = 'center';
-        btn.style.gap = '6px';
-        btn.style.transition = 'all 0.15s ease';
-        btn.style.fontFamily = "'Jost', sans-serif";
+    handleWorldPointerDown(pointer) {
+        if (pointer.event && pointer.event.target && pointer.event.target.tagName !== 'CANVAS') return;
+        if (!GridSystem || GridSystem.toolMode === 'none') return;
+        const cam = this.cameras.main;
+        const wp = cam.getWorldPoint(pointer.x, pointer.y);
+        if (GridSystem.toolMode === 'dig') {
+            this.handleWorldDig(wp.x, wp.y);
+        } else if (GridSystem.toolMode === 'build') {
+            this.handleWorldBuild(wp.x, wp.y);
+        }
+    }
 
-        btn.addEventListener('mouseenter', () => {
-            btn.style.transform = 'translateY(-1px)';
-            btn.style.background = 'linear-gradient(180deg, #0284c7 0%, #0369a1 100%)';
-            btn.style.color = '#ffffff';
-        });
-        btn.addEventListener('mouseleave', () => {
-            btn.style.transform = 'translateY(0)';
-            btn.style.background = 'linear-gradient(180deg, #1e293b 0%, #0f172a 100%)';
-            btn.style.color = '#38bdf8';
-        });
-        btn.addEventListener('click', () => {
-            AudioManager.playClick();
-            this.openSceneBuilder();
+    handleWorldDig(worldX, worldY) {
+        const col = Math.floor(worldX / 50);
+        const row = Math.floor(worldY / 50);
+        const cx = col * 50 + 25;
+        const cy = row * 50 + 25;
+
+        // Cari blok/platform di koordinat ini
+        if (this.platforms) {
+            const children = this.platforms.getChildren();
+            for (let i = children.length - 1; i >= 0; i--) {
+                const child = children[i];
+                if (child && child.active) {
+                    if (Math.abs(child.x - cx) < 26 && Math.abs(child.y - cy) < 26) {
+                        // Bedrock di baris 13 kebal
+                        if (row >= 13) {
+                            AudioManager.playClick();
+                            this.tweens.add({ targets: child, x: cx + 3, yoyo: true, repeat: 3, duration: 35, onComplete: () => { child.x = cx; } });
+                            return;
+                        }
+                        AudioManager.playDig();
+                        this.platforms.remove(child, true, true);
+                        if (this.showFloatingToast) {
+                            this.showFloatingToast('👊 Balok hancur!', 0xef4444);
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    handleWorldBuild(worldX, worldY) {
+        const col = Math.floor(worldX / 50);
+        const row = Math.floor(worldY / 50);
+        const cx = col * 50 + 25;
+        const cy = row * 50 + 25;
+
+        // Cek jika sudah ada balok di petak ini
+        if (this.platforms) {
+            const children = this.platforms.getChildren();
+            for (let i = 0; i < children.length; i++) {
+                const child = children[i];
+                if (child && child.active && Math.abs(child.x - cx) < 26 && Math.abs(child.y - cy) < 26) {
+                    if (this.showFloatingToast) {
+                        this.showFloatingToast('⚠️ Sudah ada balok di petak ini!', 0xf59e0b);
+                    }
+                    return;
+                }
+            }
+        }
+
+        // Pasang balok tanah modular baru
+        const dirtColor = 0x5c4033;
+        const newBlock = this.add.rectangle(cx, cy, 50, 50, dirtColor).setDepth(4);
+        newBlock.setStrokeStyle(1, 0x3d2817);
+        this.physics.add.existing(newBlock, true);
+        this.platforms.add(newBlock);
+
+        AudioManager.playClick();
+        this.tweens.add({
+            targets: newBlock,
+            scaleX: { from: 0.1, to: 1 },
+            scaleY: { from: 0.1, to: 1 },
+            duration: 180,
+            ease: 'Back.out'
         });
 
-        document.body.appendChild(btn);
-        this.events.once('shutdown', () => btn.remove());
-        this.events.once('destroy', () => btn.remove());
+        if (this.showFloatingToast) {
+            this.showFloatingToast('🧱 Balok modular berhasil dipasang!', 0x22c55e);
+        }
     }
 
     openSceneBuilder() {

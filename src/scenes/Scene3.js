@@ -9,7 +9,6 @@ import { CameraZoomManager } from '../utils/CameraZoomManager.js';
 import { CommandConsole } from '../utils/CommandConsole.js';
 import { DialogBox } from '../ui/DialogBox.js';
 import { EngineMenuBar } from '../ui/EngineMenuBar.js';
-import { ScriptingWorkspace } from '../ui/ScriptingWorkspace.js';
 import { HTMLGameHUD } from '../ui/HTMLGameHUD.js';
 import { HTMLInteractPrompt } from '../ui/HTMLInteractPrompt.js';
 import { QuestModal } from '../ui/QuestModal.js';
@@ -415,7 +414,6 @@ export class Scene3 extends Phaser.Scene {
             plat.setDepth(10);
             this.tweens.add({ targets: plat, scaleX: { from: 0.1, to: 1 }, scaleY: { from: 0.1, to: 1 }, duration: 250, ease: 'Back.out' });
             this.placedObjects.push({ type: 'tile', x: snapX, y: snapY });
-            ScriptingWorkspace.instance?.appendCodeSnippet(`// [Platform] di (${snapX}, ${snapY})\nthis.platforms.create(${snapX}, ${snapY}, 'tile_plat_mid').refreshBody();`);
         } else if (type === 'npc') {
             const npc = this.physics.add.sprite(snapX, snapY, 'skeleton_npc').setDepth(10).setImmovable(true);
             this.physics.add.collider(npc, this.platforms);
@@ -448,16 +446,13 @@ export class Scene3 extends Phaser.Scene {
 
             this.customNpcs.push(npcObj);
             this.placedObjects.push({ type: 'npc', x: snapX, y: snapY, name: 'NPC Petualang' });
-            ScriptingWorkspace.instance?.appendCodeSnippet(`// [NPC] di (${snapX}, ${snapY})\nconst npc = this.physics.add.sprite(${snapX}, ${snapY}, 'skeleton_npc');\nthis.physics.add.collider(npc, this.platforms);`);
         } else if (type === 'coin') {
             const coin = this.coins.create(snapX, snapY, 'skeleton_item').setDepth(10);
             this.tweens.add({ targets: coin, y: snapY - 6, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
             this.placedObjects.push({ type: 'coin', x: snapX, y: snapY });
-            ScriptingWorkspace.instance?.appendCodeSnippet(`// [Koin] di (${snapX}, ${snapY})\nconst coin = this.coins.create(${snapX}, ${snapY}, 'skeleton_item');`);
         } else if (type === 'obstacle') {
             const spike = this.hazards.create(snapX, snapY, 'skeleton_hazard').setDepth(10);
             this.placedObjects.push({ type: 'obstacle', x: snapX, y: snapY });
-            ScriptingWorkspace.instance?.appendCodeSnippet(`// [Duri] di (${snapX}, ${snapY})\nconst duri = this.hazards.create(${snapX}, ${snapY}, 'skeleton_hazard');`);
         } else if (type === 'portal') {
             const portal = this.add.sprite(snapX, snapY, 'skeleton_portal').setDepth(10);
             const pLabel = this.add.text(snapX, snapY - 38, '🌀 Gerbang Rahasia', {
@@ -466,7 +461,6 @@ export class Scene3 extends Phaser.Scene {
             this.tweens.add({ targets: portal, scaleX: 1.08, scaleY: 1.08, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
             this.customPortals.push({ sprite: portal, label: pLabel, x: snapX, y: snapY });
             this.placedObjects.push({ type: 'portal', x: snapX, y: snapY });
-            ScriptingWorkspace.instance?.appendCodeSnippet(`// [Portal] di (${snapX}, ${snapY})\nconst portal = this.add.sprite(${snapX}, ${snapY}, 'skeleton_portal');`);
         }
 
         AudioManager.playSuccess();
