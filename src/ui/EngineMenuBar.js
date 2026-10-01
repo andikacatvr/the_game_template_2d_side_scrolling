@@ -14,6 +14,7 @@ import { CodeInspector } from '../utils/CodeInspector.js';
 import { CommandConsole } from '../utils/CommandConsole.js';
 import { AudioManager } from '../utils/AudioManager.js';
 import { GridSystem } from '../utils/GridSystem.js';
+import { UndoRedoManager } from '../utils/UndoRedoManager.js';
 
 export class EngineMenuBar {
     static instance = null;
@@ -379,6 +380,29 @@ export class EngineMenuBar {
                     border-color: transparent transparent #ffffff transparent;
                 }
 
+                /* Blender Divider & Non-tool Action Button Variants */
+                .gt-blender-divider {
+                    width: 22px;
+                    height: 1px;
+                    background: rgba(255, 255, 255, 0.16);
+                    margin: 3px auto;
+                }
+
+                .gt-blender-tool-btn.no-arrow::after {
+                    display: none !important;
+                }
+
+                .gt-blender-tool-btn.disabled {
+                    opacity: 0.32;
+                    cursor: not-allowed;
+                    filter: grayscale(0.85);
+                }
+
+                .gt-blender-tool-btn.disabled:hover {
+                    background: transparent;
+                    border-color: transparent;
+                }
+
                 /* Floating Tooltip ke Kanan saat Mouse Hover */
                 .gt-blender-tooltip {
                     position: absolute;
@@ -646,6 +670,27 @@ export class EngineMenuBar {
                     <span class="gt-blender-tooltip-badge">Edit Dialog NPC</span>
                 </div>
             </button>
+
+            <!-- Pemisah Halus Blender Strip -->
+            <div class="gt-blender-divider"></div>
+
+            <!-- Kotak 4: Undo (Batalkan Aksi) -->
+            <button class="gt-blender-tool-btn no-arrow disabled" id="gt-card-tool-undo" type="button" title="Undo (Batalkan Aksi) [Ctrl+Z]">
+                <span>↩️</span>
+                <div class="gt-blender-tooltip">
+                    <span>↩️ Undo</span>
+                    <span class="gt-blender-tooltip-badge">Ctrl+Z</span>
+                </div>
+            </button>
+
+            <!-- Kotak 5: Redo (Ulangi Aksi) -->
+            <button class="gt-blender-tool-btn no-arrow disabled" id="gt-card-tool-redo" type="button" title="Redo (Ulangi Aksi) [Ctrl+Y]">
+                <span>↪️</span>
+                <div class="gt-blender-tooltip">
+                    <span>↪️ Redo</span>
+                    <span class="gt-blender-tooltip-badge">Ctrl+Y</span>
+                </div>
+            </button>
         `;
         document.body.appendChild(this.editFloatingPanel);
 
@@ -736,6 +781,33 @@ export class EngineMenuBar {
                     this.selectTool(this.currentTool === 'wrench' ? 'none' : 'wrench');
                 });
             }
+
+            // Undo & Redo Handlers
+            const undoCard = document.getElementById('gt-card-tool-undo');
+            const redoCard = document.getElementById('gt-card-tool-redo');
+
+            if (undoCard) {
+                undoCard.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    UndoRedoManager.undo();
+                });
+            }
+
+            if (redoCard) {
+                redoCard.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    UndoRedoManager.redo();
+                });
+            }
+
+            UndoRedoManager.subscribe((mgr) => {
+                if (undoCard) {
+                    undoCard.classList.toggle('disabled', !mgr.canUndo());
+                }
+                if (redoCard) {
+                    redoCard.classList.toggle('disabled', !mgr.canRedo());
+                }
+            });
         }
 
         // Close dropdowns on outside click

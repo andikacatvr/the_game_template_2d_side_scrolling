@@ -14,6 +14,7 @@ import { HTMLInteractPrompt } from '../ui/HTMLInteractPrompt.js';
 import { QuestModal } from '../ui/QuestModal.js';
 import { GridSystem } from '../utils/GridSystem.js';
 import { ProjectManager } from '../utils/ProjectManager.js';
+import { UndoRedoManager } from '../utils/UndoRedoManager.js';
 
 export class CustomWorldScene extends Phaser.Scene {
     constructor() {
@@ -974,6 +975,29 @@ export class CustomWorldScene extends Phaser.Scene {
                         if (this.showFloatingToast) {
                             this.showFloatingToast('👊 Balok hancur!', 0xef4444);
                         }
+
+                        const savedX = cx;
+                        const savedY = cy;
+                        UndoRedoManager.push({
+                            description: 'Hancurkan Balok',
+                            undo: () => {
+                                if (!this.platforms) return;
+                                const restored = this.add.rectangle(savedX, savedY, 50, 50, 0x5c4033).setDepth(4);
+                                restored.setStrokeStyle(1, 0x3d2817);
+                                this.physics.add.existing(restored, true);
+                                this.platforms.add(restored);
+                                AudioManager.playClick();
+                            },
+                            redo: () => {
+                                if (!this.platforms) return;
+                                const blk = this.platforms.getChildren().find(c => c && c.active && Math.abs(c.x - savedX) < 26 && Math.abs(c.y - savedY) < 26);
+                                if (blk) {
+                                    this.platforms.remove(blk, true, true);
+                                    AudioManager.playDig();
+                                }
+                            }
+                        });
+
                         return;
                     }
                 }
@@ -1020,6 +1044,28 @@ export class CustomWorldScene extends Phaser.Scene {
         if (this.showFloatingToast) {
             this.showFloatingToast('🧱 Balok modular berhasil dipasang!', 0x22c55e);
         }
+
+        const savedX = cx;
+        const savedY = cy;
+        UndoRedoManager.push({
+            description: 'Pasang Balok',
+            undo: () => {
+                if (!this.platforms) return;
+                const blk = this.platforms.getChildren().find(c => c && c.active && Math.abs(c.x - savedX) < 26 && Math.abs(c.y - savedY) < 26);
+                if (blk) {
+                    this.platforms.remove(blk, true, true);
+                    AudioManager.playDig();
+                }
+            },
+            redo: () => {
+                if (!this.platforms) return;
+                const reBlock = this.add.rectangle(savedX, savedY, 50, 50, 0x5c4033).setDepth(4);
+                reBlock.setStrokeStyle(1, 0x3d2817);
+                this.physics.add.existing(reBlock, true);
+                this.platforms.add(reBlock);
+                AudioManager.playClick();
+            }
+        });
     }
 
     openSceneBuilder() {

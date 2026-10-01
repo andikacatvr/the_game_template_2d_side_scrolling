@@ -14,6 +14,7 @@ import { HTMLInteractPrompt } from '../ui/HTMLInteractPrompt.js';
 import { QuestModal } from '../ui/QuestModal.js';
 import { NPCDialogEditorModal } from '../ui/NPCDialogEditorModal.js';
 import { GridSystem } from '../utils/GridSystem.js';
+import { UndoRedoManager } from '../utils/UndoRedoManager.js';
 
 // ===============================================================
 // SCENE 3: TEMPLATE KOSONG (HANYA LANTAI / TILES)
@@ -414,6 +415,20 @@ export class Scene3 extends Phaser.Scene {
             plat.setDepth(10);
             this.tweens.add({ targets: plat, scaleX: { from: 0.1, to: 1 }, scaleY: { from: 0.1, to: 1 }, duration: 250, ease: 'Back.out' });
             this.placedObjects.push({ type: 'tile', x: snapX, y: snapY });
+
+            UndoRedoManager.push({
+                description: 'Pasang Platform',
+                undo: () => {
+                    if (plat && plat.active) plat.destroy();
+                    const idx = this.placedObjects.findIndex(o => o.type === 'tile' && o.x === snapX && o.y === snapY);
+                    if (idx !== -1) this.placedObjects.splice(idx, 1);
+                },
+                redo: () => {
+                    const p = this.platforms.create(snapX, snapY, 'tile_plat_mid').refreshBody();
+                    p.setDepth(10);
+                    this.placedObjects.push({ type: 'tile', x: snapX, y: snapY });
+                }
+            });
         } else if (type === 'npc') {
             const npc = this.physics.add.sprite(snapX, snapY, 'skeleton_npc').setDepth(10).setImmovable(true);
             this.physics.add.collider(npc, this.platforms);
@@ -446,13 +461,71 @@ export class Scene3 extends Phaser.Scene {
 
             this.customNpcs.push(npcObj);
             this.placedObjects.push({ type: 'npc', x: snapX, y: snapY, name: 'NPC Petualang' });
+
+            UndoRedoManager.push({
+                description: 'Pasang NPC',
+                undo: () => {
+                    if (npc && npc.active) npc.destroy();
+                    if (tag && tag.active) tag.destroy();
+                    const idx = this.customNpcs.indexOf(npcObj);
+                    if (idx !== -1) this.customNpcs.splice(idx, 1);
+                    const pIdx = this.placedObjects.findIndex(o => o.type === 'npc' && o.x === snapX && o.y === snapY);
+                    if (pIdx !== -1) this.placedObjects.splice(pIdx, 1);
+                },
+                redo: () => {
+                    const newNpc = this.physics.add.sprite(snapX, snapY, 'skeleton_npc').setDepth(10).setImmovable(true);
+                    this.physics.add.collider(newNpc, this.platforms);
+                    const newTag = this.add.text(snapX, snapY - 30, '🧙 NPC Petualang', {
+                        fontSize: '10px', fontStyle: 'bold', fill: '#fde047', backgroundColor: '#0f172a', padding: { x: 5, y: 2 }, fontFamily: FONT_BODY
+                    }).setOrigin(0.5).setDepth(15);
+                    this.tweens.add({ targets: [newNpc, newTag], y: '-=4', duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+                    npcObj.sprite = newNpc;
+                    npcObj.nameTag = newTag;
+                    newNpc.setInteractive({ useHandCursor: true }).on('pointerdown', () => {
+                        if (this.isEditMode) {
+                            this.openNPCDialogEditor(npcObj);
+                        } else {
+                            this.handleInteract();
+                        }
+                    });
+                    this.customNpcs.push(npcObj);
+                    this.placedObjects.push({ type: 'npc', x: snapX, y: snapY, name: 'NPC Petualang' });
+                }
+            });
         } else if (type === 'coin') {
             const coin = this.coins.create(snapX, snapY, 'skeleton_item').setDepth(10);
             this.tweens.add({ targets: coin, y: snapY - 6, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
             this.placedObjects.push({ type: 'coin', x: snapX, y: snapY });
+
+            UndoRedoManager.push({
+                description: 'Pasang Koin',
+                undo: () => {
+                    if (coin && coin.active) coin.destroy();
+                    const idx = this.placedObjects.findIndex(o => o.type === 'coin' && o.x === snapX && o.y === snapY);
+                    if (idx !== -1) this.placedObjects.splice(idx, 1);
+                },
+                redo: () => {
+                    const c = this.coins.create(snapX, snapY, 'skeleton_item').setDepth(10);
+                    this.tweens.add({ targets: c, y: snapY - 6, duration: 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+                    this.placedObjects.push({ type: 'coin', x: snapX, y: snapY });
+                }
+            });
         } else if (type === 'obstacle') {
             const spike = this.hazards.create(snapX, snapY, 'skeleton_hazard').setDepth(10);
             this.placedObjects.push({ type: 'obstacle', x: snapX, y: snapY });
+
+            UndoRedoManager.push({
+                description: 'Pasang Duri',
+                undo: () => {
+                    if (spike && spike.active) spike.destroy();
+                    const idx = this.placedObjects.findIndex(o => o.type === 'obstacle' && o.x === snapX && o.y === snapY);
+                    if (idx !== -1) this.placedObjects.splice(idx, 1);
+                },
+                redo: () => {
+                    this.hazards.create(snapX, snapY, 'skeleton_hazard').setDepth(10);
+                    this.placedObjects.push({ type: 'obstacle', x: snapX, y: snapY });
+                }
+            });
         } else if (type === 'portal') {
             const portal = this.add.sprite(snapX, snapY, 'skeleton_portal').setDepth(10);
             const pLabel = this.add.text(snapX, snapY - 38, '🌀 Gerbang Rahasia', {
@@ -461,6 +534,26 @@ export class Scene3 extends Phaser.Scene {
             this.tweens.add({ targets: portal, scaleX: 1.08, scaleY: 1.08, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
             this.customPortals.push({ sprite: portal, label: pLabel, x: snapX, y: snapY });
             this.placedObjects.push({ type: 'portal', x: snapX, y: snapY });
+
+            UndoRedoManager.push({
+                description: 'Pasang Portal',
+                undo: () => {
+                    if (portal && portal.active) portal.destroy();
+                    if (pLabel && pLabel.active) pLabel.destroy();
+                    const idx = this.customPortals.findIndex(p => p.x === snapX && p.y === snapY);
+                    if (idx !== -1) this.customPortals.splice(idx, 1);
+                    const pIdx = this.placedObjects.findIndex(o => o.type === 'portal' && o.x === snapX && o.y === snapY);
+                    if (pIdx !== -1) this.placedObjects.splice(pIdx, 1);
+                },
+                redo: () => {
+                    const p = this.add.sprite(snapX, snapY, 'skeleton_portal').setDepth(10);
+                    const l = this.add.text(snapX, snapY - 38, '🌀 Gerbang Rahasia', {
+                        fontSize: '10px', fontStyle: 'bold', fill: '#38bdf8', backgroundColor: '#0f172a', padding: { x: 5, y: 2 }, fontFamily: FONT_BODY
+                    }).setOrigin(0.5).setDepth(15);
+                    this.customPortals.push({ sprite: p, label: l, x: snapX, y: snapY });
+                    this.placedObjects.push({ type: 'portal', x: snapX, y: snapY });
+                }
+            });
         }
 
         AudioManager.playSuccess();

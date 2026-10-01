@@ -17,6 +17,7 @@ import { NPCDialogEditorModal } from '../ui/NPCDialogEditorModal.js';
 import { EngineMenuBar } from '../ui/EngineMenuBar.js';
 import { EngineUITourModal } from '../ui/EngineUITourModal.js';
 import { GridSystem } from '../utils/GridSystem.js';
+import { UndoRedoManager } from '../utils/UndoRedoManager.js';
 
 // ===============================================================
 // 3. GAME SCENE: SKELETON WITH FULL HUD & RESOLUTION MANAGER
@@ -718,6 +719,15 @@ export class GameScene extends Phaser.Scene {
             }
 
             // Balok tanah, salju, batu, atau platform biasa
+            const savedCol = col;
+            const savedRow = row;
+            const savedKey = key;
+            const savedBType = bType;
+            const savedX = cx;
+            const savedY = block.y;
+            const savedTexture = (block.texture && block.texture.key) ? block.texture.key : ('tile_block_50_' + (bType === 'ground' ? 'dirt' : bType));
+            const savedDepth = block.depth || 9;
+
             this.spawnBlockBreakParticles(cx, cy, bType);
             AudioManager.playDig();
 
@@ -732,6 +742,31 @@ export class GameScene extends Phaser.Scene {
             else label = 'Balok Tanah';
 
             this.showFloatingBlockToast(cx, cy - 20, `-1 ${label}`, 0xef4444);
+
+            UndoRedoManager.push({
+                description: `Hancurkan ${label}`,
+                undo: () => {
+                    if (!this.platforms) return;
+                    const restored = this.platforms.create(savedX, savedY, savedTexture).refreshBody();
+                    restored.setDepth(savedDepth);
+                    restored.gridCol = savedCol;
+                    restored.gridRow = savedRow;
+                    restored.gridType = savedBType;
+                    if (!this.gridWorldBlocks) this.gridWorldBlocks = new Map();
+                    this.gridWorldBlocks.set(savedKey, restored);
+                    this.spawnBlockPlaceParticles(savedX, savedY);
+                    AudioManager.playPlace();
+                },
+                redo: () => {
+                    const blk = this.gridWorldBlocks ? this.gridWorldBlocks.get(savedKey) : null;
+                    if (blk && blk.active) {
+                        this.spawnBlockBreakParticles(blk.x, blk.y, savedBType);
+                        this.platforms.remove(blk, true, true);
+                        this.gridWorldBlocks.delete(savedKey);
+                        AudioManager.playDig();
+                    }
+                }
+            });
             return true;
         }
 
@@ -740,10 +775,30 @@ export class GameScene extends Phaser.Scene {
             const hzList = this.hazards.getChildren();
             const foundHz = hzList.find(hz => hz.active && Math.abs(hz.x - (col * 50 + 25)) < 30 && Math.abs(hz.y - (row * 50 + 25)) < 30);
             if (foundHz) {
+                const hzX = foundHz.x;
+                const hzY = foundHz.y;
                 this.spawnBlockBreakParticles(foundHz.x, foundHz.y, 'hazard');
                 AudioManager.playDig();
                 this.hazards.remove(foundHz, true, true);
                 this.showFloatingBlockToast(foundHz.x, foundHz.y - 20, '-1 Duri', 0xef4444);
+
+                UndoRedoManager.push({
+                    description: 'Hapus Duri',
+                    undo: () => {
+                        if (!this.hazards) return;
+                        this.hazards.create(hzX, hzY, 'skeleton_hazard').setDepth(10);
+                        AudioManager.playPlace();
+                    },
+                    redo: () => {
+                        if (!this.hazards) return;
+                        const h = this.hazards.getChildren().find(hz => hz.active && Math.abs(hz.x - hzX) < 10 && Math.abs(hz.y - hzY) < 10);
+                        if (h) {
+                            this.spawnBlockBreakParticles(h.x, h.y, 'hazard');
+                            this.hazards.remove(h, true, true);
+                            AudioManager.playDig();
+                        }
+                    }
+                });
                 return true;
             }
         }
@@ -753,10 +808,30 @@ export class GameScene extends Phaser.Scene {
             const coinList = this.items.getChildren();
             const foundCoin = coinList.find(c => c.active && Math.abs(c.x - (col * 50 + 25)) < 30 && Math.abs(c.y - (row * 50 + 25)) < 30);
             if (foundCoin) {
+                const coinX = foundCoin.x;
+                const coinY = foundCoin.y;
                 this.spawnBlockBreakParticles(foundCoin.x, foundCoin.y, 'coin');
                 AudioManager.playDig();
                 this.items.remove(foundCoin, true, true);
                 this.showFloatingBlockToast(foundCoin.x, foundCoin.y - 20, '-1 Koin', 0xfacc15);
+
+                UndoRedoManager.push({
+                    description: 'Hapus Koin',
+                    undo: () => {
+                        if (!this.items) return;
+                        this.items.create(coinX, coinY, 'skeleton_item').setDepth(10);
+                        AudioManager.playPlace();
+                    },
+                    redo: () => {
+                        if (!this.items) return;
+                        const c = this.items.getChildren().find(item => item.active && Math.abs(item.x - coinX) < 10 && Math.abs(item.y - coinY) < 10);
+                        if (c) {
+                            this.spawnBlockBreakParticles(c.x, c.y, 'coin');
+                            this.items.remove(c, true, true);
+                            AudioManager.playDig();
+                        }
+                    }
+                });
                 return true;
             }
         }
@@ -821,6 +896,41 @@ export class GameScene extends Phaser.Scene {
         else label = 'Balok Tanah';
 
         this.showFloatingBlockToast(tileCenterX, row * 50 - 15, `+1 ${label}`, 0x22c55e);
+
+        const savedCol = col;
+        const savedRow = row;
+        const savedKey = key;
+        const savedBType = bType;
+        const savedX = tileCenterX;
+        const savedY = newBlock.y;
+        const savedTexture = (newBlock.texture && newBlock.texture.key) ? newBlock.texture.key : ('tile_block_50_' + (bType === 'ground' ? 'dirt' : bType));
+        const savedDepth = newBlock.depth;
+
+        UndoRedoManager.push({
+            description: `Pasang ${label}`,
+            undo: () => {
+                const blk = this.gridWorldBlocks ? this.gridWorldBlocks.get(savedKey) : null;
+                if (blk && blk.active) {
+                    this.spawnBlockBreakParticles(blk.x, blk.y, savedBType);
+                    this.platforms.remove(blk, true, true);
+                    this.gridWorldBlocks.delete(savedKey);
+                    AudioManager.playDig();
+                }
+            },
+            redo: () => {
+                if (!this.platforms) return;
+                const reBlock = this.platforms.create(savedX, savedY, savedTexture).refreshBody();
+                reBlock.setDepth(savedDepth);
+                reBlock.gridCol = savedCol;
+                reBlock.gridRow = savedRow;
+                reBlock.gridType = savedBType;
+                if (!this.gridWorldBlocks) this.gridWorldBlocks = new Map();
+                this.gridWorldBlocks.set(savedKey, reBlock);
+                this.spawnBlockPlaceParticles(savedX, savedY);
+                AudioManager.playPlace();
+            }
+        });
+
         return true;
     }
 
