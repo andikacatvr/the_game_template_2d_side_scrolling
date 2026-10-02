@@ -25,6 +25,7 @@ export class SceneFlowGraphView {
         this.dragOffset = { x: 0, y: 0 };
 
         this.wiring = null; // { fromSceneId, startX, startY, currentX, currentY }
+        this.selectedSourcePort = null; // Untuk mode sambung via klik port
 
         this.connections = [];
         this.nodePositions = {};
@@ -157,10 +158,20 @@ export class SceneFlowGraphView {
                     filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.45));
                 }
 
+                .gt-flow-wire-hit {
+                    fill: none;
+                    stroke: transparent;
+                    stroke-width: 24px;
+                    stroke-linecap: round;
+                    cursor: pointer;
+                    pointer-events: stroke;
+                }
+
+                .gt-flow-wire-hit:hover + .gt-flow-wire,
                 .gt-flow-wire:hover {
                     stroke: #ef4444 !important;
-                    stroke-width: 5px !important;
-                    filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.7));
+                    stroke-width: 5.5px !important;
+                    filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.8));
                 }
 
                 .gt-flow-wire-pulse {
@@ -378,6 +389,19 @@ export class SceneFlowGraphView {
                     box-shadow: 0 0 10px #a855f7;
                 }
 
+                .gt-flow-port-dot.is-source-active {
+                    background: #a855f7 !important;
+                    border-color: #f472b6 !important;
+                    box-shadow: 0 0 18px #c084fc !important;
+                    transform: scale(1.4) !important;
+                    animation: gtPulsePort 1s ease-in-out infinite alternate;
+                }
+
+                @keyframes gtPulsePort {
+                    from { box-shadow: 0 0 8px #c084fc; }
+                    to { box-shadow: 0 0 20px #e879f9; transform: scale(1.5); }
+                }
+
                 .gt-flow-port-dot.is-hovered {
                     background: #22c55e !important;
                     border-color: #22c55e !important;
@@ -537,6 +561,15 @@ export class SceneFlowGraphView {
                 </div>
             `;
 
+            // Klik Ganda pada Kartu untuk Langsung Buka Scene
+            card.addEventListener('dblclick', (e) => {
+                if (e.target.closest('button') || e.target.closest('.gt-flow-port-dot')) return;
+                AudioManager.playClick();
+                if (typeof this.onOpenScene === 'function') {
+                    this.onOpenScene(scene.id, scene);
+                }
+            });
+
             // Tombol Edit Scene
             const editBtn = card.querySelector('.btn-open-scene');
             editBtn.addEventListener('click', (e) => {
@@ -584,27 +617,62 @@ export class SceneFlowGraphView {
             const dx = Math.max(70, Math.abs(x2 - x1) * 0.55);
             const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
 
+            // Path Hitbox Tebal Transparan (24px) agar sangat mudah di-klik putus kabel
+            const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            hitPath.setAttribute('d', d);
+            hitPath.setAttribute('class', 'gt-flow-wire-hit');
+            hitPath.setAttribute('title', 'Klik garis untuk memutuskan koneksi portal');
+
+            const delHandler = (e) => {
+                e.stopPropagation();
+                AudioManager.playClick();
+                this.removeConnection(index);
+            };
+            hitPath.addEventListener('click', delHandler);
+
             // Path Kabel Utama
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path.setAttribute('d', d);
             path.setAttribute('class', 'gt-flow-wire');
             path.setAttribute('stroke', 'url(#gtFlowGrad)');
             path.setAttribute('title', 'Klik untuk memutus kabel koneksi ini');
-
-            path.addEventListener('click', (e) => {
-                e.stopPropagation();
-                AudioManager.playClick();
-                this.removeConnection(index);
-            });
+            path.addEventListener('click', delHandler);
 
             // Path Efek Denyut Alur (Pulse Flow Animation)
             const pulse = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             pulse.setAttribute('d', d);
             pulse.setAttribute('class', 'gt-flow-wire-pulse');
 
+            this.wiresGroup.appendChild(hitPath);
             this.wiresGroup.appendChild(path);
             this.wiresGroup.appendChild(pulse);
         });
+    }
+
+    selectSourcePort(sceneId, portEl) {
+        this.clearPortSelection();
+        this.selectedSourcePort = sceneId;
+        if (portEl) portEl.classList.add('is-source-active');
+        const hintEl = this.dom.querySelector('.gt-flow-hint');
+        if (hintEl) {
+            hintEl.innerHTML = `🔗 <b>Mode Sambung Rute:</b> Port Portal terpilih! Sekarang klik port <b>Spawn (Biru)</b> pada level tujuan untuk menyambungkan alur.`;
+            hintEl.style.color = '#38bdf8';
+        }
+    }
+
+    clearPortSelection() {
+        this.selectedSourcePort = null;
+        if (this.dom) {
+            this.dom.querySelectorAll('.gt-flow-port-dot').forEach(d => {
+                d.classList.remove('is-source-active');
+                d.classList.remove('is-hovered');
+            });
+            const hintEl = this.dom.querySelector('.gt-flow-hint');
+            if (hintEl) {
+                hintEl.innerHTML = `💡 <b>Tips Alur:</b> Klik atau tarik kabel dari <b>Portal Out (Ungu)</b> ke <b>Spawn In (Biru)</b> scene tujuan untuk menghubungkan level! Klik garis merah untuk putus rute.`;
+                hintEl.style.color = '#94a3b8';
+            }
+        }
     }
 
     removeConnection(index) {
@@ -633,26 +701,56 @@ export class SceneFlowGraphView {
             const dragHandle = e.target.closest('[data-drag-handle="true"]');
             const portDot = e.target.closest('.gt-flow-port-dot');
 
-            // Kasus A: Menarik kabel dari Output Port
-            if (portDot && portDot.classList.contains('is-out')) {
+            // Kasus A: Interaksi Port (Klik atau Tarik)
+            if (portDot) {
                 e.preventDefault();
                 e.stopPropagation();
-                const fromSceneId = portDot.getAttribute('data-scene');
-                const rect = portDot.getBoundingClientRect();
-                const wrapRect = this.canvasWrap.getBoundingClientRect();
-                const startX = (rect.left + rect.width / 2 - wrapRect.left) / this.zoom;
-                const startY = (rect.top + rect.height / 2 - wrapRect.top) / this.zoom;
+                const portSceneId = portDot.getAttribute('data-scene');
 
-                this.wiring = {
-                    fromSceneId,
-                    startX,
-                    startY,
-                    currentX: startX,
-                    currentY: startY
-                };
+                // Jika sedang memilih port tujuan (Klik port IN setelah klik port OUT)
+                if (portDot.classList.contains('is-in') && this.selectedSourcePort) {
+                    if (this.selectedSourcePort !== portSceneId) {
+                        this.connections = this.connections.filter(c => c.fromSceneId !== this.selectedSourcePort);
+                        this.connections.push({
+                            fromSceneId: this.selectedSourcePort,
+                            fromPort: 'portal',
+                            toSceneId: portSceneId,
+                            toPort: 'entry'
+                        });
+                        AudioManager.playSuccess();
+                        this.saveGraph();
+                    }
+                    this.clearPortSelection();
+                    this.renderWires();
+                    return;
+                }
 
-                this.liveWirePath.style.display = 'block';
-                return;
+                // Klik port OUT untuk mode drag ATAU klik
+                if (portDot.classList.contains('is-out')) {
+                    const fromSceneId = portDot.getAttribute('data-scene');
+                    this.selectSourcePort(fromSceneId, portDot);
+
+                    const rect = portDot.getBoundingClientRect();
+                    const wrapRect = this.canvasWrap.getBoundingClientRect();
+                    const startX = (rect.left + rect.width / 2 - wrapRect.left) / this.zoom;
+                    const startY = (rect.top + rect.height / 2 - wrapRect.top) / this.zoom;
+
+                    this.wiring = {
+                        fromSceneId,
+                        startX,
+                        startY,
+                        currentX: startX,
+                        currentY: startY
+                    };
+
+                    this.liveWirePath.style.display = 'block';
+                    return;
+                }
+            }
+
+            // Batalkan seleksi port jika klik di tempat lain
+            if (this.selectedSourcePort && !e.target.closest('.gt-flow-port-dot')) {
+                this.clearPortSelection();
             }
 
             // Kasus B: Menggeser Node Card

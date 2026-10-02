@@ -100,12 +100,14 @@ export class SceneBuilderModal {
 
         this.createDOM();
         this.preventAllOverlaps();
+        window.__gtSceneBuilderInstance = this;
         if (this.scene) {
             this.syncWithActiveScene(this.scene);
         }
     }
 
     createDOM() {
+        window.__gtSceneBuilderInstance = this;
         const oldEl = document.getElementById('gt-scene-builder-overlay');
         if (oldEl) oldEl.remove();
 
@@ -208,39 +210,50 @@ export class SceneBuilderModal {
 
                 /* Mode Switcher: Scene View vs Flow Graph */
                 .gt-sb-mode-tabs {
-                    display: flex;
+                    display: inline-flex;
                     align-items: center;
                     background: #111115;
-                    border: 1px solid #27272a;
+                    border: 1px solid #3b82f6;
                     border-radius: 6px;
                     padding: 2px;
                     gap: 3px;
+                    position: relative;
+                    z-index: 1000;
+                    pointer-events: auto !important;
                 }
 
                 .gt-sb-mode-tab {
-                    padding: 4px 10px;
+                    padding: 5px 12px;
                     border: none;
                     background: transparent;
                     color: #94a3b8;
-                    font-size: 11px;
+                    font-size: 11.5px;
                     font-weight: 700;
                     border-radius: 4px;
-                    cursor: pointer;
-                    display: flex;
+                    cursor: pointer !important;
+                    display: inline-flex;
                     align-items: center;
                     gap: 5px;
                     transition: all 0.15s ease;
+                    position: relative;
+                    z-index: 1001;
+                    pointer-events: auto !important;
+                    user-select: none;
+                }
+
+                .gt-sb-mode-tab * {
+                    pointer-events: none;
                 }
 
                 .gt-sb-mode-tab:hover {
                     color: #ffffff;
-                    background: rgba(255, 255, 255, 0.06);
+                    background: rgba(255, 255, 255, 0.12);
                 }
 
                 .gt-sb-mode-tab.active {
-                    background: #0284c7;
-                    color: #ffffff;
-                    box-shadow: 0 0 10px rgba(2, 132, 199, 0.4);
+                    background: #0284c7 !important;
+                    color: #ffffff !important;
+                    box-shadow: 0 0 12px rgba(2, 132, 199, 0.5) !important;
                 }
 
                 .gt-sb-input-wrap {
@@ -1177,10 +1190,10 @@ export class SceneBuilderModal {
 
                     <!-- Mode Switcher: Scene View vs Flow Graph -->
                     <div class="gt-sb-mode-tabs" id="gt-sb-mode-tabs">
-                        <button class="gt-sb-mode-tab active" id="gt-sb-tab-scene" title="Canvas Editor Dunia 2D">
+                        <button class="gt-sb-mode-tab active" id="gt-sb-tab-scene" title="Canvas Editor Dunia 2D" onclick="window.__gtSceneBuilderInstance &amp;&amp; window.__gtSceneBuilderInstance.switchEditorMode('scene')">
                             <span>🗺️ Scene View</span>
                         </button>
-                        <button class="gt-sb-mode-tab" id="gt-sb-tab-flow" title="Visual Flow Node Graph (Hubungkan Rute Antar-Scene)">
+                        <button class="gt-sb-mode-tab" id="gt-sb-tab-flow" title="Visual Flow Node Graph (Hubungkan Rute Antar-Scene)" onclick="window.__gtSceneBuilderInstance &amp;&amp; window.__gtSceneBuilderInstance.switchEditorMode('flow')">
                             <span>⚡ Flow Graph</span>
                         </button>
                     </div>
@@ -2668,6 +2681,19 @@ export class SceneBuilderModal {
                 if (sbDrawer) sbDrawer.style.display = 'none';
                 if (flowWrapper) flowWrapper.style.display = 'block';
 
+                if (this.isTestPlayMode) {
+                    this.toggleTestPlayMode(false);
+                }
+
+                if (!this.projectId) {
+                    if (this.scene && this.scene.projectId) {
+                        this.projectId = this.scene.projectId;
+                    } else {
+                        const projs = ProjectManager.getProjects();
+                        if (projs.length > 0) this.projectId = projs[0].id;
+                    }
+                }
+
                 if (!this.flowGraphView) {
                     this.flowGraphView = new SceneFlowGraphView(flowWrapper, {
                         projectId: this.projectId,
@@ -2700,6 +2726,12 @@ export class SceneBuilderModal {
                     this.flowGraphView.projectId = this.projectId;
                     this.flowGraphView.refresh();
                 }
+
+                setTimeout(() => {
+                    if (this.flowGraphView) {
+                        this.flowGraphView.refresh();
+                    }
+                }, 40);
             } else {
                 if (tabScene) tabScene.classList.add('active');
                 if (tabFlow) tabFlow.classList.remove('active');
@@ -2712,8 +2744,23 @@ export class SceneBuilderModal {
             }
         };
 
-        if (tabScene) tabScene.addEventListener('click', () => this.switchEditorMode('scene'));
-        if (tabFlow) tabFlow.addEventListener('click', () => this.switchEditorMode('flow'));
+        if (tabScene) {
+            const onSceneClick = (e) => {
+                if (e) { e.preventDefault(); e.stopPropagation(); }
+                this.switchEditorMode('scene');
+            };
+            tabScene.addEventListener('click', onSceneClick);
+            tabScene.addEventListener('pointerdown', onSceneClick);
+        }
+
+        if (tabFlow) {
+            const onFlowClick = (e) => {
+                if (e) { e.preventDefault(); e.stopPropagation(); }
+                this.switchEditorMode('flow');
+            };
+            tabFlow.addEventListener('click', onFlowClick);
+            tabFlow.addEventListener('pointerdown', onFlowClick);
+        }
 
         if (undoBtn) undoBtn.addEventListener('click', () => this.undo());
         if (redoBtn) redoBtn.addEventListener('click', () => this.redo());
@@ -4981,7 +5028,7 @@ export class SceneBuilderModal {
                 this.runtimePlayerX = scene.player.x;
                 this.runtimePlayerY = scene.player.y;
             }
-            this.loadWorldData(data);
+            this.loadWorldData(data, scene.projectId, scene.sceneId);
             return;
         }
     }

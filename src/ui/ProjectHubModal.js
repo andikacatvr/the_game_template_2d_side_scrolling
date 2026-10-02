@@ -989,7 +989,10 @@ export class ProjectHubModal {
                     </div>
                 </div>
                 <div class="gt-uhub-header-actions">
-                    <button class="gt-uhub-btn-primary" id="btn-add-scene-to-proj" style="background: #0284c7;">
+                    <button class="gt-uhub-btn-primary" id="btn-open-flow-graph" style="background: #0284c7; box-shadow: 0 0 12px rgba(2, 132, 199, 0.4);" title="Buka Visual Flow Graph (Hubungkan Rute Antar-Scene)">
+                        <span>⚡</span> Flow Graph
+                    </button>
+                    <button class="gt-uhub-btn-primary" id="btn-add-scene-to-proj" style="background: #2563eb;">
                         <span>+</span> Tambah Scene Baru
                     </button>
                     <button class="gt-uhub-btn-primary" id="btn-play-full-project" style="background: #16a34a;">
@@ -1037,6 +1040,18 @@ export class ProjectHubModal {
         container.querySelector('#btn-play-full-project').addEventListener('click', () => {
             this.playProject(project);
         });
+
+        // Buka Visual Flow Graph Langsung
+        const btnOpenFlow = container.querySelector('#btn-open-flow-graph');
+        if (btnOpenFlow) {
+            btnOpenFlow.addEventListener('click', () => {
+                this.hide();
+                AudioManager.playClick();
+                if (CommandConsole.instance) {
+                    CommandConsole.instance.openSceneBuilder('flow', project.id);
+                }
+            });
+        }
 
         // Tambah Scene Baru ke Project (Dialog Wizard Dinamis)
         container.querySelector('#btn-add-scene-to-proj').addEventListener('click', () => {

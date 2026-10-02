@@ -1297,14 +1297,26 @@ export class CommandConsole {
         return scenes.find(s => ['GameScene', 'HongKongScene', 'Scene2', 'CustomWorldScene', 'Scene3'].includes(s.scene && s.scene.key)) || scenes[0];
     }
 
-    openSceneBuilder() {
+    openSceneBuilder(initialMode = 'scene', targetProjectId = null) {
         const activeScene = this.getActiveScene();
-        if (!this.sceneBuilderModal) {
-            this.sceneBuilderModal = new SceneBuilderModal(activeScene);
-        } else if (activeScene) {
-            this.sceneBuilderModal.scene = activeScene;
+        if (this.sceneBuilderModal) {
+            try {
+                this.sceneBuilderModal.destroy();
+            } catch (e) {}
+            this.sceneBuilderModal = null;
         }
+        this.sceneBuilderModal = new SceneBuilderModal(activeScene, {
+            projectId: targetProjectId || (activeScene && activeScene.projectId) || null,
+            sceneId: (activeScene && activeScene.sceneId) || null
+        });
         this.sceneBuilderModal.show(activeScene);
+        if (initialMode === 'flow') {
+            setTimeout(() => {
+                if (this.sceneBuilderModal) {
+                    this.sceneBuilderModal.switchEditorMode('flow');
+                }
+            }, 10);
+        }
     }
 
     // ===============================================================
