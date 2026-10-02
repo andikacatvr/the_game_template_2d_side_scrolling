@@ -1219,7 +1219,6 @@ export class SceneBuilderModal {
                         <span class="gt-sb-unity-logo">🛠️</span>
                         <span class="gt-sb-unity-title">Preview</span>
                     </div>
-                    <span class="gt-sb-scene-tag" id="gt-sb-scene-tag">${this.state.name || 'Scene Aktif'}</span>
 
                     <div class="gt-sb-topbar-divider"></div>
 
