@@ -322,11 +322,65 @@ export class ProjectManager {
         const proj = this.getProject(projectId);
         if (!proj || !Array.isArray(proj.scenes) || proj.scenes.length <= 1) return null;
 
+        // 1. Cek visual connections dari Flow Graph terlebih dahulu jika ada
+        if (Array.isArray(proj.connections) && proj.connections.length > 0) {
+            const conn = proj.connections.find(c => c.fromSceneId === currentSceneId);
+            if (conn && conn.toSceneId) {
+                const target = proj.scenes.find(s => s.id === conn.toSceneId);
+                if (target) return target;
+            }
+        }
+
+        // 2. Fallback sekuensial jika belum ada koneksi node kustom
         const idx = proj.scenes.findIndex(s => s.id === currentSceneId);
         if (idx !== -1 && idx + 1 < proj.scenes.length) {
             return proj.scenes[idx + 1];
         }
         return null;
+    }
+
+    /**
+     * Menyimpan data visual node flow graph (koneksi antar scene dan koordinat node)
+     */
+    static saveFlowGraph(projectId, { connections, positions }) {
+        const projects = this.getProjects();
+        const proj = projects.find(p => p.id === projectId);
+        if (!proj) return false;
+
+        if (Array.isArray(connections)) {
+            proj.connections = connections;
+        }
+        if (positions && typeof positions === 'object') {
+            proj.flowGraphPositions = positions;
+        }
+        proj.updatedAt = Date.now();
+        this.saveProjects(projects);
+        return true;
+    }
+
+    /**
+     * Mengambil data koneksi dan posisi node flow graph
+     */
+    static getFlowGraph(projectId) {
+        const proj = this.getProject(projectId);
+        if (!proj) return { connections: [], positions: {} };
+        return {
+            connections: Array.isArray(proj.connections) ? proj.connections : [],
+            positions: (proj.flowGraphPositions && typeof proj.flowGraphPositions === 'object') ? proj.flowGraphPositions : {}
+        };
+    }
+
+    /**
+     * Menetapkan scene awal permainan
+     */
+    static setStartingScene(projectId, sceneId) {
+        const projects = this.getProjects();
+        const proj = projects.find(p => p.id === projectId);
+        if (!proj) return false;
+        proj.startingSceneId = sceneId;
+        proj.updatedAt = Date.now();
+        this.saveProjects(projects);
+        return true;
     }
 
     /**

@@ -1,5 +1,6 @@
 import { AudioManager } from '../utils/AudioManager.js';
 import { ProjectManager } from '../utils/ProjectManager.js';
+import { SceneFlowGraphView } from './SceneFlowGraphView.js';
 
 // Katalog Item Template untuk World Builder (Unit Kotak 1x1 Presisi)
 export const ITEM_TEMPLATES = {
@@ -203,6 +204,43 @@ export class SceneBuilderModal {
                     height: 20px;
                     background: #27272a;
                     margin: 0 4px;
+                }
+
+                /* Mode Switcher: Scene View vs Flow Graph */
+                .gt-sb-mode-tabs {
+                    display: flex;
+                    align-items: center;
+                    background: #111115;
+                    border: 1px solid #27272a;
+                    border-radius: 6px;
+                    padding: 2px;
+                    gap: 3px;
+                }
+
+                .gt-sb-mode-tab {
+                    padding: 4px 10px;
+                    border: none;
+                    background: transparent;
+                    color: #94a3b8;
+                    font-size: 11px;
+                    font-weight: 700;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                    transition: all 0.15s ease;
+                }
+
+                .gt-sb-mode-tab:hover {
+                    color: #ffffff;
+                    background: rgba(255, 255, 255, 0.06);
+                }
+
+                .gt-sb-mode-tab.active {
+                    background: #0284c7;
+                    color: #ffffff;
+                    box-shadow: 0 0 10px rgba(2, 132, 199, 0.4);
                 }
 
                 .gt-sb-input-wrap {
@@ -1137,6 +1175,16 @@ export class SceneBuilderModal {
                         <span class="gt-sb-unity-title">Preview</span>
                     </div>
 
+                    <!-- Mode Switcher: Scene View vs Flow Graph -->
+                    <div class="gt-sb-mode-tabs" id="gt-sb-mode-tabs">
+                        <button class="gt-sb-mode-tab active" id="gt-sb-tab-scene" title="Canvas Editor Dunia 2D">
+                            <span>🗺️ Scene View</span>
+                        </button>
+                        <button class="gt-sb-mode-tab" id="gt-sb-tab-flow" title="Visual Flow Node Graph (Hubungkan Rute Antar-Scene)">
+                            <span>⚡ Flow Graph</span>
+                        </button>
+                    </div>
+
                     <div class="gt-sb-topbar-divider"></div>
 
                     <!-- Undo & Redo Buttons -->
@@ -1259,6 +1307,10 @@ export class SceneBuilderModal {
                 <div class="gt-sb-palette-grid" id="gt-sb-palette-grid">
                     <!-- Populated dynamically from ITEM_TEMPLATES -->
                 </div>
+            </div>
+
+            <!-- 4. Visual Flow Graph Overlay View (When Mode Flow is Active) -->
+            <div class="gt-sb-flow-wrapper" id="gt-sb-flow-wrapper" style="display: none; position: absolute; top: 48px; left: 0; right: 0; bottom: 0; z-index: 50;">
             </div>
         `;
 
@@ -2599,6 +2651,69 @@ export class SceneBuilderModal {
         const undoBtn = overlay.querySelector('#gt-sb-btn-undo');
         const redoBtn = overlay.querySelector('#gt-sb-btn-redo');
         const btnAddItem = overlay.querySelector('#gt-sb-btn-add-item');
+
+        // Tab Mode Switcher: Scene View vs Flow Graph
+        const tabScene = overlay.querySelector('#gt-sb-tab-scene');
+        const tabFlow = overlay.querySelector('#gt-sb-tab-flow');
+        const flowWrapper = overlay.querySelector('#gt-sb-flow-wrapper');
+        const sbBody = overlay.querySelector('.gt-sb-body');
+        const sbDrawer = overlay.querySelector('.gt-sb-drawer');
+
+        this.switchEditorMode = (mode) => {
+            AudioManager.playClick();
+            if (mode === 'flow') {
+                if (tabFlow) tabFlow.classList.add('active');
+                if (tabScene) tabScene.classList.remove('active');
+                if (sbBody) sbBody.style.display = 'none';
+                if (sbDrawer) sbDrawer.style.display = 'none';
+                if (flowWrapper) flowWrapper.style.display = 'block';
+
+                if (!this.flowGraphView) {
+                    this.flowGraphView = new SceneFlowGraphView(flowWrapper, {
+                        projectId: this.projectId,
+                        onOpenScene: (sceneId, sceneData) => {
+                            this.loadWorldData(sceneData, this.projectId, sceneId);
+                            this.switchEditorMode('scene');
+                        },
+                        onAddScene: () => {
+                            let targetProjId = this.projectId;
+                            if (!targetProjId) {
+                                const projs = ProjectManager.getProjects();
+                                if (projs.length > 0) targetProjId = projs[0].id;
+                            }
+                            const project = targetProjId ? ProjectManager.getProject(targetProjId) : null;
+                            if (!project) return;
+                            const nextNum = (project.scenes || []).length + 1;
+                            const name = prompt('Nama Level Baru:', `Level ${nextNum} • Area Petualangan`);
+                            if (name && name.trim()) {
+                                ProjectManager.addSceneToProject(targetProjId, {
+                                    name: name.trim(),
+                                    biome: 'dirt',
+                                    worldWidth: 3600,
+                                    worldHeight: 1000
+                                });
+                                this.flowGraphView.refresh();
+                            }
+                        }
+                    });
+                } else {
+                    this.flowGraphView.projectId = this.projectId;
+                    this.flowGraphView.refresh();
+                }
+            } else {
+                if (tabScene) tabScene.classList.add('active');
+                if (tabFlow) tabFlow.classList.remove('active');
+                if (sbBody) sbBody.style.display = 'flex';
+                if (sbDrawer) sbDrawer.style.display = 'block';
+                if (flowWrapper) flowWrapper.style.display = 'none';
+                setTimeout(() => {
+                    this.resizeCanvas();
+                }, 30);
+            }
+        };
+
+        if (tabScene) tabScene.addEventListener('click', () => this.switchEditorMode('scene'));
+        if (tabFlow) tabFlow.addEventListener('click', () => this.switchEditorMode('flow'));
 
         if (undoBtn) undoBtn.addEventListener('click', () => this.undo());
         if (redoBtn) redoBtn.addEventListener('click', () => this.redo());
@@ -4879,6 +4994,10 @@ export class SceneBuilderModal {
 
         this._isOpen = true;
         this.overlay.classList.remove('hidden');
+
+        if (typeof this.switchEditorMode === 'function') {
+            this.switchEditorMode('scene');
+        }
 
         // Buka langsung dalam mode Uji Gerak aktif agar WASD langsung bisa dimainkan dengan smooth
         this.toggleTestPlayMode(true);
