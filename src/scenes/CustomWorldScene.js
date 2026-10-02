@@ -113,9 +113,6 @@ export class CustomWorldScene extends Phaser.Scene {
 
         // 10. Pasang HUD & Kontrol
         this.setupHUDAndControls();
-
-        // Banner Notifikasi Selamat Datang Scene Baru
-        this.showWorldBanner(`🎬 Scene: "${this.worldData.name || 'Scene Kreasiku'}" • [F4 / Tombol Preview] untuk Editor Visual`);
     }
 
     // ===============================================================
