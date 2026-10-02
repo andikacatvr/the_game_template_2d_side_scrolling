@@ -1147,25 +1147,15 @@ export class ProjectHubModal {
         dialog.id = 'gt-uhub-create-scene-dialog';
         dialog.className = 'gt-uhub-wizard-overlay';
         dialog.innerHTML = `
-            <div class="gt-uhub-wizard-card" style="width: min(500px, 94vw);">
+            <div class="gt-uhub-wizard-card" style="width: min(440px, 94vw);">
                 <div class="gt-uhub-wizard-title">✨ Tambah Scene / Level Baru</div>
                 <div class="gt-uhub-wizard-desc">
-                    Tentukan nama level dan tema lingkungan (biome) untuk stage ke-${nextNum} ini.
+                    Tentukan nama level untuk stage ke-${nextNum} ini.
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;">
                     <div>
                         <label style="display: block; font-size: 11px; font-weight: 700; color: #cbd5e1; margin-bottom: 5px;">NAMA LEVEL</label>
-                        <input type="text" id="gt-new-scene-name" placeholder="Misal: Level ${nextNum} • Hutan Terlarang" style="width: 100%; height: 36px; background: #141414; border: 1px solid #3b4252; border-radius: 6px; padding: 0 12px; color: #fff; font-size: 13px; box-sizing: border-box; outline: none;" value="Level ${nextNum} • Area Petualangan" />
-                    </div>
-                    <div>
-                        <label style="display: block; font-size: 11px; font-weight: 700; color: #cbd5e1; margin-bottom: 5px;">TEMA LINGKUNGAN (BIOME)</label>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;" id="gt-new-scene-biomes">
-                            <button type="button" class="gt-biome-opt active" data-biome="dirt" style="padding: 8px 4px; background: #1e293b; border: 1px solid #38bdf8; border-radius: 6px; color: #fff; font-size: 11.5px; font-weight: 700; cursor: pointer; text-align: center;">🌲 Hutan</button>
-                            <button type="button" class="gt-biome-opt" data-biome="snow" style="padding: 8px 4px; background: #141414; border: 1px solid #333; border-radius: 6px; color: #cbd5e1; font-size: 11.5px; font-weight: 700; cursor: pointer; text-align: center;">❄️ Salju</button>
-                            <button type="button" class="gt-biome-opt" data-biome="desert" style="padding: 8px 4px; background: #141414; border: 1px solid #333; border-radius: 6px; color: #cbd5e1; font-size: 11.5px; font-weight: 700; cursor: pointer; text-align: center;">🏜️ Gurun</button>
-                            <button type="button" class="gt-biome-opt" data-biome="cave" style="padding: 8px 4px; background: #141414; border: 1px solid #333; border-radius: 6px; color: #cbd5e1; font-size: 11.5px; font-weight: 700; cursor: pointer; text-align: center;">🌋 Gua</button>
-                            <button type="button" class="gt-biome-opt" data-biome="hongkong" style="padding: 8px 4px; background: #141414; border: 1px solid #333; border-radius: 6px; color: #cbd5e1; font-size: 11.5px; font-weight: 700; cursor: pointer; text-align: center;">🏙️ Hong Kong</button>
-                        </div>
+                        <input type="text" id="gt-new-scene-name" placeholder="Misal: Level ${nextNum} • Area Petualangan" style="width: 100%; height: 36px; background: #141414; border: 1px solid #3b4252; border-radius: 6px; padding: 0 12px; color: #fff; font-size: 13px; box-sizing: border-box; outline: none;" value="Level ${nextNum} • Area Petualangan" />
                     </div>
                 </div>
                 <div class="gt-uhub-wizard-actions" style="margin-top: 20px;">
@@ -1179,23 +1169,7 @@ export class ProjectHubModal {
 
         this.overlay.querySelector('.gt-uhub-window').appendChild(dialog);
 
-        let selectedBiome = 'dirt';
-        const biomeBtns = dialog.querySelectorAll('.gt-biome-opt');
-        biomeBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                biomeBtns.forEach(b => {
-                    b.classList.remove('active');
-                    b.style.background = '#141414';
-                    b.style.borderColor = '#333';
-                    b.style.color = '#cbd5e1';
-                });
-                btn.classList.add('active');
-                btn.style.background = '#1e293b';
-                btn.style.borderColor = '#38bdf8';
-                btn.style.color = '#fff';
-                selectedBiome = btn.getAttribute('data-biome');
-            });
-        });
+        const selectedBiome = 'dirt';
 
         const inputName = dialog.querySelector('#gt-new-scene-name');
         inputName.focus();
