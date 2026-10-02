@@ -547,15 +547,21 @@ export class EngineMenuBar {
                     border-top: none;
                     border-bottom-left-radius: 8px;
                     border-bottom-right-radius: 8px;
-                    padding: 4px 18px;
-                    font-size: 11.5px;
+                    padding: 3px 14px;
+                    font-size: 10px;
+                    line-height: 1;
                     color: #38bdf8;
-                    font-weight: 800;
-                    letter-spacing: 0.3px;
                     cursor: pointer;
                     z-index: 99996;
                     display: none;
                     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+                    transition: all 0.15s ease;
+                }
+
+                .gt-mb-pull-tab:hover {
+                    background: #242424;
+                    color: #60a5fa;
+                    border-color: #444444;
                 }
 
                 .gt-mb-pull-tab.show {
@@ -617,7 +623,7 @@ export class EngineMenuBar {
         // Pull tab when collapsed
         this.pullTab = document.createElement('div');
         this.pullTab.className = 'gt-mb-pull-tab show';
-        this.pullTab.innerHTML = '<span>🛠️</span> <span>ENGINE</span> <span style="font-size: 8px;">▼</span>';
+        this.pullTab.innerHTML = '▼';
         this.pullTab.title = 'Buka Engine Menu Bar (File, Add Object, Edit, Inspect, Preview)';
         document.body.appendChild(this.pullTab);
 
