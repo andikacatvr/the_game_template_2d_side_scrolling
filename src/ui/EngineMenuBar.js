@@ -582,21 +582,18 @@ export class EngineMenuBar {
 
                 <div class="gt-mb-v-divider"></div>
 
-                <!-- Quick Button: Edit (Growtopia Tools: Punch & Wrench) -->
-                <button class="gt-mb-tool-btn gt-mb-btn-edit" id="gt-mb-btn-edit" title="Buka Toolbar Tools di Bawah HP (Punch &amp; Wrench)">
-                    <span id="gt-mb-edit-icon">🔧</span>
+                <!-- Quick Button: Edit (Growtopia Tools: Palu & Wrench) -->
+                <button class="gt-mb-tool-btn gt-mb-btn-edit" id="gt-mb-btn-edit" title="Buka Toolbar Tools di Bawah HP (Palu &amp; Wrench)">
                     <span id="gt-mb-edit-label">Edit</span>
                 </button>
 
                 <!-- Quick Button: Inspect -->
                 <button class="gt-mb-tool-btn gt-mb-btn-inspect" id="gt-mb-btn-inspect" title="Buka Live Parameter Sliders">
-                    <span>🎛️</span>
                     <span>Inspect</span>
                 </button>
 
                 <!-- Quick Button: Preview / Scene Builder -->
                 <button class="gt-mb-tool-btn gt-mb-btn-create" id="gt-mb-btn-create" title="Buka Preview World &amp; Scene Builder">
-                    <span>👁️</span>
                     <span>Preview</span>
                 </button>
 
@@ -604,7 +601,6 @@ export class EngineMenuBar {
 
                 <!-- Quick Button: Grid System (Unity/Godot/Tiled Style) -->
                 <button class="gt-mb-tool-btn gt-mb-btn-grid" id="gt-mb-btn-grid" title="Toggle Grid System 50px (Shortcut: G)">
-                    <span>▦</span>
                     <span>Grid</span>
                     <span class="gt-mb-kbd">G</span>
                 </button>
@@ -633,11 +629,11 @@ export class EngineMenuBar {
         this.editFloatingPanel.className = 'gt-mb-edit-floating-panel';
         this.editFloatingPanel.id = 'gt-mb-dd-edit';
         this.editFloatingPanel.innerHTML = `
-            <!-- Kotak 1: Punch (Hancurkan Balok) -->
-            <button class="gt-blender-tool-btn punch-tool" id="gt-card-tool-punch" type="button" title="Punch (Hancurkan Balok) [X]">
-                <span>👊</span>
+            <!-- Kotak 1: Palu (Hancurkan Balok) -->
+            <button class="gt-blender-tool-btn punch-tool" id="gt-card-tool-punch" type="button" title="Palu (Hancurkan Balok) [X]">
+                <span>🔨</span>
                 <div class="gt-blender-tooltip">
-                    <span>👊 Punch</span>
+                    <span>🔨 Palu</span>
                     <span class="gt-blender-tooltip-badge">Hancurkan Balok [X]</span>
                 </div>
             </button>
@@ -718,7 +714,7 @@ export class EngineMenuBar {
                 editBtn.classList.toggle('active', willShow);
                 if (willShow && this.currentTool === 'none') {
                     if (this.scene && this.scene.showFloatingToast) {
-                        this.scene.showFloatingToast('🛠️ Toolbar Tools di Bawah HP: Pilih Punch [👊] atau Wrench [🔧]', 0x38bdf8);
+                        this.scene.showFloatingToast('🛠️ Toolbar Tools di Bawah HP: Pilih Palu [🔨] atau Wrench [🔧]', 0x38bdf8);
                     }
                 }
             });
@@ -983,25 +979,20 @@ export class EngineMenuBar {
 
         // 4. Update Tampilan Tombol Utama Menu Bar
         const editBtn = this.bar.querySelector('#gt-mb-btn-edit');
-        const editIcon = this.bar.querySelector('#gt-mb-edit-icon');
         const editLabel = this.bar.querySelector('#gt-mb-edit-label');
 
         if (editBtn) {
             editBtn.classList.remove('active', 'active-punch', 'active-build', 'active-wrench');
             if (isPunch) {
                 editBtn.classList.add('active-punch');
-                if (editIcon) editIcon.textContent = '👊';
-                if (editLabel) editLabel.textContent = 'Punch';
+                if (editLabel) editLabel.textContent = 'Palu';
             } else if (isBuild) {
                 editBtn.classList.add('active-build');
-                if (editIcon) editIcon.textContent = '🧱';
                 if (editLabel) editLabel.textContent = 'Build';
             } else if (isWrench) {
                 editBtn.classList.add('active-wrench');
-                if (editIcon) editIcon.textContent = '🔧';
                 if (editLabel) editLabel.textContent = 'Wrench';
             } else {
-                if (editIcon) editIcon.textContent = '🔧';
                 if (editLabel) editLabel.textContent = 'Edit';
             }
         }
@@ -1010,7 +1001,7 @@ export class EngineMenuBar {
         AudioManager.playClick();
         if (this.scene && this.scene.showFloatingToast) {
             if (isPunch) {
-                this.scene.showFloatingToast('👊 Mode Punch AKTIF! Klik balok tanah / platform untuk menghancurkan.', 0xef4444);
+                this.scene.showFloatingToast('🔨 Mode Palu AKTIF! Klik balok tanah / platform untuk menghancurkan.', 0xef4444);
             } else if (isBuild) {
                 this.scene.showFloatingToast('🧱 Mode Build AKTIF! Klik petak kosong untuk memasang balok modular.', 0x22c55e);
             } else if (isWrench) {

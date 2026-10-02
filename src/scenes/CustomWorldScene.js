@@ -29,7 +29,8 @@ export class CustomWorldScene extends Phaser.Scene {
             name: 'Dunia Kreasiku #1',
             biome: 'dirt',
             timeOfDay: 'day',
-            worldWidth: 1800,
+            worldWidth: 3600,
+            worldHeight: 1000,
             hasLava: true,
             hasWater: true,
             hasSpikes: true,
@@ -42,6 +43,17 @@ export class CustomWorldScene extends Phaser.Scene {
             hasPortal: true
         };
 
+        // Otomatis upgrade dimensi dunia jika masih menggunakan standar lama (1800x700)
+        if (!this.worldData.worldWidth || this.worldData.worldWidth <= 1800) {
+            this.worldData.worldWidth = 3600;
+        }
+        if (!this.worldData.worldHeight || this.worldData.worldHeight <= 700) {
+            this.worldData.worldHeight = 1000;
+        }
+
+        this.dugTiles = new Set((this.worldData && this.worldData.dugTiles) || []);
+        this.surfaceTurfs = {};
+
         this.hp = data.hp !== undefined ? data.hp : 3;
         this.maxHp = 3;
         this.score = 0;
@@ -50,6 +62,13 @@ export class CustomWorldScene extends Phaser.Scene {
         this.isGameOver = false;
         this.isInvincible = false;
         this.monsters = [];
+
+        const proj = this.projectId ? ProjectManager.getProject(this.projectId) : null;
+        this.project = proj;
+        this.quest = (this.worldData && this.worldData.quest) || (proj && proj.quest) || {
+            judul: `Misi: ${this.worldData.name || 'Jelajahi Level'}`,
+            deskripsi: 'Jelajahi rintangan, kalahkan monster, kumpulkan koin, dan temukan portal finish!'
+        };
     }
 
     create() {
@@ -59,8 +78,9 @@ export class CustomWorldScene extends Phaser.Scene {
         this.engineMenuBar = new EngineMenuBar(this);
         this.engineMenuBar.show(this);
 
-        const worldWidth = this.worldData.worldWidth || 1800;
-        const worldHeight = this.worldData.worldHeight || 850;
+        const worldWidth = this.worldData.worldWidth || 3600;
+        // Dunia berakhir tepat di dasar Bedrock Row 19 (20 baris × 50px = 1000px)
+        const worldHeight = this.worldData.worldHeight || 1000;
         this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
         this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
 
@@ -282,9 +302,11 @@ export class CustomWorldScene extends Phaser.Scene {
     // 2. PEMBANGUNAN MEDAN TANAH, AIR & LAVA (100% IDENTIK DENGAN PREVIEW)
     // ===============================================================
     buildTerrain(worldWidth) {
-        const totalCols = 36;
+        const totalCols = Math.ceil(worldWidth / 50);
         const groundRow = 8;
         const groundY = 400;
+        const totalRows = Math.floor((this.worldData.worldHeight || 1000) / 50);
+        const bedrockRow = totalRows - 1; // Row 19 (dasar dunia di y=950..1000)
 
         // Penentuan Warna Biome Strata Tanah & Batu Gua
         let surfaceColor = 0x15803d; // Rumput hijau
@@ -338,13 +360,15 @@ export class CustomWorldScene extends Phaser.Scene {
 
         const terrainSet = (Array.isArray(this.worldData.terrainTiles)) ? new Set(this.worldData.terrainTiles) : null;
 
-        // Render Kolom 0 sampai 35 (Setiap Kolom 50px)
+        // Render Seluruh Kolom Dunia (Misal 72 kolom untuk 3600px)
         for (let col = 0; col < totalCols; col++) {
             const cx = col * 50 + 25;
             const inWater = waterTileMap.has(`${col},8`);
             const inLava = lavaTileMap.has(`${col},8`);
-            // Jika ada terrainSet, cek apakah ada tanah di baris 8. Jika tidak ada, default ada tanah kecuali di tempat air/lava
-            const hasGroundAtCol = terrainSet ? terrainSet.has(`${col},8`) : (!inWater && !inLava);
+            // Jika ada terrainSet, cek apakah ada tanah di baris 8 (atau untuk kolom tambahan > 35, otomatis sediakan tanah selama belum digali)
+            const hasGroundAtCol = terrainSet 
+                ? (terrainSet.has(`${col},8`) || (col >= 36 && !this.dugTiles.has(`${col},8`)))
+                : (!inWater && !inLava);
 
             // A. ROW 8: PERMUKAAN TANAH / KOLAM AIR / KOLAM LAVA
             if (inWater) {
@@ -384,21 +408,29 @@ export class CustomWorldScene extends Phaser.Scene {
                 });
             } else if (hasGroundAtCol) {
                 // Balok Permukaan Tanah (Row 8: y=400..450)
-                const topTile = this.add.rectangle(cx, groundY + 25, 50, 50, dirtColor).setDepth(4);
-                this.physics.add.existing(topTile, true);
-                this.platforms.add(topTile);
+                if (!this.dugTiles.has(`${col},8`)) {
+                    const topTile = this.add.rectangle(cx, groundY + 25, 50, 50, dirtColor).setDepth(4);
+                    this.physics.add.existing(topTile, true);
+                    topTile.body.setSize(50, 50);
+                    topTile.body.reset(cx, groundY + 25);
+                    this.platforms.add(topTile);
 
-                // Lapisan Rumput / Turf Permukaan (14px)
-                this.add.rectangle(cx, groundY + 7, 50, 14, surfaceColor).setDepth(5);
+                    // Lapisan Rumput / Turf Permukaan (14px)
+                    const turf = this.add.rectangle(cx, groundY + 7, 50, 14, surfaceColor).setDepth(5);
+                    this.surfaceTurfs[col] = turf;
+                }
             }
 
-            // B. LAPISAN STRATA BAWAH TANAH (Row 9..10: Subsoil Dirt, Row 11..12: Deep Cavern Slate Stone)
+            // B. LAPISAN STRATA BAWAH TANAH YANG DALAM
             if (hasGroundAtCol) {
-                // Row 9 & 10: Tanah Cokelat Subsoil
-                for (let r = 9; r <= 10; r++) {
+                // 1. Row 9..12: Tanah Cokelat Subsoil (4 baris tebal)
+                for (let r = 9; r <= 12; r++) {
+                    if (this.dugTiles.has(`${col},${r}`)) continue;
                     const ry = r * 50 + 25;
                     const subTile = this.add.rectangle(cx, ry, 50, 50, dirtColor).setDepth(3);
                     this.physics.add.existing(subTile, true);
+                    subTile.body.setSize(50, 50);
+                    subTile.body.reset(cx, ry);
                     this.platforms.add(subTile);
 
                     // Aksen kerikil tanah halus persis seperti di preview
@@ -407,11 +439,14 @@ export class CustomWorldScene extends Phaser.Scene {
                     }
                 }
 
-                // Row 11 & 12: Batu Gua Slate Gelap (#1e293b)
-                for (let r = 11; r <= 12; r++) {
+                // 2. Row 13..16: Batu Gua Slate Gelap (#1e293b / #334155) (4 baris tebal)
+                for (let r = 13; r <= 16; r++) {
+                    if (this.dugTiles.has(`${col},${r}`)) continue;
                     const ry = r * 50 + 25;
                     const stoneTile = this.add.rectangle(cx, ry, 50, 50, stoneColor).setDepth(3);
                     this.physics.add.existing(stoneTile, true);
+                    stoneTile.body.setSize(50, 50);
+                    stoneTile.body.reset(cx, ry);
                     this.platforms.add(stoneTile);
 
                     // Urat kristal safir biru & bongkahan emas persis seperti di preview
@@ -421,16 +456,45 @@ export class CustomWorldScene extends Phaser.Scene {
                         this.add.rectangle(cx, ry, 6, 6, 0xf59e0b).setDepth(4);
                     }
                 }
+
+                // 3. Row 17..18: Deep Mantle Obsidian & Magma Cavern (2 baris tebal)
+                for (let r = 17; r <= 18; r++) {
+                    if (this.dugTiles.has(`${col},${r}`)) continue;
+                    const ry = r * 50 + 25;
+                    const mantleTile = this.add.rectangle(cx, ry, 50, 50, 0x0f172a).setDepth(3);
+                    mantleTile.setStrokeStyle(1, 0x1e1b4b);
+                    this.physics.add.existing(mantleTile, true);
+                    mantleTile.body.setSize(50, 50);
+                    mantleTile.body.reset(cx, ry);
+                    this.platforms.add(mantleTile);
+
+                    // Urat ruby merah menyala & kristal amethyst
+                    if ((col * 5 + r * 7) % 7 === 0) {
+                        this.add.circle(cx, ry, 4, 0xef4444).setDepth(4);
+                    } else if ((col * 4 + r * 9) % 6 === 0) {
+                        this.add.rectangle(cx, ry, 5, 5, 0x8b5cf6).setDepth(4);
+                    }
+                }
             } else {
-                // PALUNG JURANG DI BAWAH AIR / LAVA / JURANG GALIAN (Persis seperti palung hitam di preview!)
-                const chasmBg = this.add.rectangle(cx, groundY + 125, 50, 200, 0x070b12).setDepth(2);
+                // PALUNG JURANG DI BAWAH AIR / LAVA / JURANG GALIAN
+                const chasmH = (bedrockRow - groundRow) * 50;
+                const chasmBg = this.add.rectangle(cx, groundY + chasmH / 2, 50, chasmH, 0x070b12).setDepth(2);
                 chasmBg.setStrokeStyle(1, 0x111827, 0.35);
             }
 
-            // C. ROW 13 (y=650..700): BEDROCK TAK TERTEMBUS DI DASAR DUNIA
-            const bedrockTile = this.add.rectangle(cx, 13 * 50 + 25, 50, 50, 0x05070a).setDepth(4);
+            // C. ROW BEDROCK PALING DASAR (Row bedrockRow = 19, dasar bumi tak tertembus)
+            const bedrockY = bedrockRow * 50 + 25;
+            const bedrockTile = this.add.rectangle(cx, bedrockY, 50, 50, 0x070b14).setDepth(4);
             bedrockTile.setStrokeStyle(1.5, 0x1e293b);
+            // Pola lempeng baja & paku rivet agar tampak jelas sebagai Bedrock
+            this.add.rectangle(cx, bedrockY, 38, 38, 0x0f172a, 0.5).setDepth(4);
+            this.add.circle(cx - 14, bedrockY - 14, 2, 0x38bdf8, 0.5).setDepth(5);
+            this.add.circle(cx + 14, bedrockY - 14, 2, 0x38bdf8, 0.5).setDepth(5);
+            this.add.circle(cx - 14, bedrockY + 14, 2, 0x38bdf8, 0.5).setDepth(5);
+            this.add.circle(cx + 14, bedrockY + 14, 2, 0x38bdf8, 0.5).setDepth(5);
             this.physics.add.existing(bedrockTile, true);
+            bedrockTile.body.setSize(50, 50);
+            bedrockTile.body.reset(cx, bedrockY);
             this.platforms.add(bedrockTile);
         }
 
@@ -449,6 +513,8 @@ export class CustomWorldScene extends Phaser.Scene {
                         this.add.rectangle(bx, by - 18, 50, 14, surfaceColor).setDepth(5);
                     }
                     this.physics.add.existing(dirtTile, true);
+                    dirtTile.body.setSize(50, 50);
+                    dirtTile.body.reset(bx, by);
                     this.platforms.add(dirtTile);
                 }
             });
@@ -463,29 +529,36 @@ export class CustomWorldScene extends Phaser.Scene {
                 const dirtTile = this.add.rectangle(bx, by, 50, 50, dirtColor).setDepth(4);
                 this.add.rectangle(bx, by - 18, 50, 14, surfaceColor).setDepth(5);
                 this.physics.add.existing(dirtTile, true);
+                dirtTile.body.setSize(50, 50);
+                dirtTile.body.reset(bx, by);
                 this.platforms.add(dirtTile);
             });
         }
 
-        // Rintangan Duri (Spikes) - 2 Duri Tajam Berjejer per Petak 1x1 Sesuai Preview
-        const spawnSpikes = (col, y = 400) => {
+        // Rintangan Duri (Spikes) - 2 Duri Tajam Berjejer per Petak 1x1 Duduk Rata di Atas Permukaan
+        const spawnSpikes = (col, baseY = 400) => {
             const px = col * 50;
-            const spike1 = this.add.triangle(px + 12.5, y - 14, 0, 28, 12, 0, 24, 28, 0xdc2626).setDepth(6);
+            const spikeH = 26;
+            const spike1 = this.add.triangle(px + 12.5, baseY - spikeH / 2, 0, spikeH, 12, 0, 24, spikeH, 0xdc2626).setDepth(6);
             spike1.setStrokeStyle(1.2, 0xfca5a5);
             this.physics.add.existing(spike1, true);
+            spike1.body.setSize(24, spikeH);
+            spike1.body.reset(px + 12.5, baseY - spikeH / 2);
             this.hazards.add(spike1);
 
-            const spike2 = this.add.triangle(px + 37.5, y - 14, 0, 28, 12, 0, 24, 28, 0xdc2626).setDepth(6);
+            const spike2 = this.add.triangle(px + 37.5, baseY - spikeH / 2, 0, spikeH, 12, 0, 24, spikeH, 0xdc2626).setDepth(6);
             spike2.setStrokeStyle(1.2, 0xfca5a5);
             this.physics.add.existing(spike2, true);
+            spike2.body.setSize(24, spikeH);
+            spike2.body.reset(px + 37.5, baseY - spikeH / 2);
             this.hazards.add(spike2);
         };
 
         if (hasCustom) {
             this.worldData.entities.filter(e => e.type === 'spikes').forEach(sp => {
                 const c = (sp.col !== undefined) ? sp.col : Math.floor(sp.x / 50);
-                const y = (sp.row !== undefined) ? (sp.row * 50) : groundY;
-                spawnSpikes(c, y);
+                const baseY = (sp.row !== undefined) ? ((sp.row + 1) * 50) : groundY;
+                spawnSpikes(c, baseY);
             });
         } else if (this.worldData.hasSpikes) {
             [7, 16, 26].forEach(c => spawnSpikes(c, groundY));
@@ -523,6 +596,8 @@ export class CustomWorldScene extends Phaser.Scene {
                     const plat = this.add.rectangle(px, py, pw, 18, 0x1e293b).setDepth(6);
                     plat.setStrokeStyle(1.8, surfaceColor);
                     this.physics.add.existing(plat, true);
+                    plat.body.setSize(pw, 18);
+                    plat.body.reset(px, py);
                     this.platforms.add(plat);
 
                     // Garis Rumput Permukaan Atas
@@ -581,29 +656,36 @@ export class CustomWorldScene extends Phaser.Scene {
     createPlayer() {
         const playerTexture = this.textures.exists('custom_player') ? 'custom_player' : 'skeleton_player';
         
+        let playerCol = 2;
+        let playerRow = 7;
         let spawnX = 125;
-        let spawnY = 370;
         if (Array.isArray(this.worldData.entities)) {
             const p = this.worldData.entities.find(e => e.type === 'player');
             if (p) {
-                spawnX = (p.col !== undefined) ? (p.col * 50 + 25) : p.x;
-                spawnY = (p.row !== undefined) ? (p.row * 50 + 22) : 370;
+                playerCol = (p.col !== undefined) ? p.col : Math.floor(p.x / 50);
+                playerRow = (p.row !== undefined) ? p.row : 7;
+                spawnX = playerCol * 50 + 25;
             }
         }
 
-        // Pintu Putih Kedatangan (White Spawn Door) tepat di titik spawn
+        // Garis batas permukaan tanah tempat pintu dan pemain berpijak
+        // Default row 7 (udara tepat di atas tanah) -> pijakan di (7 + 1) * 50 = 400
+        const groundBaseY = (playerRow + 1) * 50;
+
+        // Pintu Putih Kedatangan (White Spawn Door) tepat duduk di atas baseline tanah
+        // Ukuran pintu: 36px lebar × 48px tinggi (pas di dalam sel 50px tanpa menembus langit di atasnya)
         const doorW = 36;
-        const doorH = 52;
-        const doorGroundY = spawnY + 22;
-        const spawnDoor = this.add.container(spawnX, doorGroundY - doorH / 2).setDepth(2);
+        const doorH = 48;
+        const doorCenterY = groundBaseY - doorH / 2;
+        const spawnDoor = this.add.container(spawnX, doorCenterY).setDepth(3);
 
         const doorFrame = this.add.rectangle(0, 0, doorW + 4, doorH + 2, 0xffffff);
         doorFrame.setStrokeStyle(1.8, 0xbae6fd);
         const doorBody = this.add.rectangle(0, 0, doorW, doorH, 0xf8fafc);
-        const p1 = this.add.rectangle(-doorW * 0.23, -doorH * 0.24, doorW * 0.38, doorH * 0.4, 0xe2e8f0);
-        const p2 = this.add.rectangle(doorW * 0.23, -doorH * 0.24, doorW * 0.38, doorH * 0.4, 0xe2e8f0);
-        const p3 = this.add.rectangle(-doorW * 0.23, doorH * 0.24, doorW * 0.38, doorH * 0.4, 0xe2e8f0);
-        const p4 = this.add.rectangle(doorW * 0.23, doorH * 0.24, doorW * 0.38, doorH * 0.4, 0xe2e8f0);
+        const p1 = this.add.rectangle(-doorW * 0.23, -doorH * 0.24, doorW * 0.38, doorH * 0.38, 0xe2e8f0);
+        const p2 = this.add.rectangle(doorW * 0.23, -doorH * 0.24, doorW * 0.38, doorH * 0.38, 0xe2e8f0);
+        const p3 = this.add.rectangle(-doorW * 0.23, doorH * 0.24, doorW * 0.38, doorH * 0.38, 0xe2e8f0);
+        const p4 = this.add.rectangle(doorW * 0.23, doorH * 0.24, doorW * 0.38, doorH * 0.38, 0xe2e8f0);
         const knob = this.add.circle(doorW / 2 - 5, 2, 2.5, 0xf59e0b);
         knob.setStrokeStyle(1, 0xfde047);
         const plakat = this.add.rectangle(0, -doorH / 2 + 5, 26, 8, 0x0284c7);
@@ -612,23 +694,29 @@ export class CustomWorldScene extends Phaser.Scene {
 
         spawnDoor.add([doorFrame, doorBody, p1, p2, p3, p4, knob, plakat, plakatTxt]);
 
+        // Karakter Player berdiri pas di permukaan tanah (kaki di groundBaseY, tinggi 44 -> center di groundBaseY - 22)
+        const spawnY = groundBaseY - 22;
         this.player = this.physics.add.sprite(spawnX, spawnY, playerTexture).setDepth(15);
         this.player.setCollideWorldBounds(true);
 
         // Auto-scale jika gambar custom murid agar ukurannya pas (tinggi ~44px)
-        if (playerTexture === 'custom_player') {
-            const h = this.player.height;
-            if (h > 0 && h !== 44) {
-                this.player.setScale(44 / h);
-            }
+        const rawW = this.player.width || 32;
+        const rawH = this.player.height || 44;
+        const targetH = 44;
+        if (rawH > 0 && rawH !== targetH) {
+            this.player.setScale(targetH / rawH);
         } else {
             this.player.setScale(1);
         }
 
-        // Fisika Karakter & Hitbox Anti-snag
-        const pWidth = this.player.displayWidth || 32;
-        const pHeight = this.player.displayHeight || 44;
-        this.player.body.setSize(Math.max(18, pWidth - 6), pHeight, true);
+        // Fisika Karakter & Hitbox Anti-snag:
+        // Phaser Arcade Physics body.setSize menerima dimensi tekstur asal (unscaled).
+        // Dengan boxH = rawH, tinggi fisik setelah scale adalah rawH * (44 / rawH) = 44px
+        // dan offset.y = 0 sehingga tapak kaki player tepat rata di atas permukaan balok/tanah (tidak mendem).
+        const marginX = 4 / this.player.scaleX;
+        const boxW = Math.max(14 / this.player.scaleX, rawW - marginX);
+        const boxH = rawH;
+        this.player.body.setSize(boxW, boxH, true);
         this.physics.add.collider(this.player, this.platforms);
 
         // Collision dengan Hazards (Duri & Lava)
@@ -718,15 +806,17 @@ export class CustomWorldScene extends Phaser.Scene {
         if (hasCustom) {
             this.worldData.entities.filter(e => e.type === 'slime').forEach(sl => {
                 const sx = (sl.col !== undefined) ? (sl.col * 50 + 25) : sl.x;
-                spawnSlime(sx);
+                const sy = (sl.row !== undefined) ? ((sl.row + 1) * 50) : 400;
+                spawnSlime(sx, sy);
             });
             this.worldData.entities.filter(e => e.type === 'skeleton').forEach(sk => {
                 const skx = (sk.col !== undefined) ? (sk.col * 50 + 25) : sk.x;
-                spawnSkeleton(skx);
+                const sky = (sk.row !== undefined) ? ((sk.row + 1) * 50) : 400;
+                spawnSkeleton(skx, sky);
             });
         } else {
-            if (this.worldData.hasSlime) spawnSlime(525);
-            if (this.worldData.hasSkeleton) spawnSkeleton(1525);
+            if (this.worldData.hasSlime) spawnSlime(525, 400);
+            if (this.worldData.hasSkeleton) spawnSkeleton(1525, 400);
         }
     }
 
@@ -793,27 +883,31 @@ export class CustomWorldScene extends Phaser.Scene {
         if (hasCustom) {
             this.worldData.entities.filter(e => e.type === 'npc').forEach(n => {
                 const nx = (n.col !== undefined) ? (n.col * 50 + 25) : n.x;
-                spawnNPC(nx);
+                const ny = (n.row !== undefined) ? ((n.row + 1) * 50) : 400;
+                spawnNPC(nx, ny);
             });
             this.worldData.entities.filter(e => e.type === 'chest').forEach(c => {
                 const cx = (c.col !== undefined) ? (c.col * 50 + 25) : c.x;
-                spawnChest(cx);
+                const cy = (c.row !== undefined) ? ((c.row + 1) * 50) : 400;
+                spawnChest(cx, cy);
             });
         } else {
-            if (this.worldData.hasNpc) spawnNPC(325);
-            if (this.worldData.hasChest) spawnChest(775);
+            if (this.worldData.hasNpc) spawnNPC(325, 400);
+            if (this.worldData.hasChest) spawnChest(775, 400);
         }
     }
 
-    // ===============================================================
-    // 6. PORTAL KELUAR KE MENU / HUB (PERSIS DENGAN PREVIEW)
-    // ===============================================================
     createPortal(worldWidth) {
-        let portalX = 1725;
+        let portalX = Math.max(1725, worldWidth - 75);
         let portalY = 375;
         if (Array.isArray(this.worldData.entities)) {
             const p = this.worldData.entities.find(e => e.type === 'portal');
             if (p) {
+                // Jika posisi portal masih di tengah karena ukuran lama (col <= 35), otomatis geser ke ujung dunia
+                if (p.col !== undefined && p.col <= 35 && worldWidth >= 3000) {
+                    p.col = Math.floor(worldWidth / 50) - 2;
+                    p.x = p.col * 50 + 25;
+                }
                 portalX = (p.col !== undefined) ? (p.col * 50 + 25) : p.x;
                 portalY = (p.row !== undefined) ? (p.row * 50 + 25) : 375;
             }
@@ -883,10 +977,11 @@ export class CustomWorldScene extends Phaser.Scene {
             y: 360
         };
         this.cameras.main.startFollow(this.cameraAnchor, true, 0.08, 0.08);
+        const camCfg = (typeof CONFIG_SKELETON !== 'undefined' && CONFIG_SKELETON.kamera) ? CONFIG_SKELETON.kamera : {};
         this.zoomManager = new CameraZoomManager(this, {
-            minZoom: 0.85,
-            maxZoom: 1.6,
-            defaultZoom: 1.0,
+            minZoom: camCfg.zoomMinimal !== undefined ? camCfg.zoomMinimal : 0.55,
+            maxZoom: camCfg.zoomMaksimal || 1.6,
+            defaultZoom: camCfg.zoomAwal !== undefined ? camCfg.zoomAwal : 0.75,
             followTarget: this.cameraAnchor
         });
     }
@@ -914,6 +1009,7 @@ export class CustomWorldScene extends Phaser.Scene {
         });
 
         this.input.keyboard.on('keydown-I', () => this.inventoryModal.toggle());
+        this.input.keyboard.on('keydown-Q', () => this.toggleQuestModal());
         this.input.keyboard.on('keydown-ESC', () => this.settingsModal.toggle());
         this.input.keyboard.on('keydown-F4', () => this.openSceneBuilder());
         this.input.keyboard.on('keydown-E', () => {
@@ -927,6 +1023,12 @@ export class CustomWorldScene extends Phaser.Scene {
         });
 
         this.input.on('pointerdown', (pointer) => this.handleWorldPointerDown(pointer));
+    }
+
+    toggleQuestModal() {
+        if (this.questModal) {
+            this.questModal.toggle(this.quest);
+        }
     }
 
     setEditMode(active) {
@@ -964,16 +1066,48 @@ export class CustomWorldScene extends Phaser.Scene {
                 const child = children[i];
                 if (child && child.active) {
                     if (Math.abs(child.x - cx) < 26 && Math.abs(child.y - cy) < 26) {
-                        // Bedrock di baris 13 kebal
-                        if (row >= 13) {
+                        // Bedrock di baris paling dasar kebal
+                        const maxWorldRows = Math.floor((this.worldData.worldHeight || 1000) / 50);
+                        if (row >= maxWorldRows - 1) {
                             AudioManager.playClick();
                             this.tweens.add({ targets: child, x: cx + 3, yoyo: true, repeat: 3, duration: 35, onComplete: () => { child.x = cx; } });
+                            if (this.showFloatingToast) {
+                                this.showFloatingToast('🛡️ BEDROCK: Dasar bumi tak tertembus, tidak bisa dihancurkan!', 0x38bdf8);
+                            }
                             return;
                         }
                         AudioManager.playDig();
                         this.platforms.remove(child, true, true);
+
+                        // Hapus turf rumput di atas permukaan jika baris 8 dihancurkan
+                        if (row === 8 && this.surfaceTurfs && this.surfaceTurfs[col]) {
+                            this.surfaceTurfs[col].destroy();
+                            delete this.surfaceTurfs[col];
+                        }
+
+                        // Catat ke dugTiles agar preview dan data dunia tersinkronisasi 100%
+                        const tileKey = `${col},${row}`;
+                        this.dugTiles.add(tileKey);
+                        if (!this.worldData.dugTiles) this.worldData.dugTiles = [];
+                        if (!this.worldData.dugTiles.includes(tileKey)) {
+                            this.worldData.dugTiles.push(tileKey);
+                        }
+
+                        // Hapus dari terrainTiles jika ada
+                        if (this.worldData.terrainTiles) {
+                            this.worldData.terrainTiles = this.worldData.terrainTiles.filter(t => t !== tileKey);
+                        }
+
+                        // Hapus dari entities jika ini adalah objek entitas
+                        if (this.worldData.entities) {
+                            this.worldData.entities = this.worldData.entities.filter(e => {
+                                const eRow = (e.row !== undefined) ? e.row : (e.type === 'platforms' ? 5 : 7);
+                                return !(e.col === col && eRow === row);
+                            });
+                        }
+
                         if (this.showFloatingToast) {
-                            this.showFloatingToast('👊 Balok hancur!', 0xef4444);
+                            this.showFloatingToast('🔨 Balok hancur!', 0xef4444);
                         }
 
                         const savedX = cx;
@@ -985,7 +1119,13 @@ export class CustomWorldScene extends Phaser.Scene {
                                 const restored = this.add.rectangle(savedX, savedY, 50, 50, 0x5c4033).setDepth(4);
                                 restored.setStrokeStyle(1, 0x3d2817);
                                 this.physics.add.existing(restored, true);
+                                restored.body.setSize(50, 50);
+                                restored.body.reset(savedX, savedY);
                                 this.platforms.add(restored);
+                                this.dugTiles.delete(tileKey);
+                                if (this.worldData.dugTiles) {
+                                    this.worldData.dugTiles = this.worldData.dugTiles.filter(t => t !== tileKey);
+                                }
                                 AudioManager.playClick();
                             },
                             redo: () => {
@@ -993,6 +1133,10 @@ export class CustomWorldScene extends Phaser.Scene {
                                 const blk = this.platforms.getChildren().find(c => c && c.active && Math.abs(c.x - savedX) < 26 && Math.abs(c.y - savedY) < 26);
                                 if (blk) {
                                     this.platforms.remove(blk, true, true);
+                                    this.dugTiles.add(tileKey);
+                                    if (this.worldData.dugTiles && !this.worldData.dugTiles.includes(tileKey)) {
+                                        this.worldData.dugTiles.push(tileKey);
+                                    }
                                     AudioManager.playDig();
                                 }
                             }
@@ -1030,7 +1174,30 @@ export class CustomWorldScene extends Phaser.Scene {
         const newBlock = this.add.rectangle(cx, cy, 50, 50, dirtColor).setDepth(4);
         newBlock.setStrokeStyle(1, 0x3d2817);
         this.physics.add.existing(newBlock, true);
+        newBlock.body.setSize(50, 50);
+        newBlock.body.reset(cx, cy);
         this.platforms.add(newBlock);
+
+        // Sinkronisasi data dunia agar Preview langsung menampilkan balok yang baru dipasang
+        const tileKey = `${col},${row}`;
+        this.dugTiles.delete(tileKey);
+        if (this.worldData.dugTiles) {
+            this.worldData.dugTiles = this.worldData.dugTiles.filter(t => t !== tileKey);
+        }
+        if (!this.worldData.entities) this.worldData.entities = [];
+        this.worldData.entities.push({
+            id: `dirt_${col}_${row}_${Date.now()}`,
+            type: 'dirt',
+            col: col,
+            row: row,
+            x: cx,
+            y: cy,
+            label: `Blok Tanah [${col},${row}]`,
+            cat: 'solid',
+            icon: '🟫',
+            wTiles: 1,
+            hTiles: 1
+        });
 
         AudioManager.playClick();
         this.tweens.add({

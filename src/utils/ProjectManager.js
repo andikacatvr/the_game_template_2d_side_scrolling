@@ -18,9 +18,9 @@ export class ProjectManager {
     static getProjects() {
         try {
             const raw = localStorage.getItem(this.STORAGE_KEY);
-            if (raw) {
+            if (raw !== null) {
                 const list = JSON.parse(raw);
-                if (Array.isArray(list) && list.length > 0) {
+                if (Array.isArray(list)) {
                     return list;
                 }
             }
@@ -28,7 +28,7 @@ export class ProjectManager {
             console.warn('[ProjectManager] Gagal membaca storage:', e);
         }
 
-        // Jalankan migrasi dari legacy gt_custom_worlds atau buat default
+        // Jalankan migrasi dari legacy gt_custom_worlds hanya jika storage belum pernah ada (first-time init)
         return this.migrateLegacyWorlds();
     }
 
@@ -69,8 +69,8 @@ export class ProjectManager {
             id: 'scene_' + Date.now() + '_1',
             name: 'Level 1 • Awal Petualangan',
             biome: 'dirt',
-            worldWidth: 1600,
-            worldHeight: 850,
+            worldWidth: 3600,
+            worldHeight: 1000,
             hasLava: false,
             hasWater: true,
             hasSpikes: true,
@@ -107,6 +107,11 @@ export class ProjectManager {
         let projects = this.getProjects();
         projects = projects.filter(p => p.id !== projectId);
         this.saveProjects(projects);
+
+        // Bersihkan legacy worlds agar tidak dibangkitkan ulang saat project kosong
+        try {
+            localStorage.removeItem(this.LEGACY_WORLDS_KEY);
+        } catch (e) {}
     }
 
     /**
@@ -128,8 +133,8 @@ export class ProjectManager {
             id: sceneId,
             name: sceneData.name || `Level ${sceneCount + 1} • Area Baru`,
             biome: sceneData.biome || 'desert',
-            worldWidth: sceneData.worldWidth || 1800,
-            worldHeight: sceneData.worldHeight || 850,
+            worldWidth: sceneData.worldWidth || 3600,
+            worldHeight: sceneData.worldHeight || 1000,
             entities: Array.isArray(sceneData.entities) ? sceneData.entities : []
         };
 
@@ -209,6 +214,83 @@ export class ProjectManager {
     }
 
     /**
+     * Mengubah nama dan deskripsi Project secara dinamis
+     */
+    static renameProject(projectId, name, desc = null) {
+        const projects = this.getProjects();
+        const proj = projects.find(p => p.id === projectId);
+        if (!proj) return false;
+
+        if (name && name.trim()) proj.name = name.trim();
+        if (desc !== null) proj.desc = desc.trim();
+        proj.updatedAt = Date.now();
+        this.saveProjects(projects);
+        return true;
+    }
+
+    /**
+     * Mengubah nama scene secara dinamis
+     */
+    static renameScene(projectId, sceneId, newName) {
+        if (!newName || !newName.trim()) return false;
+        return this.updateSceneInProject(projectId, sceneId, { name: newName.trim() });
+    }
+
+    /**
+     * Mengubah quest scene/project secara dinamis
+     */
+    static updateSceneQuest(projectId, sceneId, questData) {
+        return this.updateSceneInProject(projectId, sceneId, { quest: questData });
+    }
+
+    /**
+     * Mengubah posisi urutan scene (Move Up / Move Down)
+     */
+    static moveScene(projectId, sceneId, direction = 'up') {
+        const projects = this.getProjects();
+        const proj = projects.find(p => p.id === projectId);
+        if (!proj || !Array.isArray(proj.scenes)) return false;
+
+        const idx = proj.scenes.findIndex(s => s.id === sceneId);
+        if (idx === -1) return false;
+
+        const targetIdx = (direction === 'up') ? idx - 1 : idx + 1;
+        if (targetIdx < 0 || targetIdx >= proj.scenes.length) return false;
+
+        // Swap posisi
+        const temp = proj.scenes[idx];
+        proj.scenes[idx] = proj.scenes[targetIdx];
+        proj.scenes[targetIdx] = temp;
+
+        proj.updatedAt = Date.now();
+        this.saveProjects(projects);
+        return true;
+    }
+
+    /**
+     * Duplikasi sebuah scene
+     */
+    static duplicateScene(projectId, sceneId) {
+        const projects = this.getProjects();
+        const proj = projects.find(p => p.id === projectId);
+        if (!proj || !Array.isArray(proj.scenes)) return null;
+
+        const target = proj.scenes.find(s => s.id === sceneId);
+        if (!target) return null;
+
+        const cloned = JSON.parse(JSON.stringify(target));
+        cloned.id = 'scene_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+        cloned.name = `${target.name || 'Level'} (Salinan)`;
+
+        const originalIdx = proj.scenes.findIndex(s => s.id === sceneId);
+        proj.scenes.splice(originalIdx + 1, 0, cloned);
+
+        proj.updatedAt = Date.now();
+        this.saveProjects(projects);
+        return cloned;
+    }
+
+    /**
      * Menemukan scene berikutnya secara sekuensial (untuk portal warp)
      * @param {string} projectId 
      * @param {string} currentSceneId 
@@ -244,8 +326,8 @@ export class ProjectManager {
                 name: cw.name || `Level ${idx + 1} • Kustom`,
                 biome: cw.biome || 'desert',
                 timeOfDay: cw.timeOfDay || 'day',
-                worldWidth: cw.worldWidth || 1800,
-                worldHeight: cw.worldHeight || 850,
+                worldWidth: cw.worldWidth || 3600,
+                worldHeight: cw.worldHeight || 1000,
                 hasLava: cw.hasLava !== undefined ? cw.hasLava : true,
                 hasWater: cw.hasWater !== undefined ? cw.hasWater : true,
                 hasSpikes: cw.hasSpikes !== undefined ? cw.hasSpikes : true,
@@ -284,24 +366,24 @@ export class ProjectManager {
                         id: 'scene_lvl1_snow',
                         name: 'Level 1 • Lembah Salju',
                         biome: 'snow',
-                        worldWidth: 1400,
-                        worldHeight: 850,
+                        worldWidth: 3600,
+                        worldHeight: 1000,
                         entities: []
                     },
                     {
                         id: 'scene_lvl2_desert',
                         name: 'Level 2 • Gurun Api Tengkorak',
                         biome: 'desert',
-                        worldWidth: 1800,
-                        worldHeight: 850,
+                        worldWidth: 3600,
+                        worldHeight: 1000,
                         entities: []
                     },
                     {
                         id: 'scene_lvl3_cave',
                         name: 'Level 3 • Labirin Gua Tersembunyi',
                         biome: 'cave',
-                        worldWidth: 2000,
-                        worldHeight: 850,
+                        worldWidth: 3600,
+                        worldHeight: 1000,
                         entities: []
                     }
                 ]
@@ -309,6 +391,12 @@ export class ProjectManager {
         }
 
         this.saveProjects(projects);
+
+        // Tandai migrasi selesai dengan membersihkan legacy worlds
+        try {
+            localStorage.removeItem(this.LEGACY_WORLDS_KEY);
+        } catch (e) {}
+
         return projects;
     }
 }

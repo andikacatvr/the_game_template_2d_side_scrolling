@@ -586,11 +586,10 @@ export class HTMLGameHUD {
                             <div class="gt-hud-strip-actions">
                                 <button class="gt-strip-action-btn" id="gt-strip-btn-min" title="Minimize / Perkecil Radar (Mode Pill)">−</button>
                                 <button class="gt-strip-action-btn" id="gt-strip-btn-size" title="Perbesar / Perkecil Ukuran Radar">⤢</button>
-                                <button class="gt-strip-action-btn" id="gt-strip-btn-modal" title="Buka Radar Peta Penuh (M)">🗺️</button>
                             </div>
                         </div>
                     </div>
-                    <div class="gt-hud-strip-canvas-wrap" id="gt-strip-canvas-wrap" title="Klik untuk Peta Lengkap / Double Klik untuk Ubah Ukuran">
+                    <div class="gt-hud-strip-canvas-wrap" id="gt-strip-canvas-wrap" title="Klik untuk Radar Penuh / Double Klik untuk Ubah Ukuran">
                         <canvas id="gt-hud-strip-canvas" width="480" height="42"></canvas>
                     </div>
                     <div class="gt-hud-strip-bar-track" id="gt-strip-bar-track">
@@ -620,6 +619,7 @@ export class HTMLGameHUD {
         this.stripBarFill = this.dom.querySelector('#gt-strip-bar-fill');
         this.btnStripMin = this.dom.querySelector('#gt-strip-btn-min');
         this.btnStripSize = this.dom.querySelector('#gt-strip-btn-size');
+        this.btnStripRadar = this.dom.querySelector('#gt-strip-btn-radar');
         this.btnStripModal = this.dom.querySelector('#gt-strip-btn-modal');
         this.stripTitleBtn = this.dom.querySelector('#gt-strip-title-btn');
         this.btnMenu = this.dom.querySelector('#gt-hud-btn-menu');
@@ -743,7 +743,16 @@ export class HTMLGameHUD {
             });
         }
 
-        // Strip Radar Modal Button Click (Buka World Map)
+        // Strip Radar Level Modal Button Click (Buka Radar Peta Penuh)
+        if (this.btnStripRadar) {
+            this.btnStripRadar.addEventListener('click', (e) => {
+                e.stopPropagation();
+                AudioManager.playClick();
+                this.showLevelInfoModal();
+            });
+        }
+
+        // Strip World Map Button Click (Buka World Map Peta Dunia)
         if (this.btnStripModal) {
             this.btnStripModal.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -761,18 +770,18 @@ export class HTMLGameHUD {
             });
         }
 
-        // Strip Radar Body Click (jika sedang minimized, klik bar langsung buka World Map)
+        // Strip Radar Body Click (jika sedang minimized, klik bar pulihkan ukuran radar)
         if (this.radarStrip) {
             this.radarStrip.addEventListener('click', (e) => {
                 if (this.radarMode === 'minimized') {
                     e.stopPropagation();
                     AudioManager.playClick();
-                    WorldMapModal.show(this.scene);
+                    this.setRadarMode('normal');
                 }
             });
         }
 
-        // Double Click pada canvas wrap untuk toggle ukuran cepat, Single Click untuk buka World Map
+        // Double Click pada canvas wrap untuk toggle ukuran cepat, Single Click untuk buka Radar Peta Penuh
         if (this.stripCanvasWrap) {
             this.stripCanvasWrap.addEventListener('dblclick', (e) => {
                 e.stopPropagation();
@@ -782,7 +791,7 @@ export class HTMLGameHUD {
             this.stripCanvasWrap.addEventListener('click', (e) => {
                 e.stopPropagation();
                 AudioManager.playClick();
-                WorldMapModal.show(this.scene);
+                this.showLevelInfoModal();
             });
         }
 
@@ -795,7 +804,7 @@ export class HTMLGameHUD {
             });
         }
 
-        // Shortcut Keyboard [M] untuk Buka/Tutup World Map
+        // Shortcut Keyboard [M] untuk Buka/Tutup World Map & [R] untuk Radar Peta Penuh
         if (this.scene && this.scene.input && this.scene.input.keyboard) {
             this.scene.input.keyboard.on('keydown-M', () => {
                 const existing = document.getElementById('gt-worldmap-modal');
@@ -804,6 +813,9 @@ export class HTMLGameHUD {
                 } else {
                     WorldMapModal.show(this.scene);
                 }
+            });
+            this.scene.input.keyboard.on('keydown-R', () => {
+                this.showLevelInfoModal();
             });
         }
 
@@ -1382,9 +1394,17 @@ export class HTMLGameHUD {
 
         const closeModal = () => {
             if (animFrameId) cancelAnimationFrame(animFrameId);
+            window.removeEventListener('keydown', handleKeyDown);
             AudioManager.playClick();
             modal.remove();
         };
+
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape' || e.key === 'r' || e.key === 'R') {
+                closeModal();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
 
         if (btnX) btnX.addEventListener('click', closeModal);
         if (btnCloseBottom) btnCloseBottom.addEventListener('click', closeModal);

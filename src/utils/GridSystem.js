@@ -178,7 +178,14 @@ class GridSystemClass {
             g.lineBetween(wx, startY, wx, endY);
         }
         for (let wy = startY; wy <= endY; wy += step) {
-            g.lineBetween(startX, wy, endX, wy);
+            if (wy === 400) {
+                // Garis batas permukaan tanah (Ground Baseline) hijau zamrud presisi sesuai editor
+                g.lineStyle(effectiveLineWidth * 1.5, 0x22c55e, 0.85);
+                g.lineBetween(startX, wy, endX, wy);
+                g.lineStyle(effectiveLineWidth, 0xffffff, 0.40);
+            } else {
+                g.lineBetween(startX, wy, endX, wy);
+            }
         }
 
         // 3. Highlight Kotak Sel Aktif di bawah kursor mouse

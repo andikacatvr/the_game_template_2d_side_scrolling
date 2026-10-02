@@ -1111,19 +1111,23 @@ export class GameScene extends Phaser.Scene {
         this.player = this.physics.add.sprite(spawnX, spawnY, playerTexture).setDepth(10);
         this.player.setCollideWorldBounds(true);
 
-        // Hitbox anti-snag: beri margin 2px di kiri & kanan agar pergerakan di atas sambungan balok ubin lantai selalu mulus tanpa tersendat
-        const pWidth = this.player.width || 32;
-        const pHeight = this.player.height || 44;
-        this.player.body.setSize(Math.max(18, pWidth - 6), pHeight, true);
-        this.physics.add.collider(this.player, this.platforms);
-
-        // Auto-scale jika gambar custom murid
-        if (playerTexture === 'custom_player') {
-            const h = this.player.height;
-            if (h > 0 && h !== 44) {
-                this.player.setScale(44 / h);
-            }
+        // Auto-scale jika gambar custom murid agar ukurannya pas (tinggi ~44px)
+        const rawW = this.player.width || 32;
+        const rawH = this.player.height || 44;
+        const targetH = 44;
+        if (rawH > 0 && rawH !== targetH) {
+            this.player.setScale(targetH / rawH);
+        } else {
+            this.player.setScale(1);
         }
+
+        // Hitbox anti-snag: beri margin 2px di kiri & kanan agar pergerakan di atas sambungan balok ubin lantai selalu mulus tanpa tersendat
+        // Hitbox tinggi menggunakan rawH agar tinggi fisik setelah scale pas 44px dan kaki tidak mendem
+        const marginX = 4 / this.player.scaleX;
+        const boxW = Math.max(14 / this.player.scaleX, rawW - marginX);
+        const boxH = rawH;
+        this.player.body.setSize(boxW, boxH, true);
+        this.physics.add.collider(this.player, this.platforms);
 
         // Variabel animasi elastisitas & timer platformer halus
         this.playerBaseScaleX = this.player.scaleX || 1;

@@ -907,35 +907,63 @@ export class ProjectHubModal {
             const biomeLabel = biomeIcons[scene.biome] || '🌍 Kustom';
 
             return `
-                <div class="gt-uhub-row" data-name="${(scene.name || '').toLowerCase()}">
-                    <div class="gt-uhub-col-name">
-                        <span class="gt-uhub-project-name">
-                            <span style="font-size: 12px; color: #38bdf8; font-family: 'JetBrains Mono', monospace;">#${idx + 1}</span>
-                            <span>🎮</span> ${scene.name || 'Level ' + (idx + 1)}
-                            ${isStart ? '<span class="gt-badge-start-pill">🏁 Start Level</span>' : ''}
+                <div class="gt-uhub-row" data-name="${(scene.name || '').toLowerCase()}" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid #27272a; gap: 16px;">
+                    <!-- Kiri: Nomor & Nama Level -->
+                    <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+                        <span style="font-size: 12px; font-weight: 800; color: #38bdf8; font-family: 'JetBrains Mono', monospace; background: rgba(56, 189, 248, 0.12); padding: 3px 8px; border-radius: 5px; flex-shrink: 0;">
+                            #${idx + 1}
                         </span>
-                        <span class="gt-uhub-project-path">Ukuran Dunia: ${scene.worldWidth || 1800}px • ID: ${scene.id}</span>
+                        <div style="min-width: 0;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 14px; font-weight: 700; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    ${scene.name || 'Level ' + (idx + 1)}
+                                </span>
+                                <button class="btn-quick-rename-scene" data-scene-id="${scene.id}" title="Ganti Nama Level" style="background: transparent; border: none; color: #64748b; cursor: pointer; font-size: 12px; padding: 0;">
+                                    ✏️
+                                </button>
+                                ${isStart ? '<span style="font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: rgba(34, 197, 94, 0.18); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4);">Awal</span>' : ''}
+                            </div>
+                            <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
+                                ${biomeLabel} • Ukuran ${scene.worldWidth || 1800}px
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <span class="gt-uhub-badge-tag gt-tag-sandbox">${biomeLabel}</span>
+
+                    <!-- Tengah: Alur Portal -->
+                    <div style="flex-shrink: 0;">
+                        ${nextScene ? `
+                            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: #94a3b8; background: rgba(255, 255, 255, 0.04); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.08);">
+                                <span>Lanjut ke:</span>
+                                <b style="color: #38bdf8;">#${idx + 2} ${nextScene.name || 'Level ' + (idx + 2)}</b>
+                            </span>
+                        ` : `
+                            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: #facc15; background: rgba(234, 179, 8, 0.1); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(234, 179, 8, 0.25); font-weight: 700;">
+                                🏆 Tamat (Final Stage)
+                            </span>
+                        `}
                     </div>
-                    <div>
-                        ${nextScene ? `<span class="gt-badge-next">Portal → Level ${idx + 2}</span>` : `<span class="gt-badge-final">🏆 Final Stage</span>`}
-                    </div>
-                    <div class="gt-uhub-col-action" style="display: flex; gap: 6px; justify-content: flex-end;">
-                        <button class="gt-uhub-btn-edit btn-edit-scene" data-scene-id="${scene.id}" style="background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8; padding: 4px 10px; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer;">
-                            <span>✏️</span> Edit
+
+                    <!-- Kanan: Tombol Aksi -->
+                    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                        <button class="btn-edit-scene" data-scene-id="${scene.id}" title="Edit di Scene Builder" style="padding: 6px 14px; background: #0284c7; border: 1px solid #38bdf8; color: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
+                            Edit
                         </button>
-                        <button class="gt-uhub-btn-open btn-test-scene" data-scene-id="${scene.id}">
-                            <span>▶</span> Test
+                        <button class="btn-test-scene" data-scene-id="${scene.id}" title="Mainkan Stage Ini" style="padding: 6px 12px; background: #27272a; border: 1px solid #3f3f46; color: #f4f4f5; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                            Play
                         </button>
                         ${!isStart ? `
-                            <button class="btn-set-start-scene" data-scene-id="${scene.id}" title="Jadikan Level Awal" style="background: #14281e; border: 1px solid #16a34a; color: #4ade80; padding: 4px 8px; border-radius: 5px; font-size: 11px; font-weight: 700; cursor: pointer;">
-                                🏁 Start
+                            <button class="btn-set-start-scene" data-scene-id="${scene.id}" title="Jadikan Level Awal" style="padding: 5px 8px; background: #14281e; border: 1px solid #16a34a; color: #4ade80; border-radius: 6px; font-size: 11px; cursor: pointer;">
+                                🏁
                             </button>
                         ` : ''}
                         ${(project.scenes.length > 1) ? `
-                            <button class="btn-delete-scene" data-scene-id="${scene.id}" title="Hapus Scene Ini" style="background: transparent; border: 1px solid #451a1a; color: #f87171; border-radius: 5px; padding: 4px 8px; cursor: pointer; font-size: 12px;">
+                            <button class="btn-move-scene" data-scene-id="${scene.id}" data-dir="up" ${idx === 0 ? 'disabled style="opacity: 0.2; cursor: not-allowed;"' : 'style="cursor: pointer;"'} title="Geser ke Atas" style="padding: 5px 8px; background: #27272a; border: 1px solid #3f3f46; color: #cbd5e1; border-radius: 6px; font-size: 11px;">
+                                ↑
+                            </button>
+                            <button class="btn-move-scene" data-scene-id="${scene.id}" data-dir="down" ${idx === (project.scenes.length - 1) ? 'disabled style="opacity: 0.2; cursor: not-allowed;"' : 'style="cursor: pointer;"'} title="Geser ke Bawah" style="padding: 5px 8px; background: #27272a; border: 1px solid #3f3f46; color: #cbd5e1; border-radius: 6px; font-size: 11px;">
+                                ↓
+                            </button>
+                            <button class="btn-delete-scene" data-scene-id="${scene.id}" title="Hapus Level" style="padding: 5px 8px; background: transparent; border: 1px solid #451a1a; color: #f87171; border-radius: 6px; font-size: 11px; cursor: pointer;">
                                 🗑️
                             </button>
                         ` : ''}
@@ -952,10 +980,11 @@ export class ProjectHubModal {
                     </button>
                     <div>
                         <h1 class="gt-uhub-content-title" style="display: flex; align-items: center; gap: 8px;">
-                            <span>📁</span> ${project.name}
+                            <span>📁</span> <span id="gt-header-proj-name">${project.name}</span>
+                            <button id="btn-rename-project" title="Ubah Nama Project" style="background: transparent; border: none; color: #94a3b8; cursor: pointer; font-size: 14px; padding: 2px 4px;">✏️</button>
                         </h1>
                         <p style="font-size: 12px; color: #94a3b8; margin: 4px 0 0 0;">
-                            <b>${(project.scenes || []).length} Scene</b> terhubung otomatis via portal finish
+                            <b>${(project.scenes || []).length} Scene</b> terhubung otomatis berurutan via portal finish
                         </p>
                     </div>
                 </div>
@@ -970,14 +999,17 @@ export class ProjectHubModal {
             </div>
 
             <div class="gt-uhub-table-container">
-                <div class="gt-uhub-table-header">
-                    <div>Level &amp; Scene Name</div>
-                    <div>Biome / Tema</div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; border-bottom: 1px solid #27272a; color: #64748b; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <div>Level &amp; Tema</div>
                     <div>Alur Portal</div>
-                    <div style="text-align: right;">Action</div>
+                    <div style="text-align: right;">Aksi</div>
                 </div>
 
-                ${sceneRowsHTML}
+                ${sceneRowsHTML || `
+                    <div style="padding: 40px 20px; text-align: center; color: #64748b; font-size: 13px;">
+                        Belum ada scene di project ini. Klik <strong>+ Tambah Scene Baru</strong> untuk membuat stage pertama!
+                    </div>
+                `}
             </div>
         `;
 
@@ -988,17 +1020,67 @@ export class ProjectHubModal {
             this.renderContent();
         });
 
+        // Ganti Nama Project
+        const btnRenameProj = container.querySelector('#btn-rename-project');
+        if (btnRenameProj) {
+            btnRenameProj.addEventListener('click', () => {
+                const newName = prompt(`Ubah Nama Project:`, project.name);
+                if (newName && newName.trim() && newName.trim() !== project.name) {
+                    ProjectManager.renameProject(project.id, newName.trim());
+                    AudioManager.playClick();
+                    this.renderContent();
+                }
+            });
+        }
+
         // Mainkan Full Project
         container.querySelector('#btn-play-full-project').addEventListener('click', () => {
             this.playProject(project);
         });
 
-        // Tambah Scene Baru ke Project
+        // Tambah Scene Baru ke Project (Dialog Wizard Dinamis)
         container.querySelector('#btn-add-scene-to-proj').addEventListener('click', () => {
-            this.hide();
             AudioManager.playClick();
-            const builder = new SceneBuilderModal(this.scene, { projectId: project.id });
-            builder.show();
+            this.showCreateSceneDialog(project);
+        });
+
+        // Ubah Urutan Scene (Move Up / Down)
+        container.querySelectorAll('.btn-move-scene').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const sId = btn.getAttribute('data-scene-id');
+                const dir = btn.getAttribute('data-dir');
+                ProjectManager.moveScene(project.id, sId, dir);
+                AudioManager.playClick();
+                this.renderContent();
+            });
+        });
+
+        // Quick Rename Scene
+        container.querySelectorAll('.btn-quick-rename-scene').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const sId = btn.getAttribute('data-scene-id');
+                const targetScene = (project.scenes || []).find(s => s.id === sId);
+                if (!targetScene) return;
+                const newName = prompt(`Ubah Nama Level:`, targetScene.name);
+                if (newName && newName.trim() && newName.trim() !== targetScene.name) {
+                    ProjectManager.renameScene(project.id, sId, newName.trim());
+                    AudioManager.playClick();
+                    this.renderContent();
+                }
+            });
+        });
+
+        // Duplikasi Scene
+        container.querySelectorAll('.btn-dup-scene').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const sId = btn.getAttribute('data-scene-id');
+                ProjectManager.duplicateScene(project.id, sId);
+                AudioManager.playClick();
+                this.renderContent();
+            });
         });
 
         // Edit Scene di Scene Builder
@@ -1009,7 +1091,7 @@ export class ProjectHubModal {
                 if (targetScene) {
                     this.hide();
                     AudioManager.playClick();
-                    const builder = new SceneBuilderModal(this.scene, { projectId: project.id, sceneId: sId });
+                    const builder = new SceneBuilderModal(this.scene, { projectId: project.id, sceneId: sId, name: targetScene.name, biome: targetScene.biome });
                     builder.loadWorldData(targetScene, project.id, sId);
                     builder.show();
                 }
@@ -1047,12 +1129,111 @@ export class ProjectHubModal {
                 const sId = btn.getAttribute('data-scene-id');
                 const targetScene = (project.scenes || []).find(s => s.id === sId);
                 const sName = targetScene ? targetScene.name : 'scene ini';
-                if (confirm(`Hapus ${sName} dari project ${project.name}?`)) {
+                if (confirm(`Hapus "${sName}" dari project ${project.name}?`)) {
                     ProjectManager.deleteSceneFromProject(project.id, sId);
                     AudioManager.playClick();
                     this.renderContent();
                 }
             });
+        });
+    }
+
+    showCreateSceneDialog(project) {
+        const oldDialog = document.getElementById('gt-uhub-create-scene-dialog');
+        if (oldDialog) oldDialog.remove();
+
+        const nextNum = (project.scenes || []).length + 1;
+        const dialog = document.createElement('div');
+        dialog.id = 'gt-uhub-create-scene-dialog';
+        dialog.className = 'gt-uhub-wizard-overlay';
+        dialog.innerHTML = `
+            <div class="gt-uhub-wizard-card" style="width: min(500px, 94vw);">
+                <div class="gt-uhub-wizard-title">✨ Tambah Scene / Level Baru</div>
+                <div class="gt-uhub-wizard-desc">
+                    Tentukan nama level dan tema lingkungan (biome) untuk stage ke-${nextNum} ini.
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;">
+                    <div>
+                        <label style="display: block; font-size: 11px; font-weight: 700; color: #cbd5e1; margin-bottom: 5px;">NAMA LEVEL</label>
+                        <input type="text" id="gt-new-scene-name" placeholder="Misal: Level ${nextNum} • Hutan Terlarang" style="width: 100%; height: 36px; background: #141414; border: 1px solid #3b4252; border-radius: 6px; padding: 0 12px; color: #fff; font-size: 13px; box-sizing: border-box; outline: none;" value="Level ${nextNum} • Area Petualangan" />
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 11px; font-weight: 700; color: #cbd5e1; margin-bottom: 5px;">TEMA LINGKUNGAN (BIOME)</label>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;" id="gt-new-scene-biomes">
+                            <button type="button" class="gt-biome-opt active" data-biome="dirt" style="padding: 8px 4px; background: #1e293b; border: 1px solid #38bdf8; border-radius: 6px; color: #fff; font-size: 11.5px; font-weight: 700; cursor: pointer; text-align: center;">🌲 Hutan</button>
+                            <button type="button" class="gt-biome-opt" data-biome="snow" style="padding: 8px 4px; background: #141414; border: 1px solid #333; border-radius: 6px; color: #cbd5e1; font-size: 11.5px; font-weight: 700; cursor: pointer; text-align: center;">❄️ Salju</button>
+                            <button type="button" class="gt-biome-opt" data-biome="desert" style="padding: 8px 4px; background: #141414; border: 1px solid #333; border-radius: 6px; color: #cbd5e1; font-size: 11.5px; font-weight: 700; cursor: pointer; text-align: center;">🏜️ Gurun</button>
+                            <button type="button" class="gt-biome-opt" data-biome="cave" style="padding: 8px 4px; background: #141414; border: 1px solid #333; border-radius: 6px; color: #cbd5e1; font-size: 11.5px; font-weight: 700; cursor: pointer; text-align: center;">🌋 Gua</button>
+                            <button type="button" class="gt-biome-opt" data-biome="hongkong" style="padding: 8px 4px; background: #141414; border: 1px solid #333; border-radius: 6px; color: #cbd5e1; font-size: 11.5px; font-weight: 700; cursor: pointer; text-align: center;">🏙️ Hong Kong</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="gt-uhub-wizard-actions" style="margin-top: 20px;">
+                    <button class="gt-uhub-btn-cancel" id="btn-cancel-create-scene">Batal</button>
+                    <button class="gt-uhub-btn-primary" id="btn-submit-create-scene" style="padding: 0 20px;">
+                        <span>✓</span> Buat &amp; Buka Editor Scene
+                    </button>
+                </div>
+            </div>
+        `;
+
+        this.overlay.querySelector('.gt-uhub-window').appendChild(dialog);
+
+        let selectedBiome = 'dirt';
+        const biomeBtns = dialog.querySelectorAll('.gt-biome-opt');
+        biomeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                biomeBtns.forEach(b => {
+                    b.classList.remove('active');
+                    b.style.background = '#141414';
+                    b.style.borderColor = '#333';
+                    b.style.color = '#cbd5e1';
+                });
+                btn.classList.add('active');
+                btn.style.background = '#1e293b';
+                btn.style.borderColor = '#38bdf8';
+                btn.style.color = '#fff';
+                selectedBiome = btn.getAttribute('data-biome');
+            });
+        });
+
+        const inputName = dialog.querySelector('#gt-new-scene-name');
+        inputName.focus();
+        inputName.select();
+
+        const cancelBtn = dialog.querySelector('#btn-cancel-create-scene');
+        cancelBtn.addEventListener('click', () => dialog.remove());
+
+        const submitBtn = dialog.querySelector('#btn-submit-create-scene');
+        const doCreate = () => {
+            const name = inputName.value.trim() || `Level ${nextNum} • Area Petualangan`;
+            const created = ProjectManager.addSceneToProject(project.id, {
+                name,
+                biome: selectedBiome,
+                worldWidth: 3600,
+                worldHeight: 1000
+            });
+
+            dialog.remove();
+            this.hide();
+            AudioManager.playClick();
+
+            if (created) {
+                const builder = new SceneBuilderModal(this.scene, {
+                    projectId: project.id,
+                    sceneId: created.id,
+                    name: created.name,
+                    biome: created.biome
+                });
+                builder.loadWorldData(created, project.id, created.id);
+                builder.show();
+            }
+        };
+
+        submitBtn.addEventListener('click', doCreate);
+        inputName.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') doCreate();
+            else if (e.key === 'Escape') dialog.remove();
         });
     }
 

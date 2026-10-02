@@ -30,15 +30,15 @@ export class SceneBuilderModal {
         // 36 Kolom (0..35 = 1800px).
         // Baris 0..7 = Langit, Baris 8 = Permukaan Tanah (y = 400px), Baris 9+ = Subsoil & Bedrock.
         this.state = {
-            name: 'Gurun Api Tengkorak',
-            biome: 'desert', // 'dirt' | 'snow' | 'desert' | 'cave'
+            name: options.name || (options.sceneName || 'Level Baru'),
+            biome: options.biome || 'dirt', // 'dirt' | 'snow' | 'desert' | 'cave' | 'hongkong'
             timeOfDay: 'day', // 'day' | 'sunset' | 'night'
             showGrid: true,
             showGizmos: true,
             selectedId: 'player_1',
             activeTool: null, // item type yang sedang aktif untuk mode cap (stamp tool)
-            worldWidth: 1800,
-            worldHeight: 850,
+            worldWidth: 3600,
+            worldHeight: 1000,
 
             // Dynamic Entity List (Semua objek unit 1x1, otomatis menyatu bila berjejer)
             entities: [
@@ -58,18 +58,19 @@ export class SceneBuilderModal {
                 { id: 'lava_2', type: 'lava', col: 21, row: 8, x: 1075, y: 400, label: 'Blok Lava #2', cat: 'fluid', icon: '🌋', wTiles: 1, hTiles: 1 },
                 { id: 'lava_3', type: 'lava', col: 22, row: 8, x: 1125, y: 400, label: 'Blok Lava #3', cat: 'fluid', icon: '🌋', wTiles: 1, hTiles: 1 },
                 { id: 'skeleton_1', type: 'skeleton', col: 30, row: 7, x: 1525, y: 400, label: 'Monster Skeleton', cat: 'creature', icon: '💀', wTiles: 1, hTiles: 1 },
-                { id: 'portal_1', type: 'portal', col: 34, row: 7, x: 1725, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 }
+                { id: 'portal_1', type: 'portal', col: 70, row: 7, x: 3525, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 }
             ]
         };
 
-        // Inisialisasi Petak Tanah Modular (Row 8, kecuali tempat Air dan Lava)
+        // Inisialisasi Petak Tanah Modular (Row 8, membentang sepanjang 72 kolom)
         const initTerrain = new Set();
-        for (let c = 0; c < 36; c++) {
+        for (let c = 0; c < 72; c++) {
             if ((c < 11 || c > 13) && (c < 20 || c > 22)) {
                 initTerrain.add(`${c},8`);
             }
         }
         this.state.terrainTiles = initTerrain;
+        this.state.dugTiles = new Set();
 
         this.animTime = 0;
         this.hoverTile = null; // { col, row }
@@ -85,6 +86,9 @@ export class SceneBuilderModal {
         this.isBoxSelecting = false;
         this.dragPixelBox = null; // { startX, startY, currentX, currentY } untuk 60fps pixel-smooth drag
         this.selectionFlashes = []; // Feedback visual flash saat batch fill / delete
+        this.isTestPlayMode = false;
+        this.testPlayer = null;
+        this.testKeys = { w: false, a: false, s: false, d: false, space: false };
 
         // History Stacks untuk Undo & Redo (Ctrl+Z & Ctrl+Y / Ctrl+Shift+Z)
         this.undoStack = [];
@@ -117,21 +121,49 @@ export class SceneBuilderModal {
         }
     }
 
-    loadWorldData(data) {
+    loadWorldData(data, projectId = null, sceneId = null) {
         if (!data) return;
+        if (projectId) this.projectId = projectId;
+        if (sceneId) this.sceneId = sceneId;
         if (data.name) this.state.name = data.name;
         if (data.biome) this.state.biome = data.biome;
-        if (data.timeOfDay) this.state.timeOfDay = data.timeOfDay;
-        if (data.worldWidth) this.state.worldWidth = data.worldWidth;
-        if (data.worldHeight) this.state.worldHeight = data.worldHeight;
+        if (!data.worldWidth || data.worldWidth <= 1800) {
+            this.state.worldWidth = 3600;
+        } else {
+            this.state.worldWidth = data.worldWidth;
+        }
+        if (!data.worldHeight || data.worldHeight <= 700) {
+            this.state.worldHeight = 1000;
+        } else {
+            this.state.worldHeight = data.worldHeight;
+        }
         if (Array.isArray(data.entities)) {
             this.state.entities = JSON.parse(JSON.stringify(data.entities));
+            // Geser portal ke ujung dunia jika masih berada di posisi template kecil lama
+            const portalEntity = this.state.entities.find(e => e.type === 'portal');
+            if (portalEntity && portalEntity.col !== undefined && portalEntity.col <= 35 && this.state.worldWidth >= 3000) {
+                portalEntity.col = Math.floor(this.state.worldWidth / 50) - 2;
+                portalEntity.x = portalEntity.col * 50 + 25;
+            }
             if (this.state.entities.length > 0) {
                 this.state.selectedId = this.state.entities[0].id;
             }
         }
         if (Array.isArray(data.terrainTiles)) {
             this.state.terrainTiles = new Set(data.terrainTiles);
+            // Isi tanah untuk kolom tambahan jika dunia diperbesar
+            const totalCols = Math.ceil(this.state.worldWidth / 50);
+            for (let c = 36; c < totalCols; c++) {
+                const key = `${c},8`;
+                if (!this.state.dugTiles || !this.state.dugTiles.has(key)) {
+                    this.state.terrainTiles.add(key);
+                }
+            }
+        }
+        if (Array.isArray(data.dugTiles)) {
+            this.state.dugTiles = new Set(data.dugTiles);
+        } else if (!this.state.dugTiles) {
+            this.state.dugTiles = new Set();
         }
 
         // Sinkronisasi elemen DOM
@@ -385,6 +417,29 @@ export class SceneBuilderModal {
                     display: flex;
                     align-items: center;
                     gap: 8px;
+                }
+
+                .gt-sb-btn-play {
+                    width: 30px;
+                    height: 30px;
+                    border-radius: 5px;
+                    background: #1c1c21;
+                    border: 1px solid #2d2d34;
+                    color: #22c55e;
+                    font-size: 12px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.15s ease;
+                    padding: 0;
+                    margin: 0;
+                }
+
+                .gt-sb-btn-play:hover {
+                    background: #15803d;
+                    border-color: #22c55e;
+                    color: #ffffff;
                 }
 
                 .gt-sb-biome-group {
@@ -1184,9 +1239,13 @@ export class SceneBuilderModal {
                     <button class="gt-sb-tool-toggle ${this.state.showGizmos ? 'active' : ''}" id="gt-sb-btn-gizmo" title="Toggle Transform Gizmo">
                         <span>◈ Gizmos</span>
                     </button>
+                    <button class="gt-sb-tool-toggle" id="gt-sb-btn-testplay" title="Uji Gerak Karakter dengan WASD / Spasi (Shortcut: Tab)">
+                        <span>🎮 Uji Gerak (WASD)</span>
+                    </button>
                 </div>
 
                 <div class="gt-sb-topbar-right">
+                    <button class="gt-sb-btn-play" id="gt-sb-btn-enter" title="Terapkan Pembaruan & Mainkan (Play)">▶</button>
                     <button class="gt-sb-btn-close" id="gt-sb-close-btn" title="Tutup Studio (ESC)">✕</button>
                 </div>
             </div>
@@ -1577,6 +1636,9 @@ export class SceneBuilderModal {
      * Memeriksa apakah terdapat blok tanah (terrain) di petak [col, row].
      */
     hasTerrainAt(col, row) {
+        if (this.state.dugTiles && this.state.dugTiles.has(`${col},${row}`)) {
+            return false;
+        }
         if (!this.state.terrainTiles) return row === 8;
         return this.state.terrainTiles.has(`${col},${row}`);
     }
@@ -1618,14 +1680,32 @@ export class SceneBuilderModal {
     }
 
     /**
+     * Mengambil batas baris maksimum yang valid berdasarkan tinggi kanvas / dunia.
+     */
+    getMaxRow() {
+        const height = this.state.worldHeight || 1000;
+        return Math.max(19, Math.floor(height / 50) - 1);
+    }
+
+    /**
+     * Mengambil batas kolom maksimum yang valid berdasarkan lebar dunia.
+     */
+    getMaxCol() {
+        const width = this.state.worldWidth || 3600;
+        return Math.max(71, Math.ceil(width / 50) - 1);
+    }
+
+    /**
      * Mengambil batas-batas area seleksi yang dinormalisasi (minCol, maxCol, minRow, maxRow, width, height).
      */
     getSelectionBounds() {
         if (!this.boxSelection) return null;
-        const minCol = Math.max(0, Math.min(this.boxSelection.startCol, this.boxSelection.endCol));
-        const maxCol = Math.min(35, Math.max(this.boxSelection.startCol, this.boxSelection.endCol));
-        const minRow = Math.max(0, Math.min(this.boxSelection.startRow, this.boxSelection.endRow));
-        const maxRow = Math.min(13, Math.max(this.boxSelection.startRow, this.boxSelection.endRow));
+        const maxAllowedCol = this.getMaxCol();
+        const maxAllowedRow = this.getMaxRow();
+        const minCol = Math.max(0, Math.min(maxAllowedCol, Math.min(this.boxSelection.startCol, this.boxSelection.endCol)));
+        const maxCol = Math.max(0, Math.min(maxAllowedCol, Math.max(this.boxSelection.startCol, this.boxSelection.endCol)));
+        const minRow = Math.max(0, Math.min(maxAllowedRow, Math.min(this.boxSelection.startRow, this.boxSelection.endRow)));
+        const maxRow = Math.max(0, Math.min(maxAllowedRow, Math.max(this.boxSelection.startRow, this.boxSelection.endRow)));
         return {
             minCol,
             maxCol,
@@ -1689,6 +1769,7 @@ export class SceneBuilderModal {
             action: actionName,
             entities: JSON.parse(JSON.stringify(this.state.entities)),
             terrainTiles: this.state.terrainTiles ? Array.from(this.state.terrainTiles) : [],
+            dugTiles: this.state.dugTiles ? Array.from(this.state.dugTiles) : [],
             selectedId: this.state.selectedId
         };
     }
@@ -1719,6 +1800,7 @@ export class SceneBuilderModal {
         const previousSnapshot = this.undoStack.pop();
         this.state.entities = previousSnapshot.entities;
         this.state.terrainTiles = new Set(previousSnapshot.terrainTiles || []);
+        this.state.dugTiles = new Set(previousSnapshot.dugTiles || []);
         this.state.selectedId = previousSnapshot.selectedId;
 
         this.boxSelection = null;
@@ -1750,6 +1832,7 @@ export class SceneBuilderModal {
         const nextSnapshot = this.redoStack.pop();
         this.state.entities = nextSnapshot.entities;
         this.state.terrainTiles = new Set(nextSnapshot.terrainTiles || []);
+        this.state.dugTiles = new Set(nextSnapshot.dugTiles || []);
         this.state.selectedId = nextSnapshot.selectedId;
 
         this.boxSelection = null;
@@ -1830,6 +1913,10 @@ export class SceneBuilderModal {
                     if (this.state.terrainTiles.delete(`${c},${r}`)) {
                         deletedTerrain++;
                     }
+                    if (r >= 8) {
+                        if (!this.state.dugTiles) this.state.dugTiles = new Set();
+                        this.state.dugTiles.add(`${c},${r}`);
+                    }
                 }
             }
         }
@@ -1878,6 +1965,7 @@ export class SceneBuilderModal {
                 for (let r = bounds.minRow; r <= bounds.maxRow; r++) {
                     this.state.entities = this.state.entities.filter(e => !(e.col === c && (e.row || 7) === r && e.type !== 'player'));
                     this.state.terrainTiles.add(`${c},${r}`);
+                    if (this.state.dugTiles) this.state.dugTiles.delete(`${c},${r}`);
                 }
             }
         } else if (type === 'platforms' || type === 'water' || type === 'lava' || type === 'coins') {
@@ -1928,8 +2016,10 @@ export class SceneBuilderModal {
      */
     findFreeSlot(preferredCol, preferredRow, wTiles = 1, ignoreId = null) {
         const safeW = Math.max(1, wTiles);
-        let col = Math.max(0, Math.min(36 - safeW, preferredCol));
-        let row = Math.max(0, Math.min(13, preferredRow));
+        const maxC = this.getMaxCol();
+        const maxR = this.getMaxRow();
+        let col = Math.max(0, Math.min(maxC + 1 - safeW, preferredCol));
+        let row = Math.max(0, Math.min(maxR, preferredRow));
 
         // Jika slot yang diinginkan sudah kosong, pakai langsung
         if (!this.isSlotOccupied(col, row, ignoreId, safeW)) {
@@ -1937,7 +2027,7 @@ export class SceneBuilderModal {
         }
 
         // 1. Cari ke kanan pada baris yang sama
-        for (let c = col + 1; c <= 36 - safeW; c++) {
+        for (let c = col + 1; c <= maxC + 1 - safeW; c++) {
             if (!this.isSlotOccupied(c, row, ignoreId, safeW)) {
                 return { col: c, row };
             }
@@ -1951,13 +2041,13 @@ export class SceneBuilderModal {
         }
 
         // 3. Jika satu baris penuh, cari baris terdekat (atas/bawah)
-        for (let offset = 1; offset <= 6; offset++) {
+        for (let offset = 1; offset <= 10; offset++) {
             for (const r of [row - offset, row + offset]) {
-                if (r >= 0 && r <= 13) {
+                if (r >= 0 && r <= maxR) {
                     if (!this.isSlotOccupied(col, r, ignoreId, safeW)) {
                         return { col, row: r };
                     }
-                    for (let c = col + 1; c <= 36 - safeW; c++) {
+                    for (let c = col + 1; c <= maxC + 1 - safeW; c++) {
                         if (!this.isSlotOccupied(c, r, ignoreId, safeW)) {
                             return { col: c, row: r };
                         }
@@ -2037,6 +2127,7 @@ export class SceneBuilderModal {
             const targetRow = customRow !== null ? customRow : 8;
             this.pushUndoState('Tambah Blok Tanah');
             this.state.terrainTiles.add(`${targetCol},${targetRow}`);
+            if (this.state.dugTiles) this.state.dugTiles.delete(`${targetCol},${targetRow}`);
             AudioManager.playClick();
             this.renderHierarchy();
             this.renderInspector();
@@ -2088,6 +2179,100 @@ export class SceneBuilderModal {
 
         if (this.gridInfoEl) {
             this.gridInfoEl.textContent = `✨ OBJEK DITAMBAHKAN: ${newEnt.label} di [Col ${safeSlot.col}, Row ${safeSlot.row}] (Kotak Bersih)`;
+        }
+    }
+
+    nudgeSelectedEntity(dCol, dRow) {
+        let ent = this.state.entities.find(el => el.id === this.state.selectedId);
+        if (!ent) {
+            ent = this.state.entities.find(el => el.type === 'player') || this.state.entities[0];
+            if (ent) {
+                this.state.selectedId = ent.id;
+            }
+        }
+        if (!ent) return;
+
+        const maxC = this.getMaxCol();
+        const maxR = this.getMaxRow();
+        const wTiles = ent.wTiles || 1;
+        const curRow = (ent.row !== undefined) ? ent.row : 7;
+        const targetCol = Math.max(0, Math.min(maxC - wTiles + 1, ent.col + dCol));
+        const targetRow = Math.max(0, Math.min(maxR, curRow + dRow));
+
+        if (targetCol === ent.col && targetRow === curRow) return;
+
+        // Cek tabrakan jika ada objek lain di petak tujuan
+        const occ = this.getOccupyingEntity(targetCol, targetRow, ent.id, wTiles);
+        if (occ) {
+            AudioManager.playClick();
+            if (this.gridInfoEl) {
+                this.gridInfoEl.textContent = `⛔ GAGAL GESER: Kotak [Col ${targetCol}, Row ${targetRow}] sudah diisi oleh "${occ.label}".`;
+            }
+            return;
+        }
+
+        this.pushUndoState(`Geser ${ent.label} (WASD)`);
+
+        ent.col = targetCol;
+        ent.row = targetRow;
+        ent.x = targetCol * 50 + 25;
+        ent.y = (targetRow === 7) ? 400 : (targetRow * 50 + 25);
+
+        AudioManager.playClick();
+        this.renderHierarchy();
+        this.renderInspector();
+        if (this.gridInfoEl) {
+            this.gridInfoEl.textContent = `🎮 [Col ${ent.col}, Row ${ent.row}] ${ent.label} digeser (WASD / Panah)`;
+        }
+    }
+
+    initTestPlayer(startX = null, startY = null) {
+        const playerEnt = this.state.entities.find(e => e.type === 'player');
+        const defaultSpawnX = playerEnt ? (playerEnt.x !== undefined ? playerEnt.x : playerEnt.col * 50 + 25) : 125;
+        const defaultSpawnY = (playerEnt && playerEnt.row !== undefined && playerEnt.row !== 7) ? (playerEnt.row + 1) * 50 : 400;
+
+        const posX = (startX !== null && startX !== undefined) ? startX : defaultSpawnX;
+        const posY = (startY !== null && startY !== undefined) ? startY : defaultSpawnY;
+
+        this.testPlayer = {
+            x: posX,
+            y: posY,
+            vx: 0,
+            vy: 0,
+            facing: 1,
+            isGrounded: true,
+            walkTime: 0
+        };
+        this.testKeys = { w: false, a: false, s: false, d: false, space: false };
+    }
+
+    toggleTestPlayMode(forceState = null) {
+        this.isTestPlayMode = (forceState !== null) ? forceState : !this.isTestPlayMode;
+        AudioManager.playClick();
+        const btn = this.overlay ? this.overlay.querySelector('#gt-sb-btn-testplay') : null;
+        if (btn) {
+            if (this.isTestPlayMode) {
+                btn.classList.add('active');
+                btn.innerHTML = '<span>🎮 Uji Gerak: ON</span>';
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '<span>🎮 Uji Gerak (WASD)</span>';
+            }
+        }
+
+        if (this.isTestPlayMode) {
+            const startX = this.runtimePlayerX !== null && this.runtimePlayerX !== undefined ? this.runtimePlayerX : null;
+            const startY = this.runtimePlayerY !== null && this.runtimePlayerY !== undefined ? this.runtimePlayerY : null;
+            this.initTestPlayer(startX, startY);
+            if (this.gridInfoEl) {
+                this.gridInfoEl.textContent = '🎮 MODE UJI GERAK AKTIF: Gunakan [W, A, S, D] atau Spasi untuk berjalan mulus & lompat | Tekan Tab/Esc untuk selesai';
+            }
+        } else {
+            this.testPlayer = null;
+            this.testKeys = { w: false, a: false, s: false, d: false, space: false };
+            if (this.gridInfoEl) {
+                this.gridInfoEl.textContent = 'GRID: 50px PERSEGI | MODE EDIT AKTIF (Gunakan Tombol Panah ← ↑ → ↓ untuk menggeser objek)';
+            }
         }
     }
 
@@ -2313,7 +2498,7 @@ export class SceneBuilderModal {
                     <div class="gt-sb-card-title">🌐 WORLD SETTINGS</div>
                     <div class="gt-sb-prop-row">
                         <span class="gt-sb-prop-label">World Bounds</span>
-                        <span class="gt-sb-prop-val">1800 x ${this.state.worldHeight || 850} px</span>
+                        <span class="gt-sb-prop-val">1800 x ${this.state.worldHeight || 700} px</span>
                     </div>
                     <div class="gt-sb-prop-row">
                         <span class="gt-sb-prop-label">Grid Cell Type</span>
@@ -2566,6 +2751,14 @@ export class SceneBuilderModal {
             });
         }
 
+        // Toggle Uji Gerak Karakter (WASD)
+        const testPlayBtn = overlay.querySelector('#gt-sb-btn-testplay');
+        if (testPlayBtn) {
+            testPlayBtn.addEventListener('click', () => {
+                this.toggleTestPlayMode();
+            });
+        }
+
         // Biome Buttons
         overlay.querySelectorAll('.gt-sb-biome-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -2637,11 +2830,19 @@ export class SceneBuilderModal {
                 const mouseX = Math.max(0, Math.min(this.canvas.width, e.clientX - rect.left));
                 const mouseY = Math.max(0, Math.min(this.canvas.height, e.clientY - rect.top));
                 const W = this.canvas.width;
+                const H = this.canvas.height;
                 const worldW = this.state.worldWidth || 1800;
-                const scale = W / worldW;
-                const col = Math.floor((mouseX / scale) / 50);
-                const row = Math.floor((mouseY / scale) / 50);
-                return { col: Math.max(0, Math.min(35, col)), row: Math.max(0, row), scale, mouseX, mouseY };
+                const worldH = this.state.worldHeight || 700;
+                const scaleX = W / worldW;
+                const scaleY = H / worldH;
+                const scale = Math.max(scaleX, scaleY);
+                const offsetX = Math.max(0, (W - worldW * scale) / 2);
+                const offsetY = Math.max(0, (H - worldH * scale) / 2);
+                const col = Math.floor(((mouseX - offsetX) / scale) / 50);
+                const row = Math.floor(((mouseY - offsetY) / scale) / 50);
+                const maxC = this.getMaxCol();
+                const maxR = this.getMaxRow();
+                return { col: Math.max(0, Math.min(maxC, col)), row: Math.max(0, Math.min(maxR, row)), scale, mouseX, mouseY };
             };
 
             // 1. Mouse move tracker pada Canvas (Hover Tile & Tooltip)
@@ -2751,7 +2952,7 @@ export class SceneBuilderModal {
                     ent.col = col;
                     ent.x = col * 50 + 25;
                     if (ent.type === 'platforms' || ent.type === 'coins' || ent.cat === 'fluid') {
-                        ent.row = Math.max(0, Math.min(13, row));
+                        ent.row = Math.max(0, Math.min(this.getMaxRow(), row));
                         ent.y = ent.row * 50 + 25;
                     }
                     this.renderInspector();
@@ -2863,7 +3064,7 @@ export class SceneBuilderModal {
                     if (ent) {
                         const wTiles = ent.wTiles || 1;
                         let targetRow = (ent.type === 'platforms' || ent.type === 'coins' || ent.cat === 'fluid')
-                            ? Math.max(0, Math.min(13, row))
+                            ? Math.max(0, Math.min(this.getMaxRow(), row))
                             : 7;
 
                         const existing = this.getOccupyingEntity(col, targetRow, ent.id, wTiles);
@@ -2934,6 +3135,65 @@ export class SceneBuilderModal {
 
             if (isTyping) return;
 
+            // Tab: Toggle Mode Uji Gerak (WASD)
+            // Tab: Toggle Mode Uji Gerak (WASD)
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                this.toggleTestPlayMode();
+                return;
+            }
+
+            // Tombol WASD atau Spasi: Kontrol Karakter Player Bergerak Mulus (Smooth 60FPS)
+            const k = e.key.toLowerCase();
+            if (['a', 'd', 'w', 's', ' '].includes(k) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                if (!this.testPlayer) {
+                    this.initTestPlayer();
+                    this.isTestPlayMode = true;
+                    const btn = this.overlay ? this.overlay.querySelector('#gt-sb-btn-testplay') : null;
+                    if (btn) {
+                        btn.classList.add('active');
+                        btn.innerHTML = '<span>🎮 Uji Gerak: ON</span>';
+                    }
+                }
+                if (k === 'a') this.testKeys.a = true;
+                if (k === 'd') this.testKeys.d = true;
+                if (k === 'w' || k === ' ') {
+                    e.preventDefault();
+                    this.testKeys.w = true;
+                }
+                if (k === 's') this.testKeys.s = true;
+                return;
+            }
+
+            if (e.key === 'Escape' && this.isTestPlayMode) {
+                this.toggleTestPlayMode(false);
+                return;
+            }
+
+            // Mode Edit: Geser Objek Terpilih dengan Tombol Panah (← ↑ → ↓)
+            if (!e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    this.nudgeSelectedEntity(0, -1);
+                    return;
+                }
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    this.nudgeSelectedEntity(0, 1);
+                    return;
+                }
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    this.nudgeSelectedEntity(-1, 0);
+                    return;
+                }
+                if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    this.nudgeSelectedEntity(1, 0);
+                    return;
+                }
+            }
+
             // Shift + Arrow Keys: Seleksi Kotak Banyak (Kanan, Kiri, Atas, Bawah)
             if (e.shiftKey && ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
                 e.preventDefault();
@@ -2953,11 +3213,11 @@ export class SceneBuilderModal {
                 }
 
                 if (e.key === 'ArrowRight') {
-                    this.boxSelection.endCol = Math.min(35, this.boxSelection.endCol + 1);
+                    this.boxSelection.endCol = Math.min(this.getMaxCol(), this.boxSelection.endCol + 1);
                 } else if (e.key === 'ArrowLeft') {
                     this.boxSelection.endCol = Math.max(0, this.boxSelection.endCol - 1);
                 } else if (e.key === 'ArrowDown') {
-                    this.boxSelection.endRow = Math.min(13, this.boxSelection.endRow + 1);
+                    this.boxSelection.endRow = Math.min(this.getMaxRow(), this.boxSelection.endRow + 1);
                 } else if (e.key === 'ArrowUp') {
                     this.boxSelection.endRow = Math.max(0, this.boxSelection.endRow - 1);
                 }
@@ -3014,6 +3274,19 @@ export class SceneBuilderModal {
             }
         };
         window.addEventListener('keydown', this._escHandler);
+
+        // KeyUp Listener untuk merilis tombol gerak pada Mode Uji Gerak
+        this._keyUpHandler = (e) => {
+            if (!this._isOpen) return;
+            if (this.isTestPlayMode) {
+                const k = e.key.toLowerCase();
+                if (k === 'a' || e.key === 'ArrowLeft') this.testKeys.a = false;
+                if (k === 'd' || e.key === 'ArrowRight') this.testKeys.d = false;
+                if (k === 'w' || e.key === 'ArrowUp' || e.key === ' ') this.testKeys.w = false;
+                if (k === 's' || e.key === 'ArrowDown') this.testKeys.s = false;
+            }
+        };
+        window.addEventListener('keyup', this._keyUpHandler);
     }
 
     resizeCanvas() {
@@ -3035,7 +3308,7 @@ export class SceneBuilderModal {
             biome: this.state.biome,
             timeOfDay: this.state.timeOfDay,
             worldWidth: this.state.worldWidth || 1800,
-            worldHeight: this.state.worldHeight || 850,
+            worldHeight: this.state.worldHeight || 700,
             hasLava: types.has('lava'),
             hasWater: types.has('water'),
             hasSpikes: types.has('spikes'),
@@ -3048,7 +3321,8 @@ export class SceneBuilderModal {
             hasPortal: types.has('portal'),
             // Dynamic custom entities array
             entities: JSON.parse(JSON.stringify(this.state.entities)),
-            terrainTiles: this.state.terrainTiles ? Array.from(this.state.terrainTiles) : null
+            terrainTiles: this.state.terrainTiles ? Array.from(this.state.terrainTiles) : null,
+            dugTiles: this.state.dugTiles ? Array.from(this.state.dugTiles) : []
         };
 
         let targetProjectId = this.projectId;
@@ -3067,16 +3341,6 @@ export class SceneBuilderModal {
             if (created) targetSceneId = created.id;
         }
 
-        // Simpan juga ke legacy localStorage agar backward compatibility tetap terjaga
-        try {
-            const raw = localStorage.getItem('gt_custom_worlds');
-            const list = raw ? JSON.parse(raw) : [];
-            list.unshift(worldData);
-            localStorage.setItem('gt_custom_worlds', JSON.stringify(list.slice(0, 10)));
-        } catch (e) {
-            // ignore
-        }
-
         this.hide();
 
         // Teleportasi Instan ke CustomWorldScene dengan project context
@@ -3085,6 +3349,15 @@ export class SceneBuilderModal {
         } else if (window.__templateGame && window.__templateGame.scene) {
             window.__templateGame.scene.start('CustomWorldScene', { worldData, projectId: targetProjectId, sceneId: targetSceneId });
         }
+
+        setTimeout(() => {
+            const activeScene = window.__templateGame?.scene?.getScenes(true)?.[0];
+            if (activeScene?.showWorldBanner) {
+                activeScene.showWorldBanner(`▶️ Memainkan "${worldData.name}" — Pembaruan Berhasil Diterapkan!`, '#10b981');
+            } else if (activeScene?.showFloatingToast) {
+                activeScene.showFloatingToast(`▶️ Memainkan "${worldData.name}" — Pembaruan Berhasil Diterapkan!`, 0x10b981);
+            }
+        }, 300);
     }
 
     // ===============================================================
@@ -3109,24 +3382,33 @@ export class SceneBuilderModal {
         const H = this.canvas.height;
         const t = this.animTime;
 
-        // 1. UNIFORM SCALE (LEBAR PENUH & TINGGI PENUH VIEWPORT)
-        const worldW = this.state.worldWidth || 1800;
-        const scale = W / worldW;
-        const cellSize = 50 * scale; // Ukuran kotak persegi 100% 1:1
+        // 1. SCALE YANG MENGISI PENUH KANVAS (VERTIKAL & HORIZONTAL)
+        const worldW = this.state.worldWidth || 3600;
+        const worldH = this.state.worldHeight || 1000; // 20 baris × 50px (Row 0..19, Bedrock di Row 19)
+        const totalRows = Math.floor(worldH / 50);
+        const totalCols = Math.ceil(worldW / 50);
+        this.state.worldHeight = worldH;
+        this.state.worldWidth = worldW;
 
-        // Jumlah baris vertikal yang menutupi seluruh tinggi kanvas H
-        const totalRows = Math.max(14, Math.ceil(H / cellSize));
-        this.state.worldHeight = totalRows * 50;
+        // Skala terbesar agar dunia mengisi seluruh kanvas tanpa ruang hitam kosong
+        const scaleX = W / worldW;
+        const scaleY = H / worldH;
+        const scale = Math.max(scaleX, scaleY);
+        const cellSize = 50 * scale;
+
+        // Offset untuk centering horizontal jika tinggi kanvas menentukan skala
+        const offsetX = Math.max(0, (W - worldW * scale) / 2);
+        const offsetY = Math.max(0, (H - worldH * scale) / 2);
 
         // Helper fungsi pemetaan koordinat dunia ke kanvas
-        const toX = (wx) => wx * scale;
-        const toY = (wy) => wy * scale;
+        const toX = (wx) => offsetX + wx * scale;
+        const toY = (wy) => offsetY + wy * scale;
 
         // Ground walking baseline tepat di Row 8 (y = 400px)
         const groundRow = 8;
         const groundY = toY(400);
 
-        // Bedrock di baris paling bawah yang mengisi dasar viewport kanvas
+        // Bedrock SELALU di Row 19 (y=950..1000) identik dengan CustomWorldScene.js
         const bedrockRow = totalRows - 1;
         const bedrockY = toY(bedrockRow * 50);
 
@@ -3311,7 +3593,7 @@ export class SceneBuilderModal {
         const isLavaTile = (c, r) => lavaTileMap.has(`${c},${r}`);
 
         // 4b. GAMBAR BLOK AIR, LAVA & TANAH DI LANGIT (Rows 0..7) JIKA ADA
-        for (let col = 0; col < 36; col++) {
+        for (let col = 0; col < totalCols; col++) {
             const rx = toX(col * 50);
             const rw = cellSize + 0.5;
             for (let r = 0; r < groundRow; r++) {
@@ -3377,7 +3659,7 @@ export class SceneBuilderModal {
         }
 
         // 5. MENGGAMBAR STRATA TANAH & PETAK CAIRAN (SETIAP PETAK 1x1 MURNI)
-        for (let col = 0; col < 36; col++) {
+        for (let col = 0; col < totalCols; col++) {
             const rx = toX(col * 50);
             const rw = cellSize + 0.5;
 
@@ -3475,6 +3757,9 @@ export class SceneBuilderModal {
                 }
 
                 if (r === groundRow) {
+                    if (this.state.dugTiles && this.state.dugTiles.has(`${col},${r}`)) {
+                        continue;
+                    }
                     if (hasGroundAtR) {
                         const hasAbove = this.hasTerrainAt(col, r - 1);
                         if (!hasAbove) {
@@ -3490,14 +3775,19 @@ export class SceneBuilderModal {
                     continue;
                 }
 
+                // Jika petak bawah tanah ini sudah digali / dihancurkan pemain
+                if (this.state.dugTiles && this.state.dugTiles.has(`${col},${r}`)) {
+                    continue;
+                }
+
                 // Jika tanah di baris 8 sudah dihapus dan tidak ada blok di baris r ini,
                 // biarkan tembus langit/jurang sampai ke dasar!
                 if (!hasGroundAtSurface && !hasGroundAtR) {
                     continue;
                 }
 
-                // D. ROW 9..11: LAPISAN TANAH BAWAH (SUBSURFACE DIRT)
-                if (r <= 11) {
+                // D. ROW 9..12: LAPISAN TANAH BAWAH (SUBSURFACE DIRT - 4 BARIS)
+                if (r <= 12) {
                     ctx.fillStyle = dirtColor;
                     ctx.fillRect(rx, ry, rw, rh);
                     if ((col + r) % 3 === 0) {
@@ -3507,19 +3797,35 @@ export class SceneBuilderModal {
                     continue;
                 }
 
-                // E. ROW 12..bedrockRow-1: LAPISAN BATU GUA DALAM (CAVERN SLATE STONE)
-                ctx.fillStyle = stoneColor;
-                ctx.fillRect(rx, ry, rw, rh);
+                // E. ROW 13..16: LAPISAN BATU GUA DALAM (CAVERN SLATE STONE - 4 BARIS)
+                if (r <= 16) {
+                    ctx.fillStyle = stoneColor;
+                    ctx.fillRect(rx, ry, rw, rh);
 
-                // Urat Mineral Kristal Terpendam
-                if ((col * 7 + r * 13) % 9 === 0) {
-                    ctx.fillStyle = '#38bdf8'; // Kristal Safir
+                    // Urat Mineral Kristal Terpendam
+                    if ((col * 7 + r * 13) % 9 === 0) {
+                        ctx.fillStyle = '#38bdf8'; // Kristal Safir
+                        ctx.beginPath();
+                        ctx.arc(rx + rw / 2, ry + rh / 2, 4 * scale, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else if ((col * 3 + r * 11) % 8 === 0) {
+                        ctx.fillStyle = '#f59e0b'; // Emas
+                        ctx.fillRect(rx + rw / 2 - 3 * scale, ry + rh / 2 - 3 * scale, 6 * scale, 6 * scale);
+                    }
+                    continue;
+                }
+
+                // F. ROW 17..18: DEEP MANTLE OBSIDIAN & MAGMA CAVERN (2 BARIS)
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(rx, ry, rw, rh);
+                if ((col * 5 + r * 7) % 7 === 0) {
+                    ctx.fillStyle = '#ef4444'; // Kristal Ruby Merah
                     ctx.beginPath();
                     ctx.arc(rx + rw / 2, ry + rh / 2, 4 * scale, 0, Math.PI * 2);
                     ctx.fill();
-                } else if ((col * 3 + r * 11) % 8 === 0) {
-                    ctx.fillStyle = '#f59e0b'; // Emas
-                    ctx.fillRect(rx + rw / 2 - 3 * scale, ry + rh / 2 - 3 * scale, 6 * scale, 6 * scale);
+                } else if ((col * 4 + r * 9) % 6 === 0) {
+                    ctx.fillStyle = '#8b5cf6'; // Kristal Amethyst Ungu
+                    ctx.fillRect(rx + rw / 2 - 2.5 * scale, ry + rh / 2 - 2.5 * scale, 5 * scale, 5 * scale);
                 }
             }
         }
@@ -3792,7 +4098,7 @@ export class SceneBuilderModal {
 
                 // 1. PINTU PUTIH KEDATANGAN (WHITE DOOR / GERBANG SPAWN)
                 const dw = Math.max(20, 36 * scale);
-                const dh = Math.max(30, 52 * scale);
+                const dh = Math.max(26, 48 * scale);
                 const doorLeft = spawnX - dw / 2;
                 const doorTop = groundBaseY - dh;
 
@@ -3848,29 +4154,7 @@ export class SceneBuilderModal {
                 ctx.textBaseline = 'middle';
                 ctx.fillText('SPAWN', spawnX, doorTop - 2 * scale);
 
-                // 2. SILUET KARAKTER PEMAIN (Berdiri di Depan Pintu)
-                const pw = Math.max(10, 20 * scale);
-                const ph = Math.max(12, 26 * scale);
-                const playerY = groundBaseY - ph;
-                const playerX = spawnX;
-
-                ctx.fillStyle = '#0f172a';
-                ctx.fillRect(playerX - pw / 2, playerY, pw, ph);
-                ctx.strokeStyle = '#38bdf8';
-                ctx.lineWidth = 1.2;
-                ctx.strokeRect(playerX - pw / 2, playerY, pw, ph);
-
-                // Mata Putih & Pupil Hitam
-                const eyeW = 3 * scale;
-                const eyeH = 3 * scale;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(playerX - 1 * scale, playerY + 5 * scale, eyeW, eyeH);
-                ctx.fillRect(playerX + 4 * scale, playerY + 5 * scale, eyeW, eyeH);
-                ctx.fillStyle = '#000000';
-                ctx.fillRect(playerX + 0.5 * scale, playerY + 6 * scale, 1.5 * scale, 1.5 * scale);
-                ctx.fillRect(playerX + 5.5 * scale, playerY + 6 * scale, 1.5 * scale, 1.5 * scale);
-
-                // 3. BADGE TEKS DI ATAS GERBANG
+                // BADGE TEKS DI ATAS PINTU SPAWN
                 ctx.fillStyle = '#38bdf8';
                 ctx.font = `bold ${Math.max(7.5, 8.5 * scale)}px 'JetBrains Mono'`;
                 ctx.textAlign = 'center';
@@ -3948,8 +4232,8 @@ export class SceneBuilderModal {
             ctx.save();
             ctx.lineWidth = 1;
 
-            // Garis Vertikal (Setiap 50px dari Col 0 sampai Col 36)
-            for (let col = 0; col <= 36; col++) {
+            // Garis Vertikal (Setiap 50px dari Col 0 sampai Col totalCols)
+            for (let col = 0; col <= totalCols; col++) {
                 const rx = toX(col * 50);
                 const isMajor = (col % 5) === 0;
 
@@ -3959,7 +4243,7 @@ export class SceneBuilderModal {
                 ctx.lineTo(rx, H);
                 ctx.stroke();
 
-                if (isMajor && col >= 0 && col <= 36) {
+                if (isMajor && col >= 0 && col <= totalCols) {
                     ctx.fillStyle = 'rgba(56, 189, 248, 0.75)';
                     ctx.font = "8.5px 'JetBrains Mono'";
                     ctx.textAlign = 'center';
@@ -4218,16 +4502,175 @@ export class SceneBuilderModal {
 
             // Badge penanda di sudut kiri atas kotak kamera
             ctx.setLineDash([]);
-            const bWidth = Math.max(110, 130 * scale);
-            const bHeight = Math.max(15, 16 * scale);
-            ctx.fillStyle = 'rgba(2, 132, 199, 0.9)';
+            const zoomPct = Math.round(camZoom * 100);
+            const wTiles = Math.round(camW / 50);
+            const hTiles = Math.round(camH / 50);
+            const badgeText = `📷 AREA KAMERA GAME (${zoomPct}% • ${wTiles}x${hTiles} petak)`;
+
+            ctx.font = `bold ${Math.max(7.5, 8.5 * scale)}px 'JetBrains Mono'`;
+            const textWidth = ctx.measureText(badgeText).width;
+            const bWidth = textWidth + 14;
+            const bHeight = Math.max(16, 17 * scale);
+            ctx.fillStyle = 'rgba(2, 132, 199, 0.92)';
             ctx.fillRect(bx, by, bWidth, bHeight);
 
             ctx.fillStyle = '#ffffff';
-            ctx.font = `bold ${Math.max(7.5, 8.5 * scale)}px 'JetBrains Mono'`;
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
-            ctx.fillText('📷 AREA KAMERA GAME', bx + 6, by + bHeight / 2);
+            ctx.fillText(badgeText, bx + 6, by + bHeight / 2);
+            ctx.restore();
+        }
+
+        // ===============================================================
+        // 9. LIVE TEST-PLAY CHARACTER SIMULATION (ULTRA-SMOOTH 60FPS WASD)
+        // ===============================================================
+        if (this.testPlayer) {
+            const tp = this.testPlayer;
+            const maxSpeed = 5.2;
+            const accel = 0.9;
+            const friction = 0.78;
+
+            if (this.testKeys.a) {
+                tp.vx = Math.max(-maxSpeed, tp.vx - accel);
+                tp.facing = -1;
+            } else if (this.testKeys.d) {
+                tp.vx = Math.min(maxSpeed, tp.vx + accel);
+                tp.facing = 1;
+            } else {
+                tp.vx *= friction;
+                if (Math.abs(tp.vx) < 0.05) tp.vx = 0;
+            }
+
+            if ((this.testKeys.w || this.testKeys.space) && tp.isGrounded) {
+                tp.vy = -12.2;
+                tp.isGrounded = false;
+                AudioManager.playJump();
+            }
+
+            // Gravitasi halus
+            tp.vy += 0.58;
+            if (tp.vy > 14) tp.vy = 14;
+
+            tp.x += tp.vx;
+            tp.y += tp.vy;
+
+            // Batas layar horizontal
+            const worldW = this.state.worldWidth || 1800;
+            tp.x = Math.max(15, Math.min(worldW - 15, tp.x));
+
+            const pCol = Math.max(0, Math.min(Math.floor((worldW - 1) / 50), Math.floor(tp.x / 50)));
+
+            // Kumpulkan semua batas lantai potensial di bawah pemain
+            const floorCandidates = [];
+
+            // 1. Bedrock (Row 13 = y: 650) selalu padat tak tertembus
+            floorCandidates.push(13 * 50);
+
+            // 2. Lapisan tanah alamiah (Row 8..12) yang belum digali
+            for (let r = 8; r < 13; r++) {
+                const isDug = this.state.dugTiles && this.state.dugTiles.has(`${pCol},${r}`);
+                const hasT = (r === 8) ? this.hasTerrainAt(pCol, 8) : true;
+                if (!isDug && hasT) {
+                    floorCandidates.push(r * 50);
+                    break;
+                }
+            }
+
+            // 3. Pijakan buatan (platforms, dirt, chest)
+            this.state.entities.forEach(ent => {
+                if (['platforms', 'dirt', 'chest'].includes(ent.type)) {
+                    const eCol = ent.col;
+                    const eRow = (ent.row !== undefined) ? ent.row : 7;
+                    if (pCol === eCol) {
+                        floorCandidates.push(eRow * 50);
+                    }
+                }
+            });
+
+            floorCandidates.sort((a, b) => a - b);
+            let targetFloor = 13 * 50; // default Bedrock jika tanah berlubang
+            for (const fl of floorCandidates) {
+                if (tp.y <= fl + 14 && (tp.y + tp.vy >= fl - 2 || tp.y >= fl - 2)) {
+                    targetFloor = fl;
+                    break;
+                }
+            }
+
+            if (tp.y >= targetFloor) {
+                tp.y = targetFloor;
+                tp.vy = 0;
+                tp.isGrounded = true;
+            } else {
+                tp.isGrounded = false;
+            }
+
+            // Animasi langkah kaki dinamis (bobbing & tilt)
+            if (tp.isGrounded && Math.abs(tp.vx) > 0.3) {
+                tp.walkTime = (tp.walkTime || 0) + 0.28;
+            } else {
+                tp.walkTime = 0;
+            }
+            const walkBob = tp.isGrounded ? Math.abs(Math.sin(tp.walkTime)) * (2.8 * scale) : 0;
+            const walkTilt = tp.isGrounded ? Math.sin(tp.walkTime) * 0.08 : (tp.vy < 0 ? -0.09 * tp.facing : 0.07 * tp.facing);
+
+            // Sinkronisasi kamera game agar kotak cyan mengikuti pergerakan karakter uji
+            if (this.scene && this.scene.cameras && this.scene.cameras.main) {
+                const camWVal = this.scene.cameras.main.width / (this.scene.cameras.main.zoom || 1);
+                this.scene.cameras.main.scrollX = Math.max(0, Math.min(worldW - camWVal, tp.x - camWVal / 2));
+            }
+
+            // Gambar Karakter Player Uji Coba di Kanvas
+            const px = toX(tp.x);
+            const py = toY(tp.y) - walkBob;
+            const pw = Math.max(12, 22 * scale);
+            const ph = Math.max(16, 32 * scale);
+
+            ctx.save();
+            ctx.translate(px, py);
+            ctx.rotate(walkTilt);
+
+            // Bayangan Kaki
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.38)';
+            ctx.beginPath();
+            ctx.ellipse(0, walkBob, pw * 0.65, 3.5 * scale, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pendar Aura Halus
+            ctx.shadowColor = '#38bdf8';
+            ctx.shadowBlur = 8 * scale;
+
+            // Tubuh Karakter
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(-pw / 2, -ph, pw, ph);
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 1.8;
+            ctx.strokeRect(-pw / 2, -ph, pw, ph);
+            ctx.shadowBlur = 0;
+
+            // Mata Putih & Pupil
+            const eyeOff = tp.facing * (3 * scale);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(eyeOff - 3 * scale, -ph + 6 * scale, 4 * scale, 4 * scale);
+            ctx.fillRect(eyeOff + 2 * scale, -ph + 6 * scale, 4 * scale, 4 * scale);
+            ctx.fillStyle = '#000000';
+            const lookY = !tp.isGrounded ? (tp.vy < 0 ? -1 * scale : 1 * scale) : 0;
+            ctx.fillRect(eyeOff - (tp.facing > 0 ? 1 : 3) * scale, -ph + 7 * scale + lookY, 2 * scale, 2 * scale);
+            ctx.fillRect(eyeOff + (tp.facing > 0 ? 4 : 2) * scale, -ph + 7 * scale + lookY, 2 * scale, 2 * scale);
+
+            // Label Floating "🏃 PEMAIN (WASD)"
+            ctx.fillStyle = 'rgba(2, 132, 199, 0.95)';
+            const tagW = Math.max(68, 84 * scale);
+            const tagH = Math.max(14, 15 * scale);
+            ctx.fillRect(-tagW / 2, -ph - tagH - 4 * scale, tagW, tagH);
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(-tagW / 2, -ph - tagH - 4 * scale, tagW, tagH);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${Math.max(6.5, 7.5 * scale)}px 'JetBrains Mono'`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🏃 PEMAIN (WASD)', 0, -ph - tagH / 2 - 4 * scale);
             ctx.restore();
         }
     }
@@ -4270,6 +4713,11 @@ export class SceneBuilderModal {
         }
         if (data.terrainTiles) {
             this.state.terrainTiles = new Set(data.terrainTiles);
+        }
+        if (data.dugTiles && Array.isArray(data.dugTiles)) {
+            this.state.dugTiles = new Set(data.dugTiles);
+        } else if (!this.state.dugTiles) {
+            this.state.dugTiles = new Set();
         }
 
         // Render ulang bila DOM sudah terbentuk
@@ -4450,13 +4898,12 @@ export class SceneBuilderModal {
         // 3. JIKA SEDANG DI CUSTOM WORLD SCENE
         if (sceneKey === 'CustomWorldScene' && scene.worldData) {
             const data = JSON.parse(JSON.stringify(scene.worldData));
+            if (scene.dugTiles) {
+                data.dugTiles = Array.from(scene.dugTiles);
+            }
             if (scene.player) {
-                const playerCol = Math.max(0, Math.floor(scene.player.x / 50));
-                const pEnt = (data.entities || []).find(e => e.type === 'player');
-                if (pEnt) {
-                    pEnt.col = playerCol;
-                    pEnt.x = playerCol * 50 + 25;
-                }
+                this.runtimePlayerX = scene.player.x;
+                this.runtimePlayerY = scene.player.y;
             }
             this.loadWorldData(data);
             return;
@@ -4464,12 +4911,16 @@ export class SceneBuilderModal {
     }
 
     show(targetScene = null) {
-        if (!this.overlay) return;
+        this.runtimePlayerX = null;
+        this.runtimePlayerY = null;
         const sceneToSync = targetScene || this.scene;
         this.syncWithActiveScene(sceneToSync);
 
         this._isOpen = true;
         this.overlay.classList.remove('hidden');
+
+        // Buka langsung dalam mode Uji Gerak aktif agar WASD langsung bisa dimainkan dengan smooth
+        this.toggleTestPlayMode(true);
 
         setTimeout(() => {
             this.resizeCanvas();
@@ -4489,6 +4940,14 @@ export class SceneBuilderModal {
     hide() {
         if (!this.overlay) return;
         this._isOpen = false;
+        this.isTestPlayMode = false;
+        this.testPlayer = null;
+        this.testKeys = { w: false, a: false, s: false, d: false, space: false };
+        const testBtn = this.overlay.querySelector('#gt-sb-btn-testplay');
+        if (testBtn) {
+            testBtn.classList.remove('active');
+            testBtn.innerHTML = '<span>🎮 Uji Gerak (WASD)</span>';
+        }
         this.boxSelection = null;
         this.isBoxSelecting = false;
         this.dragPixelBox = null;
@@ -4513,6 +4972,7 @@ export class SceneBuilderModal {
     destroy() {
         if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
         if (this._escHandler) window.removeEventListener('keydown', this._escHandler);
+        if (this._keyUpHandler) window.removeEventListener('keyup', this._keyUpHandler);
         if (this._globalMouseMove) window.removeEventListener('mousemove', this._globalMouseMove);
         if (this._globalMouseUp) window.removeEventListener('mouseup', this._globalMouseUp);
         if (this.overlay) {

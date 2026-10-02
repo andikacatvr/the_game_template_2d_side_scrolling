@@ -39,8 +39,8 @@ export const CONFIG_SKELETON = {
 
     // 5. Pengaturan Kamera & Zoom
     kamera: {
-        zoomAwal: 0.85,        // 0.85 = Normal (85%)
-        zoomMinimal: 0.85,     // 0.85 = Lebih Luas
+        zoomAwal: 0.75,        // 0.75 = Luas & Sinematik (Menampilkan ~21 petak mendatar di layar)
+        zoomMinimal: 0.55,     // 0.55 = Ekstra Luas (Panoramic View)
         zoomMaksimal: 1.6      // 1.6 = Detail Dekat
     }
 };
