@@ -3349,15 +3349,6 @@ export class SceneBuilderModal {
         } else if (window.__templateGame && window.__templateGame.scene) {
             window.__templateGame.scene.start('CustomWorldScene', { worldData, projectId: targetProjectId, sceneId: targetSceneId });
         }
-
-        setTimeout(() => {
-            const activeScene = window.__templateGame?.scene?.getScenes(true)?.[0];
-            if (activeScene?.showWorldBanner) {
-                activeScene.showWorldBanner(`▶️ Memainkan "${worldData.name}" — Pembaruan Berhasil Diterapkan!`, '#10b981');
-            } else if (activeScene?.showFloatingToast) {
-                activeScene.showFloatingToast(`▶️ Memainkan "${worldData.name}" — Pembaruan Berhasil Diterapkan!`, 0x10b981);
-            }
-        }, 300);
     }
 
     // ===============================================================
