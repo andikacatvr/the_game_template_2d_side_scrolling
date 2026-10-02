@@ -72,16 +72,21 @@ export class ProjectManager {
             worldWidth: 3600,
             worldHeight: 1000,
             hasLava: false,
-            hasWater: true,
-            hasSpikes: true,
-            hasPlatforms: true,
-            hasSlime: true,
-            hasSkeleton: true,
-            hasNpc: true,
-            hasChest: true,
-            hasCoins: true,
+            hasWater: false,
+            hasSpikes: false,
+            hasPlatforms: false,
+            hasSlime: false,
+            hasSkeleton: false,
+            hasNpc: false,
+            hasChest: false,
+            hasCoins: false,
             hasPortal: true,
-            entities: []
+            terrainTiles: Array.from({ length: 72 }, (_, i) => `${i},8`),
+            dugTiles: [],
+            entities: [
+                { id: 'player_1', type: 'player', col: 2, row: 7, x: 125, y: 400, label: 'Letak Spawn (Pintu Putih)', cat: 'spawn', icon: '🚪', wTiles: 1, hTiles: 1 },
+                { id: 'portal_1', type: 'portal', col: 70, row: 7, x: 3525, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 }
+            ]
         };
 
         const newProject = {
@@ -131,11 +136,28 @@ export class ProjectManager {
         const newScene = {
             ...sceneData,
             id: sceneId,
-            name: sceneData.name || `Level ${sceneCount + 1} • Area Baru`,
-            biome: sceneData.biome || 'desert',
+            name: sceneData.name || `Level ${sceneCount + 1} • Area Petualangan`,
+            biome: sceneData.biome || 'dirt',
             worldWidth: sceneData.worldWidth || 3600,
             worldHeight: sceneData.worldHeight || 1000,
-            entities: Array.isArray(sceneData.entities) ? sceneData.entities : []
+            hasLava: false,
+            hasWater: false,
+            hasSpikes: false,
+            hasPlatforms: false,
+            hasSlime: false,
+            hasSkeleton: false,
+            hasNpc: false,
+            hasChest: false,
+            hasCoins: false,
+            hasPortal: true,
+            terrainTiles: sceneData.terrainTiles || Array.from({ length: 72 }, (_, i) => `${i},8`),
+            dugTiles: sceneData.dugTiles || [],
+            entities: Array.isArray(sceneData.entities) && sceneData.entities.length > 0
+                ? sceneData.entities
+                : [
+                    { id: 'player_1', type: 'player', col: 2, row: 7, x: 125, y: 400, label: 'Letak Spawn (Pintu Putih)', cat: 'spawn', icon: '🚪', wTiles: 1, hTiles: 1 },
+                    { id: 'portal_1', type: 'portal', col: 70, row: 7, x: 3525, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 }
+                ]
         };
 
         if (!Array.isArray(proj.scenes)) proj.scenes = [];
@@ -360,15 +382,20 @@ export class ProjectManager {
                 desc: 'Contoh project multi-level dengan rute portal sekuensial',
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
-                startingSceneId: 'scene_lvl1_snow',
+                startingSceneId: 'scene_lvl1_dirt',
                 scenes: [
                     {
-                        id: 'scene_lvl1_snow',
-                        name: 'Level 1 • Lembah Salju',
-                        biome: 'snow',
+                        id: 'scene_lvl1_dirt',
+                        name: 'Level 1 • Awal Petualangan',
+                        biome: 'dirt',
                         worldWidth: 3600,
                         worldHeight: 1000,
-                        entities: []
+                        terrainTiles: Array.from({ length: 72 }, (_, i) => `${i},8`),
+                        dugTiles: [],
+                        entities: [
+                            { id: 'player_1', type: 'player', col: 2, row: 7, x: 125, y: 400, label: 'Letak Spawn (Pintu Putih)', cat: 'spawn', icon: '🚪', wTiles: 1, hTiles: 1 },
+                            { id: 'portal_1', type: 'portal', col: 70, row: 7, x: 3525, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 }
+                        ]
                     },
                     {
                         id: 'scene_lvl2_desert',

@@ -40,34 +40,17 @@ export class SceneBuilderModal {
             worldWidth: 3600,
             worldHeight: 1000,
 
-            // Dynamic Entity List (Semua objek unit 1x1, otomatis menyatu bila berjejer)
+            // Dynamic Entity List (Default bersih: Pintu Kedatangan & Portal Kemenangan)
             entities: [
                 { id: 'player_1', type: 'player', col: 2, row: 7, x: 125, y: 400, label: 'Letak Spawn (Pintu Putih)', cat: 'spawn', icon: '🚪', wTiles: 1, hTiles: 1 },
-                { id: 'npc_1', type: 'npc', col: 6, row: 7, x: 325, y: 400, label: 'NPC Guide', cat: 'creature', icon: '🧙', wTiles: 1, hTiles: 1 },
-                { id: 'spikes_1', type: 'spikes', col: 7, row: 7, x: 375, y: 400, label: 'Rintangan Duri', cat: 'solid', icon: '⚠️', wTiles: 1, hTiles: 1 },
-                { id: 'slime_1', type: 'slime', col: 10, row: 7, x: 525, y: 400, label: 'Monster Slime', cat: 'creature', icon: '🟢', wTiles: 1, hTiles: 1 },
-                { id: 'water_1', type: 'water', col: 11, row: 8, x: 575, y: 400, label: 'Blok Air #1', cat: 'fluid', icon: '🌊', wTiles: 1, hTiles: 1 },
-                { id: 'water_2', type: 'water', col: 12, row: 8, x: 625, y: 400, label: 'Blok Air #2', cat: 'fluid', icon: '🌊', wTiles: 1, hTiles: 1 },
-                { id: 'water_3', type: 'water', col: 13, row: 8, x: 675, y: 400, label: 'Blok Air #3', cat: 'fluid', icon: '🌊', wTiles: 1, hTiles: 1 },
-                { id: 'platform_1', type: 'platforms', col: 12, row: 5, x: 625, y: 250, label: 'Pijakan #1', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
-                { id: 'platform_2', type: 'platforms', col: 13, row: 5, x: 675, y: 250, label: 'Pijakan #2', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
-                { id: 'coins_1', type: 'coins', col: 12, row: 4, x: 625, y: 200, label: 'Koin Emas #1', cat: 'solid', icon: '🪙', wTiles: 1, hTiles: 1 },
-                { id: 'coins_2', type: 'coins', col: 13, row: 4, x: 675, y: 200, label: 'Koin Emas #2', cat: 'solid', icon: '🪙', wTiles: 1, hTiles: 1 },
-                { id: 'chest_1', type: 'chest', col: 15, row: 7, x: 775, y: 400, label: 'Peti Harta Karun', cat: 'solid', icon: '📦', wTiles: 1, hTiles: 1 },
-                { id: 'lava_1', type: 'lava', col: 20, row: 8, x: 1025, y: 400, label: 'Blok Lava #1', cat: 'fluid', icon: '🌋', wTiles: 1, hTiles: 1 },
-                { id: 'lava_2', type: 'lava', col: 21, row: 8, x: 1075, y: 400, label: 'Blok Lava #2', cat: 'fluid', icon: '🌋', wTiles: 1, hTiles: 1 },
-                { id: 'lava_3', type: 'lava', col: 22, row: 8, x: 1125, y: 400, label: 'Blok Lava #3', cat: 'fluid', icon: '🌋', wTiles: 1, hTiles: 1 },
-                { id: 'skeleton_1', type: 'skeleton', col: 30, row: 7, x: 1525, y: 400, label: 'Monster Skeleton', cat: 'creature', icon: '💀', wTiles: 1, hTiles: 1 },
                 { id: 'portal_1', type: 'portal', col: 70, row: 7, x: 3525, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 }
             ]
         };
 
-        // Inisialisasi Petak Tanah Modular (Row 8, membentang sepanjang 72 kolom)
+        // Inisialisasi Petak Tanah Modular Penuh (Row 8, membentang sepanjang 72 kolom)
         const initTerrain = new Set();
         for (let c = 0; c < 72; c++) {
-            if ((c < 11 || c > 13) && (c < 20 || c > 22)) {
-                initTerrain.add(`${c},8`);
-            }
+            initTerrain.add(`${c},8`);
         }
         this.state.terrainTiles = initTerrain;
         this.state.dugTiles = new Set();
@@ -119,72 +102,6 @@ export class SceneBuilderModal {
         if (this.scene) {
             this.syncWithActiveScene(this.scene);
         }
-    }
-
-    loadWorldData(data, projectId = null, sceneId = null) {
-        if (!data) return;
-        if (projectId) this.projectId = projectId;
-        if (sceneId) this.sceneId = sceneId;
-        if (data.name) this.state.name = data.name;
-        if (data.biome) this.state.biome = data.biome;
-        if (!data.worldWidth || data.worldWidth <= 1800) {
-            this.state.worldWidth = 3600;
-        } else {
-            this.state.worldWidth = data.worldWidth;
-        }
-        if (!data.worldHeight || data.worldHeight <= 700) {
-            this.state.worldHeight = 1000;
-        } else {
-            this.state.worldHeight = data.worldHeight;
-        }
-        if (Array.isArray(data.entities)) {
-            this.state.entities = JSON.parse(JSON.stringify(data.entities));
-            // Geser portal ke ujung dunia jika masih berada di posisi template kecil lama
-            const portalEntity = this.state.entities.find(e => e.type === 'portal');
-            if (portalEntity && portalEntity.col !== undefined && portalEntity.col <= 35 && this.state.worldWidth >= 3000) {
-                portalEntity.col = Math.floor(this.state.worldWidth / 50) - 2;
-                portalEntity.x = portalEntity.col * 50 + 25;
-            }
-            if (this.state.entities.length > 0) {
-                this.state.selectedId = this.state.entities[0].id;
-            }
-        }
-        if (Array.isArray(data.terrainTiles)) {
-            this.state.terrainTiles = new Set(data.terrainTiles);
-            // Isi tanah untuk kolom tambahan jika dunia diperbesar
-            const totalCols = Math.ceil(this.state.worldWidth / 50);
-            for (let c = 36; c < totalCols; c++) {
-                const key = `${c},8`;
-                if (!this.state.dugTiles || !this.state.dugTiles.has(key)) {
-                    this.state.terrainTiles.add(key);
-                }
-            }
-        }
-        if (Array.isArray(data.dugTiles)) {
-            this.state.dugTiles = new Set(data.dugTiles);
-        } else if (!this.state.dugTiles) {
-            this.state.dugTiles = new Set();
-        }
-
-        // Sinkronisasi elemen DOM
-        if (this.overlay) {
-            const nameInput = this.overlay.querySelector('#gt-sb-input-name');
-            if (nameInput) nameInput.value = this.state.name;
-            const tag = this.overlay.querySelector('#gt-sb-scene-tag');
-            if (tag) tag.textContent = `Scene: ${this.state.name}.scene`;
-
-            this.overlay.querySelectorAll('.gt-sb-biome-btn').forEach(btn => {
-                if (btn.getAttribute('data-biome') === this.state.biome) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
-        }
-
-        this.preventAllOverlaps();
-        this.renderHierarchy();
-        this.renderInspector();
     }
 
     createDOM() {
@@ -4672,10 +4589,17 @@ export class SceneBuilderModal {
         else if (data.id) this.sceneId = data.id;
 
         if (data.name) this.state.name = data.name;
-        if (data.biome) this.state.biome = data.biome;
-        if (data.timeOfDay) this.state.timeOfDay = data.timeOfDay;
-        if (data.worldWidth) this.state.worldWidth = data.worldWidth;
-        if (data.worldHeight) this.state.worldHeight = data.worldHeight;
+        this.state.biome = data.biome || 'dirt';
+        this.state.timeOfDay = data.timeOfDay || 'day';
+        this.state.worldWidth = (!data.worldWidth || data.worldWidth <= 1800) ? 3600 : data.worldWidth;
+        this.state.worldHeight = (!data.worldHeight || data.worldHeight <= 700) ? 1000 : data.worldHeight;
+
+        if (data.dugTiles && Array.isArray(data.dugTiles)) {
+            this.state.dugTiles = new Set(data.dugTiles);
+        } else if (!this.state.dugTiles) {
+            this.state.dugTiles = new Set();
+        }
+
         if (Array.isArray(data.entities)) {
             this.state.entities = JSON.parse(JSON.stringify(data.entities));
             // PASTIKAN OBJEK LETAK SPAWN (PINTU PUTIH) SELALU ADA SECARA DEFAULT
@@ -4700,22 +4624,69 @@ export class SceneBuilderModal {
                     playerEnt.label = 'Letak Spawn (Pintu Putih)';
                 }
             }
+
+            // PASTIKAN PORTAL FINISH SELALU ADA DI UJUNG DUNIA
+            const portalEnt = this.state.entities.find(e => e.type === 'portal');
+            const targetPortalCol = Math.max(10, Math.floor(this.state.worldWidth / 50) - 2);
+            if (!portalEnt) {
+                this.state.entities.push({
+                    id: 'portal_1',
+                    type: 'portal',
+                    col: targetPortalCol,
+                    row: 7,
+                    x: targetPortalCol * 50 + 25,
+                    y: 400,
+                    label: 'Goal Portal Finish',
+                    cat: 'solid',
+                    icon: '🌀',
+                    wTiles: 1,
+                    hTiles: 1
+                });
+            } else if (portalEnt.col <= 35 && this.state.worldWidth >= 3000) {
+                portalEnt.col = targetPortalCol;
+                portalEnt.x = targetPortalCol * 50 + 25;
+            }
+        } else {
+            const targetPortalCol = Math.max(10, Math.floor(this.state.worldWidth / 50) - 2);
+            this.state.entities = [
+                { id: 'player_1', type: 'player', col: 2, row: 7, x: 125, y: 400, label: 'Letak Spawn (Pintu Putih)', cat: 'spawn', icon: '🚪', wTiles: 1, hTiles: 1 },
+                { id: 'portal_1', type: 'portal', col: targetPortalCol, row: 7, x: targetPortalCol * 50 + 25, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 }
+            ];
         }
-        if (data.terrainTiles) {
+
+        // Pastikan seluruh rentang kolom dunia di Row 8 terisi balok tanah solid (kecuali yang sengaja digali)
+        const totalCols = Math.ceil(this.state.worldWidth / 50);
+        if (data.terrainTiles && Array.isArray(data.terrainTiles) && data.terrainTiles.length > 0) {
             this.state.terrainTiles = new Set(data.terrainTiles);
+            for (let c = 0; c < totalCols; c++) {
+                const k = `${c},8`;
+                if (!this.state.dugTiles.has(k) && !this.state.terrainTiles.has(k) && (!data.dugTiles || !data.dugTiles.includes(k))) {
+                    this.state.terrainTiles.add(k);
+                }
+            }
+        } else {
+            const tSet = new Set();
+            for (let c = 0; c < totalCols; c++) {
+                const k = `${c},8`;
+                if (!this.state.dugTiles.has(k)) tSet.add(k);
+            }
+            this.state.terrainTiles = tSet;
         }
-        if (data.dugTiles && Array.isArray(data.dugTiles)) {
-            this.state.dugTiles = new Set(data.dugTiles);
-        } else if (!this.state.dugTiles) {
-            this.state.dugTiles = new Set();
+
+        // Sinkronisasi tombol biome di UI
+        if (this.overlay) {
+            this.overlay.querySelectorAll('.gt-sb-biome-btn').forEach(btn => {
+                if (btn.getAttribute('data-biome') === this.state.biome) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
         }
 
         // Render ulang bila DOM sudah terbentuk
         if (this.titleInput) this.titleInput.value = this.state.name;
-        if (this.overlay) {
-            const sceneTagEl = this.overlay.querySelector('#gt-sb-scene-tag');
-            if (sceneTagEl) sceneTagEl.textContent = this.state.name;
-        }
+        if (typeof this.preventAllOverlaps === 'function') this.preventAllOverlaps();
         if (typeof this.renderHierarchy === 'function') this.renderHierarchy();
         if (typeof this.renderInspector === 'function') this.renderInspector();
     }
