@@ -57,6 +57,9 @@ export class CustomWorldScene extends Phaser.Scene {
         this.hp = data.hp !== undefined ? data.hp : 3;
         this.maxHp = 3;
         this.score = 0;
+        this.coinsCollected = 0;
+        this.isPortalLocked = false;
+        this.npcs = [];
         this.inventory = Array.isArray(data.inventory) ? [...data.inventory] : [];
         this.collectedItemIds = [];
         this.isGameOver = false;
@@ -730,6 +733,7 @@ export class CustomWorldScene extends Phaser.Scene {
         this.physics.add.overlap(this.player, this.coins, (player, coin) => {
             coin.destroy();
             this.score += 10;
+            this.coinsCollected = (this.coinsCollected || 0) + 1;
             AudioManager.playCoin();
         });
     }
@@ -831,6 +835,8 @@ export class CustomWorldScene extends Phaser.Scene {
             npc.setStrokeStyle(1.5, 0xd8b4fe);
             this.physics.add.existing(npc, true);
             this.npc = npc;
+            if (!this.npcs) this.npcs = [];
+            this.npcs.push(npc);
 
             this.add.circle(x - 4, ny - 6, 2, 0xfde047).setDepth(9);
             this.add.circle(x + 4, ny - 6, 2, 0xfde047).setDepth(9);
@@ -850,11 +856,7 @@ export class CustomWorldScene extends Phaser.Scene {
                 if (this.isEditMode) {
                     if (this.engineMenuBar) this.engineMenuBar.openNPCDialogEditor(this.npc);
                 } else {
-                    this.dialogBox.showDialogue([
-                        `Halo pengelana! Selamat datang di ${this.worldData.name || 'Dunia Kreasimu'}.`,
-                        'Hati-hati dengan kolam lahar dan monster yang berpatroli!',
-                        'Capai portal di ujung kanan untuk menyelesaikan misi.'
-                    ]);
+                    this.handleNPCInteract();
                 }
             });
         };
@@ -922,6 +924,19 @@ export class CustomWorldScene extends Phaser.Scene {
         }).setOrigin(0.5);
         portal.add([ringOuter, ringInner, centerDot, goalText]);
 
+        // Cek apakah ada Quest Logic di level ini yang mengunci portal
+        const questLogic = ProjectManager.getQuestLogic(this.projectId, this.sceneId);
+        const hasUnlockAction = questLogic && Array.isArray(questLogic.nodes) && questLogic.nodes.some(n => n.type === 'action_unlock');
+        this.isPortalLocked = !!hasUnlockAction;
+        this.portalRingOuter = ringOuter;
+        this.portalGoalText = goalText;
+
+        if (this.isPortalLocked) {
+            ringOuter.setStrokeStyle(2.5, 0xef4444);
+            goalText.setText('🔒 LOCKED');
+            goalText.setStyle({ fill: '#ef4444' });
+        }
+
         this.tweens.add({ targets: ringOuter, angle: 360, duration: 4000, repeat: -1 });
         this.tweens.add({ targets: ringInner, angle: -360, duration: 2500, repeat: -1 });
 
@@ -930,6 +945,13 @@ export class CustomWorldScene extends Phaser.Scene {
         this.physics.add.existing(portalSensor, true);
         this.physics.add.overlap(this.player, portalSensor, () => {
             if (this.isLevelTransitioning) return;
+
+            if (this.isPortalLocked) {
+                AudioManager.playHurt();
+                this.showWorldBanner('🔒 Portal ini terkunci! Bicara dengan Kapten/NPC dan penuhi syarat misi terlebih dahulu.', '#ef4444');
+                return;
+            }
+
             this.isLevelTransitioning = true;
             AudioManager.playCoin();
 
@@ -962,6 +984,128 @@ export class CustomWorldScene extends Phaser.Scene {
                 });
             }
         });
+    }
+
+    unlockPortal() {
+        if (!this.isPortalLocked) return;
+        this.isPortalLocked = false;
+
+        if (this.portalRingOuter) {
+            this.portalRingOuter.setStrokeStyle(2.5, 0x10b981);
+        }
+        if (this.portalGoalText) {
+            this.portalGoalText.setText('✨ GOAL');
+            this.portalGoalText.setStyle({ fill: '#10b981' });
+        }
+
+        this.cameras.main.flash(450, 56, 189, 248);
+        AudioManager.playSuccess();
+        this.showWorldBanner('🎉 Segel Portal Kemenangan Terbuka! Silakan Masuk.', '#10b981');
+    }
+
+    handleNPCInteract() {
+        const questLogic = ProjectManager.getQuestLogic(this.projectId, this.sceneId);
+        if (!questLogic || !Array.isArray(questLogic.nodes) || questLogic.nodes.length === 0) {
+            this.dialogBox.showDialogue([
+                `Halo pengelana! Selamat datang di ${this.worldData.name || 'Dunia Kreasimu'}.`,
+                'Hati-hati dengan kolam lahar dan monster yang berpatroli!',
+                'Capai portal di ujung kanan untuk menyelesaikan misi.'
+            ]);
+            return;
+        }
+
+        const nodes = questLogic.nodes;
+        const wires = questLogic.wires || [];
+
+        // 1. Cari trigger node
+        const triggerNode = nodes.find(n => n.type === 'npc_trigger') || nodes[0];
+        if (!triggerNode) return;
+
+        const talkWire = wires.find(w => w.fromNode === triggerNode.id);
+        if (!talkWire) {
+            const speaker = triggerNode.config?.speakerName || 'NPC';
+            const prompt = triggerNode.config?.promptText || 'Halo! Belum ada tugas baru.';
+            this.dialogBox.showDialogue([`[${speaker}]`, prompt]);
+            return;
+        }
+
+        let currNode = nodes.find(n => n.id === talkWire.toNode);
+        const playerCoins = (this.coinsCollected !== undefined) ? this.coinsCollected : Math.floor((this.score || 0) / 10);
+
+        let executionSafety = 0;
+        while (currNode && executionSafety < 12) {
+            executionSafety++;
+
+            if (currNode.type === 'condition_coins') {
+                const req = currNode.config?.reqCoins !== undefined ? currNode.config.reqCoins : 3;
+                const isPass = playerCoins >= req;
+                const nextPort = isPass ? 'pass' : 'fail';
+                const nextWire = wires.find(w => w.fromNode === currNode.id && w.fromPort === nextPort);
+
+                if (currNode.config?.consume && isPass) {
+                    this.coinsCollected = Math.max(0, this.coinsCollected - req);
+                    this.score = Math.max(0, this.score - (req * 10));
+                }
+
+                if (!nextWire) {
+                    if (isPass) {
+                        this.dialogBox.showDialogue(['Koinmu sudah mencukupi! Terima kasih pengelana.']);
+                    } else {
+                        this.dialogBox.showDialogue([`Kamu butuh minimal ${req} koin emas untuk menyelesaikan misi ini. (Koinmu saat ini: ${playerCoins})`]);
+                    }
+                    break;
+                }
+                currNode = nodes.find(n => n.id === nextWire.toNode);
+            } else if (currNode.type === 'condition_item') {
+                const reqItem = currNode.config?.itemName || 'Kunci Gerbang Kuno';
+                const hasItem = Array.isArray(this.inventory) && this.inventory.some(i => i.name === reqItem);
+                const nextPort = hasItem ? 'pass' : 'fail';
+                const nextWire = wires.find(w => w.fromNode === currNode.id && w.fromPort === nextPort);
+
+                if (!nextWire) {
+                    if (hasItem) {
+                        this.dialogBox.showDialogue([`Kamu membawa ${reqItem}! Gerbang bisa dibuka.`]);
+                    } else {
+                        this.dialogBox.showDialogue([`Kamu belum memiliki "${reqItem}". Cari terlebih dahulu!`]);
+                    }
+                    break;
+                }
+                currNode = nodes.find(n => n.id === nextWire.toNode);
+            } else if (currNode.type === 'dialogue') {
+                const lines = Array.isArray(currNode.config?.lines) ? currNode.config.lines : [currNode.config?.text || 'Halo!'];
+                const speaker = currNode.config?.speakerName ? `[${currNode.config.speakerName}]` : null;
+                const dialogLines = speaker ? [speaker, ...lines] : lines;
+                this.dialogBox.showDialogue(dialogLines);
+
+                // Cek apakah output 'next' terhubung ke action berikutnya
+                const nextWire = wires.find(w => w.fromNode === currNode.id);
+                if (nextWire) {
+                    currNode = nodes.find(n => n.id === nextWire.toNode);
+                } else {
+                    break;
+                }
+            } else if (currNode.type === 'action_unlock') {
+                this.unlockPortal();
+                if (currNode.config?.rewardHp) {
+                    this.hp = Math.min(this.maxHp, this.hp + currNode.config.rewardHp);
+                }
+                break;
+            } else if (currNode.type === 'give_reward') {
+                const rType = currNode.config?.rewardType || 'hp';
+                const amount = currNode.config?.amount || 20;
+                if (rType === 'hp') {
+                    this.hp = Math.min(this.maxHp, this.hp + 1);
+                    this.showWorldBanner(`❤️ HP Darah dipulihkan! (+${amount})`, '#ec4899');
+                } else if (rType === 'coins') {
+                    this.score += amount * 10;
+                    this.coinsCollected = (this.coinsCollected || 0) + amount;
+                    this.showWorldBanner(`🪙 Kamu mendapatkan bonus ${amount} koin!`, '#f59e0b');
+                }
+                break;
+            } else {
+                break;
+            }
+        }
     }
 
     // ===============================================================
@@ -1010,12 +1154,11 @@ export class CustomWorldScene extends Phaser.Scene {
         this.input.keyboard.on('keydown-ESC', () => this.settingsModal.toggle());
         this.input.keyboard.on('keydown-F4', () => this.openSceneBuilder());
         this.input.keyboard.on('keydown-E', () => {
-            if (this.npc && Phaser.Math.Distance.Between(this.player.x, this.player.y, this.npc.x, this.npc.y) < 60) {
-                this.dialogBox.showDialogue([
-                    `Halo pengelana! Selamat datang di ${this.worldData.name || 'Dunia Kreasimu'}.`,
-                    'Hati-hati dengan kolam lahar dan monster yang berpatroli!',
-                    'Capai portal di ujung kanan untuk menyelesaikan misi.'
-                ]);
+            const nearNpc = (this.npcs && this.npcs.length > 0)
+                ? this.npcs.find(n => Phaser.Math.Distance.Between(this.player.x, this.player.y, n.x, n.y) < 70)
+                : (this.npc && Phaser.Math.Distance.Between(this.player.x, this.player.y, this.npc.x, this.npc.y) < 70 ? this.npc : null);
+            if (nearNpc) {
+                this.handleNPCInteract();
             }
         });
 

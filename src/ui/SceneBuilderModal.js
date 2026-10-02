@@ -2557,9 +2557,31 @@ export class SceneBuilderModal {
                     </button>` : ''}
                 </div>
             </div>
+
+            ${(obj.type === 'npc' || obj.type === 'chest' || obj.type === 'portal') ? `
+            <div class="gt-sb-inspector-card" style="border: 1px solid #7c3aed; background: rgba(124, 58, 237, 0.1);">
+                <div class="gt-sb-card-title" style="color: #c084fc;">⚡ LOGIKA & MISI INTERAKTIF</div>
+                <div style="font-size: 10.5px; color: #cbd5e1; line-height: 1.4; margin-bottom: 8px;">
+                    Atur interaksi dialog, syarat koin/item, dan pembukaan portal secara visual di Node Graph.
+                </div>
+                <button class="gt-sb-btn-action" id="gt-sb-act-open-logic-graph" style="background: linear-gradient(135deg, #7c3aed, #9333ea); color: #fff; width: 100%; border: 1px solid #a855f7; font-weight: 700; padding: 7px 10px; cursor: pointer; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);">
+                    <span>⚡ Buka Node Graph Misi</span>
+                </button>
+            </div>` : ''}
         `;
 
         // Event listeners pada inspector
+        const btnOpenLogic = this.inspectorContent.querySelector('#gt-sb-act-open-logic-graph');
+        if (btnOpenLogic) {
+            btnOpenLogic.addEventListener('click', () => {
+                AudioManager.playClick();
+                this.switchEditorMode('flow');
+                if (this.flowGraphView) {
+                    this.flowGraphView.switchGraphMode('quests', this.sceneId);
+                }
+            });
+        }
+
         const inpWTiles = this.inspectorContent.querySelector('#gt-sb-inp-wtiles');
         if (inpWTiles) {
             inpWTiles.addEventListener('change', (e) => {

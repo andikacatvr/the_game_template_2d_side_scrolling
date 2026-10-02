@@ -371,6 +371,111 @@ export class ProjectManager {
     }
 
     /**
+     * Menyimpan data visual graph logika interaksi NPC & Quest untuk scene tertentu
+     */
+    static saveQuestLogic(projectId, sceneId, questGraph) {
+        const projects = this.getProjects();
+        const proj = projects.find(p => p.id === projectId);
+        if (!proj) return false;
+
+        if (!proj.questLogicMap || typeof proj.questLogicMap !== 'object') {
+            proj.questLogicMap = {};
+        }
+
+        const targetKey = sceneId || (proj.scenes && proj.scenes[0] ? proj.scenes[0].id : 'default');
+        proj.questLogicMap[targetKey] = questGraph;
+        proj.updatedAt = Date.now();
+        this.saveProjects(projects);
+        return true;
+    }
+
+    /**
+     * Mengambil data visual graph logika interaksi NPC & Quest
+     */
+    static getQuestLogic(projectId, sceneId) {
+        const proj = this.getProject(projectId);
+        const targetKey = sceneId || (proj && proj.scenes && proj.scenes[0] ? proj.scenes[0].id : 'default');
+        if (proj && proj.questLogicMap && proj.questLogicMap[targetKey]) {
+            return proj.questLogicMap[targetKey];
+        }
+
+        // Default Starter Quest Logic interaktif
+        return {
+            nodes: [
+                {
+                    id: 'node_npc_start',
+                    type: 'npc_trigger',
+                    title: 'Bicara dengan Kapten',
+                    x: 60,
+                    y: 120,
+                    config: {
+                        speakerName: 'Kapten Chen',
+                        avatar: '🧙',
+                        promptText: 'Tekan E untuk bicara'
+                    }
+                },
+                {
+                    id: 'node_check_coins',
+                    type: 'condition_coins',
+                    title: 'Syarat 3 Koin Emas',
+                    x: 360,
+                    y: 100,
+                    config: {
+                        reqCoins: 3,
+                        consume: false
+                    }
+                },
+                {
+                    id: 'node_dlg_success',
+                    type: 'dialogue',
+                    title: 'Dialog Misi Selesai',
+                    x: 680,
+                    y: 60,
+                    config: {
+                        speakerName: 'Kapten Chen',
+                        lines: [
+                            'Hebat sekali pengelana! Kamu berhasil mengumpulkan 3 koin emas!',
+                            'Sebagai hadiahnya, portal kemenangan di ujung kanan sudah kubuka sihirnya!',
+                            'Masuklah ke portal untuk menyelesaikan level.'
+                        ]
+                    }
+                },
+                {
+                    id: 'node_act_unlock',
+                    type: 'action_unlock',
+                    title: 'Buka Kunci Portal Finish',
+                    x: 990,
+                    y: 60,
+                    config: {
+                        target: 'portal',
+                        rewardHp: 20
+                    }
+                },
+                {
+                    id: 'node_dlg_fail',
+                    type: 'dialogue',
+                    title: 'Dialog Koin Kurang',
+                    x: 680,
+                    y: 280,
+                    config: {
+                        speakerName: 'Kapten Chen',
+                        lines: [
+                            'Halo pengelana! Portal di ujung kanan masih terkunci segel sihir.',
+                            'Tolong kumpulkan minimal 3 koin emas di pulau ini agar gerbang portal bisa aktif!'
+                        ]
+                    }
+                }
+            ],
+            wires: [
+                { fromNode: 'node_npc_start', fromPort: 'talk', toNode: 'node_check_coins', toPort: 'exec' },
+                { fromNode: 'node_check_coins', fromPort: 'pass', toNode: 'node_dlg_success', toPort: 'exec' },
+                { fromNode: 'node_check_coins', fromPort: 'fail', toNode: 'node_dlg_fail', toPort: 'exec' },
+                { fromNode: 'node_dlg_success', fromPort: 'next', toNode: 'node_act_unlock', toPort: 'exec' }
+            ]
+        };
+    }
+
+    /**
      * Menetapkan scene awal permainan
      */
     static setStartingScene(projectId, sceneId) {

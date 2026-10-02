@@ -603,11 +603,6 @@ export class EngineMenuBar {
                     <span>Preview</span>
                 </button>
 
-                <!-- Quick Button: Flow Graph -->
-                <button class="gt-mb-tool-btn" id="gt-mb-btn-flow" title="Buka Visual Flow Graph (Hubungkan Rute Antar-Scene)">
-                    <span>⚡ Flow Graph</span>
-                </button>
-
                 <div class="gt-mb-v-divider"></div>
 
                 <!-- Quick Button: Grid System (Unity/Godot/Tiled Style) -->
@@ -881,14 +876,6 @@ export class EngineMenuBar {
             }
         });
 
-        const flowBtn = this.bar.querySelector('#gt-mb-btn-flow');
-        if (flowBtn) {
-            flowBtn.addEventListener('click', () => {
-                if (CommandConsole.instance) {
-                    CommandConsole.instance.openSceneBuilder('flow');
-                }
-            });
-        }
 
         // Quick Button: Grid System
         const gridBtn = this.bar.querySelector('#gt-mb-btn-grid');

@@ -7,6 +7,7 @@
 
 import { ProjectManager } from '../utils/ProjectManager.js';
 import { AudioManager } from '../utils/AudioManager.js';
+import { QuestLogicGraphView } from './QuestLogicGraphView.js';
 
 export class SceneFlowGraphView {
     constructor(container, options = {}) {
@@ -15,6 +16,10 @@ export class SceneFlowGraphView {
         this.projectId = options.projectId || null;
         this.onOpenScene = options.onOpenScene || null;
         this.onAddScene = options.onAddScene || null;
+
+        this.graphMode = 'scenes'; // 'scenes' | 'quests'
+        this.questLogicView = null;
+        this.questLogicWrap = null;
 
         this.pan = { x: 40, y: 40 };
         this.zoom = 1;
@@ -412,6 +417,15 @@ export class SceneFlowGraphView {
 
             <!-- Control Bar Atas -->
             <div class="gt-flow-toolbar">
+                <div class="gt-flow-subtabs" style="display: inline-flex; background: #090e17; border: 1px solid #1e293b; border-radius: 6px; padding: 2px; gap: 2px; margin-right: 4px;">
+                    <button class="gt-flow-subtab" id="btn-flow-tab-scenes" style="padding: 4px 10px; font-size: 11px; font-weight: 700; border: none; background: #0284c7; color: #fff; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Alur Rute Antar-Scene">
+                        <span>🎬 Rute Level</span>
+                    </button>
+                    <button class="gt-flow-subtab" id="btn-flow-tab-quests" style="padding: 4px 10px; font-size: 11px; font-weight: 700; border: none; background: transparent; color: #94a3b8; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Logika Interaksi NPC &amp; Misi (Visual Scripting)">
+                        <span>⚡ Logika NPC &amp; Misi</span>
+                    </button>
+                </div>
+
                 <button class="gt-flow-btn gt-flow-btn-primary" id="btn-flow-add-scene" title="Tambah Level Baru ke Project">
                     <span>+</span> Tambah Scene
                 </button>
@@ -540,11 +554,14 @@ export class SceneFlowGraphView {
                     </div>
                     <div class="gt-flow-node-actions">
                         <button class="gt-flow-node-btn btn-open-scene" title="Buka Level ini di Kanvas Editor Dunia">
-                            <span>✏️</span> Edit Scene
+                            <span>✏️</span> Edit
+                        </button>
+                        <button class="gt-flow-node-btn btn-open-quest" title="Atur Logika Interaksi NPC, Koin &amp; Misi (Visual Scripting)" style="color: #c084fc; border-color: rgba(192, 132, 252, 0.4);">
+                            <span>⚡</span> Misi
                         </button>
                         ${!isStart ? `
                             <button class="gt-flow-node-btn btn-set-start" title="Jadikan Level ini Sebagai Titik Mulai Permainan">
-                                <span>★</span> Set Start
+                                <span>★</span> Start
                             </button>
                         ` : ''}
                     </div>
@@ -579,6 +596,16 @@ export class SceneFlowGraphView {
                     this.onOpenScene(scene.id, scene);
                 }
             });
+
+            // Tombol Buka Logika Misi Scene
+            const questBtn = card.querySelector('.btn-open-quest');
+            if (questBtn) {
+                questBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    AudioManager.playClick();
+                    this.switchGraphMode('quests', scene.id);
+                });
+            }
 
             // Tombol Set Starting Level
             const setStartBtn = card.querySelector('.btn-set-start');
@@ -900,6 +927,23 @@ export class SceneFlowGraphView {
             });
         }
 
+        // Sub-tabs Mode Switching
+        const btnTabScenes = this.dom.querySelector('#btn-flow-tab-scenes');
+        if (btnTabScenes) {
+            btnTabScenes.addEventListener('click', () => {
+                AudioManager.playClick();
+                this.switchGraphMode('scenes');
+            });
+        }
+
+        const btnTabQuests = this.dom.querySelector('#btn-flow-tab-quests');
+        if (btnTabQuests) {
+            btnTabQuests.addEventListener('click', () => {
+                AudioManager.playClick();
+                this.switchGraphMode('quests');
+            });
+        }
+
         const btnZIn = this.dom.querySelector('#btn-flow-zoom-in');
         if (btnZIn) btnZIn.addEventListener('click', () => this.adjustZoom(0.15));
 
@@ -915,6 +959,68 @@ export class SceneFlowGraphView {
                 this.updateZoomBtn();
                 this.renderWires();
             });
+        }
+    }
+
+    switchGraphMode(mode, sceneId = null) {
+        this.graphMode = mode;
+
+        if (mode === 'quests') {
+            let targetSceneId = sceneId;
+            if (!targetSceneId) {
+                const project = this.projectId ? ProjectManager.getProject(this.projectId) : null;
+                const flow = this.projectId ? ProjectManager.getFlowGraph(this.projectId) : null;
+                if (flow && flow.startingSceneId) {
+                    targetSceneId = flow.startingSceneId;
+                } else if (project && project.scenes && project.scenes.length > 0) {
+                    targetSceneId = project.scenes[0].id;
+                }
+            }
+
+            // Sembunyikan container alur scene
+            this.dom.style.display = 'none';
+
+            // Bersihkan instance quest view lama jika berbeda scene/project
+            if (this.questLogicView && (this.questLogicView.sceneId !== targetSceneId || this.questLogicView.projectId !== this.projectId)) {
+                this.questLogicView.destroy();
+                this.questLogicView = null;
+            }
+
+            if (!this.questLogicView) {
+                this.questLogicView = new QuestLogicGraphView(this.container, {
+                    projectId: this.projectId,
+                    sceneId: targetSceneId,
+                    onBackToSceneFlow: () => this.switchGraphMode('scenes')
+                });
+            } else {
+                if (this.questLogicView.dom) {
+                    this.questLogicView.dom.style.display = 'flex';
+                }
+                this.questLogicView.refresh();
+            }
+        } else {
+            // Mode 'scenes'
+            if (this.questLogicView && this.questLogicView.dom) {
+                this.questLogicView.dom.style.display = 'none';
+            }
+            this.dom.style.display = 'block';
+
+            // Update status tombol tab di SceneFlow toolbar
+            const btnScenes = this.dom.querySelector('#btn-flow-tab-scenes');
+            const btnQuests = this.dom.querySelector('#btn-flow-tab-quests');
+            if (btnScenes) {
+                btnScenes.style.background = '#0284c7';
+                btnScenes.style.color = '#fff';
+            }
+            if (btnQuests) {
+                btnQuests.style.background = 'transparent';
+                btnQuests.style.color = '#94a3b8';
+            }
+
+            this.loadProjectData();
+            setTimeout(() => {
+                this.renderWires();
+            }, 50);
         }
     }
 
@@ -956,9 +1062,16 @@ export class SceneFlowGraphView {
 
     refresh() {
         this.loadProjectData();
+        if (this.questLogicView) {
+            this.questLogicView.refresh();
+        }
     }
 
     destroy() {
+        if (this.questLogicView) {
+            this.questLogicView.destroy();
+            this.questLogicView = null;
+        }
         if (this.dom && this.dom.parentNode) {
             this.dom.parentNode.removeChild(this.dom);
         }
