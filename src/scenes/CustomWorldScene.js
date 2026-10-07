@@ -15,6 +15,7 @@ import { QuestModal } from '../ui/QuestModal.js';
 import { GridSystem } from '../utils/GridSystem.js';
 import { ProjectManager } from '../utils/ProjectManager.js';
 import { UndoRedoManager } from '../utils/UndoRedoManager.js';
+import { GameOverModal } from '../ui/GameOverModal.js';
 
 export class CustomWorldScene extends Phaser.Scene {
     constructor() {
@@ -28,6 +29,8 @@ export class CustomWorldScene extends Phaser.Scene {
         this.worldData = data.worldData || {
             name: 'Dunia Kreasiku #1',
             biome: 'dirt',
+            bgType: 'color',
+            bgColor: '#dcff78',
             timeOfDay: 'day',
             worldWidth: 3600,
             worldHeight: 1000,
@@ -72,9 +75,114 @@ export class CustomWorldScene extends Phaser.Scene {
             judul: `Misi: ${this.worldData.name || 'Jelajahi Level'}`,
             deskripsi: 'Jelajahi rintangan, kalahkan monster, kumpulkan koin, dan temukan portal finish!'
         };
+
+        // KUNCI ANTI-MENIMPA: Pastikan seluruh entitas dunia berdiri sendiri di petak masing-masing
+        this.sanitizeEntities();
+    }
+
+    /**
+     * Memastikan 100% tidak ada objek yang menimpa / bertumpukan di petak yang sama saat game dijalankan.
+     */
+    sanitizeEntities() {
+        if (!this.worldData || !Array.isArray(this.worldData.entities) || this.worldData.entities.length === 0) return;
+
+        const maxC = Math.ceil((this.worldData.worldWidth || 3600) / 50) - 1;
+        const maxR = Math.floor((this.worldData.worldHeight || 1000) / 50) - 1;
+        const occupiedMap = new Map();
+        const cleaned = [];
+
+        // 1. Normalisasi kolom, baris, dan lebar seluruh entitas
+        this.worldData.entities.forEach(ent => {
+            ent.col = parseInt(ent.col !== undefined ? ent.col : (ent.x !== undefined ? Math.floor(ent.x / 50) : 0), 10);
+            ent.row = parseInt(ent.row !== undefined ? ent.row : (ent.y !== undefined ? Math.floor(ent.y / 50) : 7), 10);
+            ent.wTiles = Math.max(1, parseInt(ent.wTiles, 10) || 1);
+        });
+
+        // 2. Prioritas urutan: player, portal, platforms/bangunan, baru entitas dinamis lain
+        const priorityOrder = { player: 0, portal: 1, platforms: 2, brick: 2, sidewalk: 2, glass: 2, roof: 2, ladder: 3, fence: 3, street_lamp: 3, chest: 4, npc: 5, spikes: 6, slime: 7, skeleton: 8, coins: 9, water: 10, lava: 11, dirt: 12 };
+        const sorted = [...this.worldData.entities].sort((a, b) => {
+            const pA = priorityOrder[a.type] !== undefined ? priorityOrder[a.type] : 99;
+            const pB = priorityOrder[b.type] !== undefined ? priorityOrder[b.type] : 99;
+            return pA - pB;
+        });
+
+        sorted.forEach(ent => {
+            const w = ent.wTiles || 1;
+            const h = ent.hTiles || 1;
+            let conflict = false;
+
+            for (let c = ent.col; c < ent.col + w; c++) {
+                for (let r = ent.row; r < ent.row + h; r++) {
+                    if (occupiedMap.has(`${c},${r}`)) {
+                        conflict = true;
+                        break;
+                    }
+                }
+                if (conflict) break;
+            }
+
+            if (conflict) {
+                // Geser ke petak kosong terdekat
+                let solved = false;
+                for (let dist = 1; dist <= Math.max(maxC, maxR) && !solved; dist++) {
+                    for (const dc of [dist, -dist]) {
+                        const tc = ent.col + dc;
+                        if (tc >= 0 && tc + w - 1 <= maxC) {
+                            let slotFree = true;
+                            for (let c = tc; c < tc + w; c++) {
+                                if (occupiedMap.has(`${c},${ent.row}`)) {
+                                    slotFree = false;
+                                    break;
+                                }
+                            }
+                            if (slotFree) {
+                                ent.col = tc;
+                                solved = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!solved) {
+                        for (const dr of [-1, 1, -2, 2]) {
+                            const tr = ent.row + dr;
+                            if (tr >= 0 && tr <= maxR) {
+                                let slotFree = true;
+                                for (let c = ent.col; c < ent.col + w; c++) {
+                                    if (occupiedMap.has(`${c},${tr}`)) {
+                                        slotFree = false;
+                                        break;
+                                    }
+                                }
+                                if (slotFree) {
+                                    ent.row = tr;
+                                    solved = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                ent.x = ent.col * 50 + 25;
+                ent.y = (ent.row === 7) ? 400 : (ent.row * 50 + 25);
+            }
+
+            for (let c = ent.col; c < ent.col + w; c++) {
+                for (let r = ent.row; r < ent.row + h; r++) {
+                    occupiedMap.set(`${c},${r}`, ent);
+                }
+            }
+
+            cleaned.push(ent);
+        });
+
+        this.worldData.entities = cleaned;
     }
 
     create() {
+        // Pastikan tur Pemandu Engine tidak muncul/tertinggal saat memuat project
+        const lingeringTour = document.getElementById('gt-flying-arrow-tour');
+        if (lingeringTour) lingeringTour.remove();
+
         CommandConsole.show();
 
         // 1. Inisialisasi Menu Bar & HUD
@@ -116,6 +224,7 @@ export class CustomWorldScene extends Phaser.Scene {
 
         // 10. Pasang HUD & Kontrol
         this.setupHUDAndControls();
+
     }
 
     // ===============================================================
@@ -229,65 +338,35 @@ export class CustomWorldScene extends Phaser.Scene {
             return;
         }
 
-        let topColor = 0x0369a1;
-        let midColor = 0x38bdf8;
-        let botColor = 0x7dd3fc;
-        let skyHex = '#0369a1';
+        const bgType = this.worldData.bgType || (this.worldData.biome === 'hongkong' ? 'hongkong' : (this.worldData.background && this.worldData.background.includes('bg_scene1') ? 'image' : 'color'));
+        const activeSkyColor = this.worldData.bgColor || this.worldData.warnaLangit || (bgType === 'hongkong' ? '#070e1b' : (bgType === 'image' ? '#07111e' : '#dcff78'));
 
-        if (this.worldData.biome === 'snow') {
-            topColor = 0x0369a1;
-            midColor = 0x38bdf8;
-            botColor = 0xbae6fd;
-            skyHex = '#0369a1';
-        } else if (this.worldData.biome === 'desert') {
-            topColor = 0x78350f; // Cokelat tua tembaga di puncak langit
-            midColor = 0xd97706; // Jingga gurun hangat
-            botColor = 0xfde68a; // Kuning keemasan terang di garis cakrawala
-            skyHex = '#78350f';
-        } else if (this.worldData.biome === 'cave') {
-            topColor = 0x090d16;
-            midColor = 0x111827;
-            botColor = 0x1e1b4b;
-            skyHex = '#090d16';
-        }
+        if (bgType === 'image') {
+            this.cameras.main.setBackgroundColor('#07111e');
+            const W = Math.max(3200, worldWidth + 1400);
+            this.bgSolidSky = this.add.rectangle(worldWidth / 2, 200, W, 450, 0x07111e).setDepth(-12);
+            if (this.textures.exists('bg_scene1')) {
+                this.bgImage = this.add.tileSprite(worldWidth / 2, 225, W, 450, 'bg_scene1')
+                    .setScrollFactor(0.15, 0)
+                    .setDepth(-10)
+                    .setAlpha(0.9);
+            }
+        } else {
+            // Latar Belakang Warna Solid (Default #dcff78 Kuning-Hijau Game, Hutan, Langit Malam, atau Kustom)
+            this.cameras.main.setBackgroundColor(activeSkyColor);
+            const colNum = Phaser.Display.Color.HexStringToColor(activeSkyColor).color;
+            const W = Math.max(3200, worldWidth + 1400);
+            this.bgSolidSky = this.add.rectangle(worldWidth / 2, 200, W, 450, colNum).setDepth(-10);
 
-        if (this.worldData.timeOfDay === 'sunset') {
-            topColor = 0xc2410c;
-            midColor = 0xea580c;
-            botColor = 0xfb923c;
-            skyHex = '#c2410c';
-        } else if (this.worldData.timeOfDay === 'night') {
-            topColor = 0x050b14;
-            midColor = 0x0a1120;
-            botColor = 0x0f172a;
-            skyHex = '#050b14';
-        }
-
-        // Latar Belakang Kamera Dasar
-        this.cameras.main.setBackgroundColor(skyHex);
-
-        // Gradien Langit di World Space (Membentang dari y = 0 ke y = 400 cakrawala tanah)
-        const skyGraphics = this.add.graphics().setDepth(0);
-        
-        // Bagian atas langit jika kamera melihat ke atas (y < 0)
-        skyGraphics.fillStyle(topColor, 1);
-        skyGraphics.fillRect(-1000, -800, worldWidth + 2000, 800);
-
-        // Gradien Langit dari y=0 ke y=400 (Sesuai persis dengan ctx.createLinearGradient di preview)
-        skyGraphics.fillGradientStyle(topColor, topColor, botColor, botColor, 1);
-        skyGraphics.fillRect(-1000, 0, worldWidth + 2000, 400);
-
-        // Lapisan Gunung Salju untuk Biome Snow (bg_scene1)
-        if (this.worldData.biome === 'snow') {
-            this.snowBg = this.add.tileSprite(worldWidth / 2, 225, worldWidth + 1000, 450, 'bg_scene1')
-                .setScrollFactor(0.15, 0)
-                .setDepth(0.5)
-                .setAlpha(0.85);
+            // Jika warna langit adalah tema kuning kehijauan game asli (#dcff78), tampilkan kunang-kunang hitam mini persis seperti GameScene & Studio Preview
+            if (activeSkyColor.toLowerCase() === '#dcff78') {
+                this.createFireflies(worldWidth);
+            }
         }
 
         // Matahari / Bulan dekoratif di langit (Posisi x=275, y=80 presisi dengan cincin aura bercahaya)
-        if (this.worldData.biome !== 'cave') {
-            const isNight = this.worldData.timeOfDay === 'night';
+        if (this.worldData.biome !== 'cave' && bgType !== 'hongkong') {
+            const isNight = this.worldData.timeOfDay === 'night' || activeSkyColor === '#050b14' || activeSkyColor === '#090d16' || activeSkyColor === '#062817';
             const sunColor = isNight ? 0xf8fafc : 0xfef08a;
             const glowColor = isNight ? 0xe2e8f0 : 0xfde047;
 
@@ -295,6 +374,92 @@ export class CustomWorldScene extends Phaser.Scene {
             const sun = this.add.circle(275, 80, 26, sunColor, 0.95).setDepth(1);
             // Cincin aura bercahaya lembut
             const sunGlow = this.add.circle(275, 80, 30).setStrokeStyle(3, glowColor, 0.4).setDepth(1);
+        }
+    }
+
+    createFireflies(worldWidth = 3600) {
+        if (!this.textures.exists('npc_firefly')) return;
+        if (this._fireflies && this._fireflies.length > 0) return;
+        this._fireflies = [];
+        const count = Math.min(48, Math.floor(worldWidth / 75));
+        const glowColors = [0xfef08a, 0x67e8f9, 0xf472b6, 0xa78bfa, 0x38bdf8, 0xffffff];
+
+        for (let i = 0; i < count; i++) {
+            const x = Phaser.Math.Between(40, worldWidth - 40);
+            const y = Phaser.Math.Between(35, 365);
+            const auraColor = glowColors[Math.floor(Math.random() * glowColors.length)];
+            const targetSize = Phaser.Math.Between(18, 24);
+
+            const firefly = this.add.container(x, y).setDepth(2);
+            const glowHalo = this.add.graphics();
+            glowHalo.fillStyle(auraColor, 0.45);
+            glowHalo.fillCircle(0, 0, targetSize * 0.85);
+            glowHalo.fillStyle(0xffffff, 0.60);
+            glowHalo.fillCircle(0, 0, targetSize * 0.45);
+
+            const sprite = this.add.image(0, 0, 'npc_firefly');
+            sprite.setDisplaySize(targetSize, targetSize);
+
+            firefly.add([glowHalo, sprite]);
+
+            const pulseDuration = Phaser.Math.Between(800, 1600);
+            this.tweens.add({
+                targets: glowHalo,
+                alpha: { from: 0.25, to: 0.90 },
+                scaleX: { from: 0.85, to: 1.30 },
+                scaleY: { from: 0.85, to: 1.30 },
+                duration: pulseDuration,
+                yoyo: true,
+                repeat: -1,
+                delay: Phaser.Math.Between(0, 1500),
+                ease: 'Sine.easeInOut'
+            });
+
+            this.tweens.add({
+                targets: firefly,
+                y: y + Phaser.Math.Between(-14, 14),
+                x: x + Phaser.Math.Between(-18, 18),
+                duration: Phaser.Math.Between(2200, 4200),
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+
+            this._fireflies.push(firefly);
+        }
+    }
+
+    updateSkyBackground(bgType, bgColor) {
+        this.worldData.bgType = bgType;
+        if (bgColor) this.worldData.bgColor = bgColor;
+        const col = bgColor || this.worldData.bgColor || '#dcff78';
+
+        if (bgType === 'hongkong') {
+            this.cameras.main.setBackgroundColor('#070e1b');
+            if (this.bgSolidSky) this.bgSolidSky.setVisible(false);
+            if (this.bgImage) this.bgImage.setVisible(false);
+        } else if (bgType === 'image') {
+            this.cameras.main.setBackgroundColor('#07111e');
+            if (this.bgSolidSky) this.bgSolidSky.setVisible(false);
+            if (!this.bgImage && this.textures.exists('bg_scene1')) {
+                const wW = this.worldData.worldWidth || 3600;
+                this.bgImage = this.add.tileSprite(wW / 2, 225, wW + 2000, 450, 'bg_scene1')
+                    .setScrollFactor(0.15, 0)
+                    .setDepth(-10)
+                    .setAlpha(0.9);
+            }
+            if (this.bgImage) this.bgImage.setVisible(true);
+        } else {
+            this.cameras.main.setBackgroundColor(col);
+            if (this.bgImage) this.bgImage.setVisible(false);
+            const colNum = Phaser.Display.Color.HexStringToColor(col).color;
+            if (this.bgSolidSky) {
+                this.bgSolidSky.setVisible(true);
+                this.bgSolidSky.fillColor = colNum;
+            } else {
+                const wW = this.worldData.worldWidth || 3600;
+                this.bgSolidSky = this.add.rectangle(wW / 2, 200, Math.max(wW + 2400, 3600), 450, colNum).setDepth(-10);
+            }
         }
     }
 
@@ -367,46 +532,11 @@ export class CustomWorldScene extends Phaser.Scene {
             const inLava = lavaTileMap.has(`${col},8`);
             // Jika ada terrainSet, cek apakah ada tanah di baris 8 (atau untuk kolom tambahan > 35, otomatis sediakan tanah selama belum digali)
             const hasGroundAtCol = terrainSet 
-                ? (terrainSet.has(`${col},8`) || (col >= 36 && !this.dugTiles.has(`${col},8`)))
+                ? (terrainSet.has(`${col},8`) || (col >= 36 && !this.dugTiles.has(`${col},8`) && !inWater && !inLava))
                 : (!inWater && !inLava);
 
-            // A. ROW 8: PERMUKAAN TANAH / KOLAM AIR / KOLAM LAVA
-            if (inWater) {
-                // Kolam Air 1x1 Presisi 50x50
-                const waterBlock = this.add.rectangle(cx, groundY + 25, 50, 50, 0x0284c7, 0.85).setDepth(5);
-                this.physics.add.existing(waterBlock, true);
-                this.waterBodies.add(waterBlock);
-
-                // Garis putih tipis ombak atas (3px) persis seperti di preview
-                const wave = this.add.rectangle(cx, groundY + 2, 50, 3, 0x7dd3fc, 0.95).setDepth(6);
-                this.tweens.add({
-                    targets: wave,
-                    y: groundY + 4,
-                    duration: 750 + (col % 3) * 120,
-                    yoyo: true,
-                    repeat: -1,
-                    ease: 'Sine.easeInOut'
-                });
-            } else if (inLava) {
-                // Kolam Lava 1x1 Presisi 50x50
-                const lavaBlock = this.add.rectangle(cx, groundY + 25, 50, 50, 0xef4444, 0.95).setDepth(5);
-                this.physics.add.existing(lavaBlock, true);
-                this.hazards.add(lavaBlock);
-
-                // Garis api oranye di atas permukaan
-                this.add.rectangle(cx, groundY + 2, 50, 3, 0xf97316, 0.95).setDepth(6);
-
-                // Gelembung lava kuning emas naik ke atas
-                const bubble = this.add.circle(cx, groundY + 12, 3, 0xfbbf24).setDepth(7);
-                this.tweens.add({
-                    targets: bubble,
-                    y: groundY - 4,
-                    alpha: 0,
-                    duration: 850 + (col * 70) % 500,
-                    repeat: -1,
-                    ease: 'Sine.easeOut'
-                });
-            } else if (hasGroundAtCol) {
+            // A. ROW 8: PERMUKAAN TANAH (Hanya dibuat jika bukan air atau lava)
+            if (hasGroundAtCol && !inWater && !inLava) {
                 // Balok Permukaan Tanah (Row 8: y=400..450)
                 if (!this.dugTiles.has(`${col},8`)) {
                     const topTile = this.add.rectangle(cx, groundY + 25, 50, 50, dirtColor).setDepth(4);
@@ -421,58 +551,22 @@ export class CustomWorldScene extends Phaser.Scene {
                 }
             }
 
-            // B. LAPISAN STRATA BAWAH TANAH YANG DALAM
+            // B. FULL DIRT DARI ROW 9 KE DASAR (Row 9 s/d bedrockRow)
+            // Tanpa lapisan batu/mantle kaku, petak bawah tanah seragam adalah balok tanah
             if (hasGroundAtCol) {
-                // 1. Row 9..12: Tanah Cokelat Subsoil (4 baris tebal)
-                for (let r = 9; r <= 12; r++) {
-                    if (this.dugTiles.has(`${col},${r}`)) continue;
+                for (let r = 9; r <= bedrockRow; r++) {
+                    const key = `${col},${r}`;
+                    if (this.dugTiles.has(key) || waterTileMap.has(key) || lavaTileMap.has(key)) continue;
                     const ry = r * 50 + 25;
-                    const subTile = this.add.rectangle(cx, ry, 50, 50, dirtColor).setDepth(3);
-                    this.physics.add.existing(subTile, true);
-                    subTile.body.setSize(50, 50);
-                    subTile.body.reset(cx, ry);
-                    this.platforms.add(subTile);
+                    const dirtTile = this.add.rectangle(cx, ry, 50, 50, dirtColor).setDepth(3);
+                    this.physics.add.existing(dirtTile, true);
+                    dirtTile.body.setSize(50, 50);
+                    dirtTile.body.reset(cx, ry);
+                    this.platforms.add(dirtTile);
 
                     // Aksen kerikil tanah halus persis seperti di preview
                     if ((col + r) % 3 === 0) {
                         this.add.rectangle(cx + 4, ry + 6, 8, 5, 0x000000, 0.15).setDepth(4);
-                    }
-                }
-
-                // 2. Row 13..16: Batu Gua Slate Gelap (#1e293b / #334155) (4 baris tebal)
-                for (let r = 13; r <= 16; r++) {
-                    if (this.dugTiles.has(`${col},${r}`)) continue;
-                    const ry = r * 50 + 25;
-                    const stoneTile = this.add.rectangle(cx, ry, 50, 50, stoneColor).setDepth(3);
-                    this.physics.add.existing(stoneTile, true);
-                    stoneTile.body.setSize(50, 50);
-                    stoneTile.body.reset(cx, ry);
-                    this.platforms.add(stoneTile);
-
-                    // Urat kristal safir biru & bongkahan emas persis seperti di preview
-                    if ((col * 7 + r * 13) % 9 === 0) {
-                        this.add.circle(cx, ry, 4, 0x38bdf8).setDepth(4);
-                    } else if ((col * 3 + r * 11) % 8 === 0) {
-                        this.add.rectangle(cx, ry, 6, 6, 0xf59e0b).setDepth(4);
-                    }
-                }
-
-                // 3. Row 17..18: Deep Mantle Obsidian & Magma Cavern (2 baris tebal)
-                for (let r = 17; r <= 18; r++) {
-                    if (this.dugTiles.has(`${col},${r}`)) continue;
-                    const ry = r * 50 + 25;
-                    const mantleTile = this.add.rectangle(cx, ry, 50, 50, 0x0f172a).setDepth(3);
-                    mantleTile.setStrokeStyle(1, 0x1e1b4b);
-                    this.physics.add.existing(mantleTile, true);
-                    mantleTile.body.setSize(50, 50);
-                    mantleTile.body.reset(cx, ry);
-                    this.platforms.add(mantleTile);
-
-                    // Urat ruby merah menyala & kristal amethyst
-                    if ((col * 5 + r * 7) % 7 === 0) {
-                        this.add.circle(cx, ry, 4, 0xef4444).setDepth(4);
-                    } else if ((col * 4 + r * 9) % 6 === 0) {
-                        this.add.rectangle(cx, ry, 5, 5, 0x8b5cf6).setDepth(4);
                     }
                 }
             } else {
@@ -481,22 +575,62 @@ export class CustomWorldScene extends Phaser.Scene {
                 const chasmBg = this.add.rectangle(cx, groundY + chasmH / 2, 50, chasmH, 0x070b12).setDepth(2);
                 chasmBg.setStrokeStyle(1, 0x111827, 0.35);
             }
-
-            // C. ROW BEDROCK PALING DASAR (Row bedrockRow = 19, dasar bumi tak tertembus)
-            const bedrockY = bedrockRow * 50 + 25;
-            const bedrockTile = this.add.rectangle(cx, bedrockY, 50, 50, 0x070b14).setDepth(4);
-            bedrockTile.setStrokeStyle(1.5, 0x1e293b);
-            // Pola lempeng baja & paku rivet agar tampak jelas sebagai Bedrock
-            this.add.rectangle(cx, bedrockY, 38, 38, 0x0f172a, 0.5).setDepth(4);
-            this.add.circle(cx - 14, bedrockY - 14, 2, 0x38bdf8, 0.5).setDepth(5);
-            this.add.circle(cx + 14, bedrockY - 14, 2, 0x38bdf8, 0.5).setDepth(5);
-            this.add.circle(cx - 14, bedrockY + 14, 2, 0x38bdf8, 0.5).setDepth(5);
-            this.add.circle(cx + 14, bedrockY + 14, 2, 0x38bdf8, 0.5).setDepth(5);
-            this.physics.add.existing(bedrockTile, true);
-            bedrockTile.body.setSize(50, 50);
-            bedrockTile.body.reset(cx, bedrockY);
-            this.platforms.add(bedrockTile);
         }
+
+        // D. SPAWN SEMUA BALOK AIR KUSTOM (DI PERMUKAAN, MELAYANG DI UDARA, ATAU DI DALAM GUA)
+        waterTileMap.forEach(key => {
+            const [cStr, rStr] = key.split(',');
+            const c = parseInt(cStr, 10);
+            const r = parseInt(rStr, 10);
+            if (isNaN(c) || isNaN(r)) return;
+            const wx = c * 50 + 25;
+            const wy = r * 50 + 25;
+            const waterBlock = this.add.rectangle(wx, wy, 50, 50, 0x0284c7, 0.85).setDepth(5);
+            this.physics.add.existing(waterBlock, true);
+            this.waterBodies.add(waterBlock);
+
+            // Garis putih tipis ombak atas (3px) jika tidak ada air di atasnya
+            if (!waterTileMap.has(`${c},${r - 1}`)) {
+                const wave = this.add.rectangle(wx, wy - 23, 50, 3, 0x7dd3fc, 0.95).setDepth(6);
+                this.tweens.add({
+                    targets: wave,
+                    y: wy - 21,
+                    duration: 750 + (c % 3) * 120,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Sine.easeInOut'
+                });
+            }
+        });
+
+        // E. SPAWN SEMUA BALOK LAVA KUSTOM (DI PERMUKAAN, MELAYANG DI UDARA, ATAU DI DALAM GUA)
+        lavaTileMap.forEach(key => {
+            const [cStr, rStr] = key.split(',');
+            const c = parseInt(cStr, 10);
+            const r = parseInt(rStr, 10);
+            if (isNaN(c) || isNaN(r)) return;
+            const lx = c * 50 + 25;
+            const ly = r * 50 + 25;
+            const lavaBlock = this.add.rectangle(lx, ly, 50, 50, 0xef4444, 0.95).setDepth(5);
+            this.physics.add.existing(lavaBlock, true);
+            this.hazards.add(lavaBlock);
+
+            // Garis api oranye di atas permukaan jika tidak ada lava di atasnya
+            if (!lavaTileMap.has(`${c},${r - 1}`)) {
+                this.add.rectangle(lx, ly - 23, 50, 3, 0xf97316, 0.95).setDepth(6);
+
+                // Gelembung lava kuning emas naik ke atas
+                const bubble = this.add.circle(lx, ly - 12, 3, 0xfbbf24).setDepth(7);
+                this.tweens.add({
+                    targets: bubble,
+                    y: ly - 28,
+                    alpha: 0,
+                    duration: 850 + (c * 70) % 500,
+                    repeat: -1,
+                    ease: 'Sine.easeOut'
+                });
+            }
+        });
 
         // Blok Tanah Kustom Tambahan (Modular Dirt Tiles pada baris selain baris 8)
         if (terrainSet) {
@@ -630,6 +764,150 @@ export class CustomWorldScene extends Phaser.Scene {
                     ease: 'Sine.easeInOut'
                 });
             });
+
+            // F. BANGUNAN & STRUKTUR KUSTOM (BRICK, SIDEWALK, GLASS, ROOF, STREET_LAMP, LADDER, FENCE)
+            // 1. Batu Bata (Brick) - Balok platform solid 50x50
+            this.worldData.entities.filter(e => e.type === 'brick').forEach(b => {
+                const bx = b.col * 50 + 25;
+                const by = (b.row !== undefined ? b.row : 7) * 50 + 25;
+                const brickTile = this.add.rectangle(bx, by, 50, 50, 0xb91c1c).setDepth(5);
+                brickTile.setStrokeStyle(1.5, 0x475569);
+                this.physics.add.existing(brickTile, true);
+                brickTile.body.setSize(50, 50);
+                brickTile.body.reset(bx, by);
+                this.platforms.add(brickTile);
+
+                // Garis susun bata terakota
+                const g = this.add.graphics().setDepth(6);
+                g.lineStyle(1.5, 0x475569, 0.9);
+                g.lineBetween(bx - 24, by - 8, bx + 24, by - 8);
+                g.lineBetween(bx - 24, by + 8, bx + 24, by + 8);
+                g.lineBetween(bx, by - 8, bx, by + 8);
+                g.lineBetween(bx - 12, by + 8, bx - 12, by + 24);
+                g.lineBetween(bx + 12, by + 8, bx + 12, by + 24);
+                g.lineBetween(bx - 12, by - 24, bx - 12, by - 8);
+                g.lineBetween(bx + 12, by - 24, bx + 12, by - 8);
+            });
+
+            // 2. Trotoar / Sidewalk - Balok platform beton 50x50
+            this.worldData.entities.filter(e => e.type === 'sidewalk').forEach(sw => {
+                const sx = sw.col * 50 + 25;
+                const sy = (sw.row !== undefined ? sw.row : 7) * 50 + 25;
+                const sidewalkTile = this.add.rectangle(sx, sy, 50, 50, 0x64748b).setDepth(5);
+                sidewalkTile.setStrokeStyle(1.5, 0x475569);
+                this.physics.add.existing(sidewalkTile, true);
+                sidewalkTile.body.setSize(50, 50);
+                sidewalkTile.body.reset(sx, sy);
+                this.platforms.add(sidewalkTile);
+
+                // Curb highlight atas (4px)
+                this.add.rectangle(sx, sy - 23, 50, 4, 0x94a3b8).setDepth(6);
+                // Curb dasar bawah (3px)
+                this.add.rectangle(sx, sy + 23, 50, 3, 0x334155).setDepth(6);
+                // Garis pembagi paving
+                this.add.line(0, 0, sx, sy - 21, sx, sy + 21, 0xffffff, 0.25).setDepth(6);
+            });
+
+            // 3. Blok Kaca Modern - Balok platform tembus pandang 50x50
+            this.worldData.entities.filter(e => e.type === 'glass').forEach(gl => {
+                const gx = gl.col * 50 + 25;
+                const gy = (gl.row !== undefined ? gl.row : 7) * 50 + 25;
+                const glassTile = this.add.rectangle(gx, gy, 50, 50, 0x38bdf8, 0.35).setDepth(5);
+                glassTile.setStrokeStyle(1.8, 0x7dd3fc);
+                this.physics.add.existing(glassTile, true);
+                glassTile.body.setSize(50, 50);
+                glassTile.body.reset(gx, gy);
+                this.platforms.add(glassTile);
+
+                // Garis kilauan specular
+                const g = this.add.graphics().setDepth(6);
+                g.lineStyle(1.8, 0xffffff, 0.65);
+                g.lineBetween(gx - 17, gy - 23, gx - 23, gy - 17);
+                g.lineBetween(gx - 5, gy - 23, gx - 23, gy - 5);
+                g.lineStyle(1.2, 0xffffff, 0.4);
+                g.lineBetween(gx + 23, gy + 11, gx + 11, gy + 23);
+            });
+
+            // 4. Atap Bangunan - Genteng miring
+            this.worldData.entities.filter(e => e.type === 'roof').forEach(rf => {
+                const rx = rf.col * 50 + 25;
+                const ry = (rf.row !== undefined ? rf.row : 6) * 50 + 25;
+                const roofTile = this.add.triangle(rx, ry, 0, 50, 25, 4, 50, 50, 0xea580c).setDepth(5);
+                roofTile.setStrokeStyle(2, 0xfdba74);
+                this.physics.add.existing(roofTile, true);
+                roofTile.body.setSize(50, 50);
+                roofTile.body.reset(rx, ry);
+                this.platforms.add(roofTile);
+            });
+
+            // 5. Lampu Jalan Klasik - Tiang besi dengan lentera bercahaya (1x2 unit petak)
+            this.worldData.entities.filter(e => e.type === 'street_lamp').forEach(sl => {
+                const lx = sl.col * 50 + 25;
+                const topRow = (sl.row !== undefined ? sl.row : 6);
+                const baseY = (topRow + 2) * 50;
+                const lampContainer = this.add.container(lx, baseY).setDepth(7);
+
+                // Dudukan cor dasar
+                const basePlate = this.add.rectangle(0, -4, 18, 8, 0x0f172a);
+                basePlate.setStrokeStyle(1, 0x334155);
+
+                // Tiang besi vertikal
+                const pole = this.add.rectangle(0, -46, 5, 76, 0x1e293b);
+                const poleHi = this.add.rectangle(-1.5, -46, 1.5, 76, 0x475569);
+
+                // Lentera kepala (di y = -80)
+                const lanternY = -80;
+                const lanternGlass = this.add.rectangle(0, lanternY, 12, 12, 0xfef08a);
+                lanternGlass.setStrokeStyle(1, 0xf59e0b);
+
+                const lanternCap = this.add.triangle(0, lanternY - 9, -9, 4, 0, -4, 9, 4, 0x0f172a);
+                const lanternBase = this.add.triangle(0, lanternY + 8, -6, -3, 0, 3, 6, -3, 0x0f172a);
+
+                // Aura cahaya kuning hangat dengan efek pulsing
+                const halo = this.add.circle(0, lanternY, 28, 0xfbbf24, 0.35);
+                this.tweens.add({
+                    targets: halo,
+                    alpha: { from: 0.2, to: 0.45 },
+                    scale: { from: 0.9, to: 1.15 },
+                    duration: 1200,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Sine.easeInOut'
+                });
+
+                lampContainer.add([halo, basePlate, pole, poleHi, lanternGlass, lanternCap, lanternBase]);
+            });
+
+            // 6. Tangga Panjat - Platform one-way tipis dengan visual anak tangga
+            this.worldData.entities.filter(e => e.type === 'ladder').forEach(ld => {
+                const ldx = ld.col * 50 + 25;
+                const ldy = (ld.row !== undefined ? ld.row : 7) * 50 + 25;
+                const ladderTop = this.add.rectangle(ldx, ldy - 20, 34, 6, 0xb45309).setDepth(6);
+                this.physics.add.existing(ladderTop, true);
+                this.platforms.add(ladderTop);
+
+                // Rel kayu visual
+                this.add.rectangle(ldx - 14, ldy, 4, 50, 0xb45309).setDepth(5);
+                this.add.rectangle(ldx + 14, ldy, 4, 50, 0xb45309).setDepth(5);
+                for (let i = -15; i <= 15; i += 10) {
+                    this.add.rectangle(ldx, ldy + i, 26, 3, 0xf59e0b).setDepth(5);
+                }
+            });
+
+            // 7. Pagar Pembatas - Railing teralis
+            this.worldData.entities.filter(e => e.type === 'fence').forEach(fc => {
+                const fx = fc.col * 50 + 25;
+                const fy = (fc.row !== undefined ? fc.row : 7) * 50 + 25;
+                const container = this.add.container(fx, fy).setDepth(6);
+                const bar1 = this.add.rectangle(0, -6, 50, 3, 0x475569);
+                const bar2 = this.add.rectangle(0, 8, 50, 3, 0x475569);
+                container.add([bar1, bar2]);
+                [-18, -6, 6, 18].forEach(px => {
+                    const post = this.add.rectangle(px, 3, 3, 30, 0x64748b);
+                    const tip = this.add.triangle(px, -13, -2, 2, 0, -3, 2, 2, 0x94a3b8);
+                    container.add([post, tip]);
+                });
+            });
         } else if (this.worldData.hasPlatforms) {
             const platPositions = [
                 { x: 450, y: 300, w: 100 },
@@ -744,7 +1022,7 @@ export class CustomWorldScene extends Phaser.Scene {
     buildMonsters() {
         const hasCustom = Array.isArray(this.worldData.entities) && this.worldData.entities.length > 0;
 
-        // Monster Slime Hijau Bouncy (Melompat lucu di tempat tanpa jatuh ke air)
+        // Monster Slime Hijau Bouncy (Melompat di tempat tanpa jatuh gravitasi)
         const spawnSlime = (x, y = 400) => {
             const smR = 14;
             const smY = y - smR;
@@ -758,14 +1036,16 @@ export class CustomWorldScene extends Phaser.Scene {
             this.physics.add.existing(container);
             container.body.setSize(28, 28);
             container.body.setOffset(-14, -14);
-            this.physics.add.collider(container, this.platforms);
+            // KUNCI ANTI-JATUH: moves = false membuat physics body terbebas dari gravitasi dunia
+            // dan selalu sinkron otomatis dengan posisi visual container (termasuk saat melayang di udara)
+            container.body.moves = false;
 
             container.startX = x;
-            container.patrolRadius = 15;
+            container.startY = smY;
             container.isSlime = true;
             this.monsters.push(container);
 
-            // Animasi melompat di petak miliknya persis seperti di preview
+            // 1. Animasi melompat di petak miliknya persis seperti di preview (18px)
             this.tweens.add({
                 targets: container,
                 y: smY - 18,
@@ -773,6 +1053,16 @@ export class CustomWorldScene extends Phaser.Scene {
                 yoyo: true,
                 repeat: -1,
                 ease: 'Sine.easeOut'
+            });
+
+            // 2. Animasi patroli kiri-kanan halus (12px) persis seperti di preview
+            this.tweens.add({
+                targets: container,
+                x: x + 12,
+                duration: 900,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
             });
 
             this.physics.add.overlap(this.player, container, () => this.handleHazardDamage());
@@ -793,13 +1083,23 @@ export class CustomWorldScene extends Phaser.Scene {
             this.physics.add.existing(container);
             container.body.setSize(skW, skH);
             container.body.setOffset(-skW / 2, -skH / 2);
-            this.physics.add.collider(container, this.platforms);
+            // KUNCI ANTI-JATUH: moves = false mencegah monster jatuh dari tebing / jatuh saat ditempatkan di langit
+            container.body.moves = false;
 
-            container.body.setVelocityX(-40);
             container.startX = x;
-            container.patrolRadius = 30;
+            container.startY = skY;
             container.isSkeleton = true;
             this.monsters.push(container);
+
+            // Animasi patroli horizontal halus (16px) persis seperti di preview
+            this.tweens.add({
+                targets: container,
+                x: x + 16,
+                duration: 1100,
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
 
             this.physics.add.overlap(this.player, container, () => this.handleHazardDamage());
         };
@@ -807,12 +1107,12 @@ export class CustomWorldScene extends Phaser.Scene {
         if (hasCustom) {
             this.worldData.entities.filter(e => e.type === 'slime').forEach(sl => {
                 const sx = (sl.col !== undefined) ? (sl.col * 50 + 25) : sl.x;
-                const sy = (sl.row !== undefined) ? ((sl.row + 1) * 50) : 400;
+                const sy = (sl.row !== undefined) ? ((sl.row + 1) * 50) : (sl.y !== undefined ? (sl.y + 14) : 400);
                 spawnSlime(sx, sy);
             });
             this.worldData.entities.filter(e => e.type === 'skeleton').forEach(sk => {
                 const skx = (sk.col !== undefined) ? (sk.col * 50 + 25) : sk.x;
-                const sky = (sk.row !== undefined) ? ((sk.row + 1) * 50) : 400;
+                const sky = (sk.row !== undefined) ? ((sk.row + 1) * 50) : (sk.y !== undefined ? (sk.y + 19) : 400);
                 spawnSkeleton(skx, sky);
             });
         } else {
@@ -827,13 +1127,14 @@ export class CustomWorldScene extends Phaser.Scene {
     buildInteractions() {
         const hasCustom = Array.isArray(this.worldData.entities) && this.worldData.entities.length > 0;
 
-        const spawnNPC = (x, y = 400) => {
+        const spawnNPC = (x, y = 400, entityData = null) => {
             const nw = 24;
             const nh = 38;
             const ny = y - nh / 2;
             const npc = this.add.rectangle(x, ny, nw, nh, 0xa855f7).setDepth(8);
             npc.setStrokeStyle(1.5, 0xd8b4fe);
             this.physics.add.existing(npc, true);
+            npc.entityData = entityData;
             this.npc = npc;
             if (!this.npcs) this.npcs = [];
             this.npcs.push(npc);
@@ -856,7 +1157,7 @@ export class CustomWorldScene extends Phaser.Scene {
                 if (this.isEditMode) {
                     if (this.engineMenuBar) this.engineMenuBar.openNPCDialogEditor(this.npc);
                 } else {
-                    this.handleNPCInteract();
+                    this.handleNPCInteract(npc);
                 }
             });
         };
@@ -883,7 +1184,7 @@ export class CustomWorldScene extends Phaser.Scene {
             this.worldData.entities.filter(e => e.type === 'npc').forEach(n => {
                 const nx = (n.col !== undefined) ? (n.col * 50 + 25) : n.x;
                 const ny = (n.row !== undefined) ? ((n.row + 1) * 50) : 400;
-                spawnNPC(nx, ny);
+                spawnNPC(nx, ny, n);
             });
             this.worldData.entities.filter(e => e.type === 'chest').forEach(c => {
                 const cx = (c.col !== undefined) ? (c.col * 50 + 25) : c.x;
@@ -891,7 +1192,7 @@ export class CustomWorldScene extends Phaser.Scene {
                 spawnChest(cx, cy);
             });
         } else {
-            if (this.worldData.hasNpc) spawnNPC(325, 400);
+            if (this.worldData.hasNpc) spawnNPC(325, 400, null);
             if (this.worldData.hasChest) spawnChest(775, 400);
         }
     }
@@ -916,7 +1217,13 @@ export class CustomWorldScene extends Phaser.Scene {
         const ringOuter = this.add.circle(0, 0, 24, 0x000000, 0).setStrokeStyle(2.5, 0x38bdf8);
         const ringInner = this.add.circle(0, 0, 14, 0x000000, 0).setStrokeStyle(2, 0xa855f7);
         const centerDot = this.add.circle(0, 0, 5, 0xe0f2fe);
-        const goalText = this.add.text(0, -32, 'GOAL', {
+        let goalLabel = '✨ GOAL';
+        if (this.projectId) {
+            const nextPreview = ProjectManager.getNextScene(this.projectId, this.sceneId);
+            goalLabel = nextPreview ? 'WARP ➔' : 'FINISH 🏆';
+        }
+
+        const goalText = this.add.text(0, -32, goalLabel, {
             fontSize: '9px',
             fontStyle: 'bold',
             fill: '#38bdf8',
@@ -924,10 +1231,19 @@ export class CustomWorldScene extends Phaser.Scene {
         }).setOrigin(0.5);
         portal.add([ringOuter, ringInner, centerDot, goalText]);
 
-        // Cek apakah ada Quest Logic di level ini yang mengunci portal
-        const questLogic = ProjectManager.getQuestLogic(this.projectId, this.sceneId);
-        const hasUnlockAction = questLogic && Array.isArray(questLogic.nodes) && questLogic.nodes.some(n => n.type === 'action_unlock');
-        this.isPortalLocked = !!hasUnlockAction;
+        // Cek apakah ada Quest Logic di level ini yang mengunci portal.
+        // HANYA kunci portal jika:
+        // 1. Scene ini benar-benar memiliki NPC untuk diajak bicara
+        // 2. Dan pembuat level secara eksplisit menyimpan Quest Logic dengan aksi 'action_unlock'
+        const hasNpc = (this.npcs && this.npcs.length > 0) || !!this.npc;
+        const proj = this.projectId ? ProjectManager.getProject(this.projectId) : null;
+        const targetKey = this.sceneId || (proj && proj.scenes && proj.scenes[0] ? proj.scenes[0].id : 'default');
+        const hasExplicitQuest = proj && proj.questLogicMap && proj.questLogicMap[targetKey];
+        const questLogic = hasExplicitQuest ? proj.questLogicMap[targetKey] : null;
+
+        const hasUnlockAction = hasNpc && questLogic && Array.isArray(questLogic.nodes) && questLogic.nodes.some(n => n.type === 'action_unlock');
+        const hasEntityQuestUnlock = Array.isArray(this.worldData.entities) && this.worldData.entities.some(e => e.type === 'npc' && e.quest && e.quest.type === 'coins' && e.quest.actionOnComplete === 'unlock_portal');
+        this.isPortalLocked = !!hasUnlockAction || !!hasEntityQuestUnlock;
         this.portalRingOuter = ringOuter;
         this.portalGoalText = goalText;
 
@@ -994,7 +1310,8 @@ export class CustomWorldScene extends Phaser.Scene {
             this.portalRingOuter.setStrokeStyle(2.5, 0x10b981);
         }
         if (this.portalGoalText) {
-            this.portalGoalText.setText('✨ GOAL');
+            const nextPreview = this.projectId ? ProjectManager.getNextScene(this.projectId, this.sceneId) : null;
+            this.portalGoalText.setText(nextPreview ? 'WARP ➔' : 'FINISH 🏆');
             this.portalGoalText.setStyle({ fill: '#10b981' });
         }
 
@@ -1003,7 +1320,80 @@ export class CustomWorldScene extends Phaser.Scene {
         this.showWorldBanner('🎉 Segel Portal Kemenangan Terbuka! Silakan Masuk.', '#10b981');
     }
 
-    handleNPCInteract() {
+    handleNPCInteract(targetNpc = null) {
+        if (this.dialogBox && this.dialogBox.isOpen()) return;
+
+        // Cari NPC aktif atau terdekat
+        const activeNpc = targetNpc || ((this.npcs && this.npcs.length > 0)
+            ? this.npcs.find(n => Phaser.Math.Distance.Between(this.player.x, this.player.y, n.x, n.y) < 75)
+            : this.npc);
+
+        const entData = activeNpc?.entityData || (Array.isArray(this.worldData.entities) ? this.worldData.entities.find(e => e.type === 'npc') : null);
+
+        // Jika NPC memiliki data alur dialog dua arah atau konfigurasi quest:
+        if (entData && ((Array.isArray(entData.dialogues) && entData.dialogues.length > 0) || entData.quest)) {
+            const speakerName = entData.label || 'NPC';
+            const quest = entData.quest;
+            const npcId = entData.id || 'default_npc';
+            if (!this.npcQuestStates) this.npcQuestStates = {};
+            const currentState = this.npcQuestStates[npcId] || 'NOT_STARTED';
+
+            const playerCoins = (this.coinsCollected !== undefined) ? this.coinsCollected : Math.floor((this.score || 0) / 10);
+
+            // Jika ada konfigurasi quest koin
+            if (quest && quest.type === 'coins') {
+                const targetCoins = quest.targetAmount || 3;
+
+                if (currentState === 'COMPLETED') {
+                    const doneText = quest.completedText || 'Terima kasih banyak atas bantuanmu, pengelana!';
+                    this.dialogBox.showDialogue([doneText], speakerName);
+                    return;
+                }
+
+                if (currentState === 'ACTIVE') {
+                    if (playerCoins >= targetCoins) {
+                        // Misi Selesai!
+                        this.npcQuestStates[npcId] = 'COMPLETED';
+                        const rewardText = quest.completedText || `Luar biasa! Kamu berhasil mengumpulkan ${targetCoins} koin! Misi selesai.`;
+
+                        this.dialogBox.showDialogue([rewardText], speakerName, () => {
+                            if (quest.actionOnComplete === 'unlock_portal') {
+                                this.unlockPortal();
+                            } else if (quest.actionOnComplete === 'give_score') {
+                                this.score = (this.score || 0) + 100;
+                                AudioManager.playSuccess();
+                                this.showWorldBanner('🎉 Misi Selesai! +100 Skor Bonus!', '#10b981');
+                            }
+                        });
+                        return;
+                    } else {
+                        // Koin belum cukup - beri pengingat
+                        const remindText = quest.inProgressText || `Kamu baru mengumpulkan ${playerCoins} dari ${targetCoins} koin. Terus cari lagi!`;
+                        this.dialogBox.showDialogue([remindText], speakerName);
+                        return;
+                    }
+                }
+
+                // Jika state NOT_STARTED: mainkan alur percakapan awal lalu aktifkan quest
+                const lines = (Array.isArray(entData.dialogues) && entData.dialogues.length > 0)
+                    ? entData.dialogues
+                    : [`Halo! Bisakah kamu membantuku mengumpulkan ${targetCoins} koin emas?`];
+
+                this.dialogBox.showDialogue(lines, speakerName, () => {
+                    this.npcQuestStates[npcId] = 'ACTIVE';
+                    this.showWorldBanner(`🎯 Misi Diterima: Kumpulkan ${targetCoins} Koin Emas!`, '#a855f7');
+                    AudioManager.playSuccess();
+                });
+                return;
+            }
+
+            // Jika hanya alur dialog biasa tanpa quest
+            if (Array.isArray(entData.dialogues) && entData.dialogues.length > 0) {
+                this.dialogBox.showDialogue(entData.dialogues, speakerName);
+                return;
+            }
+        }
+
         const questLogic = ProjectManager.getQuestLogic(this.projectId, this.sceneId);
         if (!questLogic || !Array.isArray(questLogic.nodes) || questLogic.nodes.length === 0) {
             this.dialogBox.showDialogue([
@@ -1014,8 +1404,24 @@ export class CustomWorldScene extends Phaser.Scene {
             return;
         }
 
-        const nodes = questLogic.nodes;
-        const wires = questLogic.wires || [];
+        let nodes = questLogic.nodes || [];
+        let wires = questLogic.wires || [];
+
+        // Dukungan Folder Quest Bertingkat (Macro & Micro Flow)
+        if (Array.isArray(questLogic.folders) && questLogic.folders.length > 0) {
+            if (!this.currentQuestFolderId) {
+                const folderWires = Array.isArray(questLogic.folderWires) ? questLogic.folderWires : [];
+                const targetFolderIds = new Set(folderWires.map(w => w.toFolder));
+                const rootFolder = questLogic.folders.find(f => !targetFolderIds.has(f.id)) || questLogic.folders[0];
+                this.currentQuestFolderId = rootFolder.id;
+            }
+
+            const activeFolder = questLogic.folders.find(f => f.id === this.currentQuestFolderId) || questLogic.folders[0];
+            if (activeFolder && Array.isArray(activeFolder.nodes) && activeFolder.nodes.length > 0) {
+                nodes = activeFolder.nodes;
+                wires = activeFolder.wires || [];
+            }
+        }
 
         // 1. Cari trigger node
         const triggerNode = nodes.find(n => n.type === 'npc_trigger') || nodes[0];
@@ -1101,6 +1507,24 @@ export class CustomWorldScene extends Phaser.Scene {
                     this.coinsCollected = (this.coinsCollected || 0) + amount;
                     this.showWorldBanner(`🪙 Kamu mendapatkan bonus ${amount} koin!`, '#f59e0b');
                 }
+            } else if (currNode.type === 'folder_complete') {
+                const bannerMsg = currNode.config?.bannerMsg || '🎉 Babak misi selesai! Lanjut ke babak berikutnya.';
+                this.showWorldBanner(bannerMsg, '#10b981');
+                AudioManager.playSuccess();
+
+                // Majukan ke folder berikutnya jika tersambung kabel antar-folder
+                if (Array.isArray(questLogic.folderWires) && this.currentQuestFolderId) {
+                    const nextFWire = questLogic.folderWires.find(w => w.fromFolder === this.currentQuestFolderId);
+                    if (nextFWire) {
+                        this.currentQuestFolderId = nextFWire.toFolder;
+                        const nextF = (questLogic.folders || []).find(f => f.id === nextFWire.toFolder);
+                        if (nextF) {
+                            setTimeout(() => {
+                                this.showWorldBanner(`🎯 Babak Baru: ${nextF.name}`, '#f59e0b');
+                            }, 1800);
+                        }
+                    }
+                }
                 break;
             } else {
                 break;
@@ -1137,6 +1561,7 @@ export class CustomWorldScene extends Phaser.Scene {
         this.inventoryModal = new InventoryModal(this);
         this.settingsModal = new SettingsModal(this, { isGameScene: true });
         this.questModal = new QuestModal(this);
+        this.gameOverModal = new GameOverModal(this);
 
         this.cursors = this.input.keyboard.createCursorKeys();
         this.keys = this.input.keyboard.addKeys({
@@ -1158,7 +1583,7 @@ export class CustomWorldScene extends Phaser.Scene {
                 ? this.npcs.find(n => Phaser.Math.Distance.Between(this.player.x, this.player.y, n.x, n.y) < 70)
                 : (this.npc && Phaser.Math.Distance.Between(this.player.x, this.player.y, this.npc.x, this.npc.y) < 70 ? this.npc : null);
             if (nearNpc) {
-                this.handleNPCInteract();
+                this.handleNPCInteract(nearNpc);
             }
         });
 
@@ -1391,26 +1816,59 @@ export class CustomWorldScene extends Phaser.Scene {
         if (this.isInvincible || this.isGameOver) return;
         this.isInvincible = true;
         this.hp = Math.max(0, this.hp - 1);
-        AudioManager.playHazardHit();
 
-        if (this.htmlHUD) {
+        try {
+            if (typeof AudioManager.playHurt === 'function') {
+                AudioManager.playHurt();
+            } else if (typeof AudioManager.playHazardHit === 'function') {
+                AudioManager.playHazardHit();
+            }
+        } catch (err) {
+            console.warn('Audio hit warning:', err);
+        }
+
+        if (this.htmlHUD && typeof this.htmlHUD.updateHP === 'function') {
             this.htmlHUD.updateHP(this.hp, this.maxHp);
         }
 
-        // Efek kedip merah saat kena hit
-        this.player.setTint(0xff0000);
-        this.player.setVelocityY(-200);
+        // Efek kedip merah & pantulan kecil saat kena hit
+        if (this.player) {
+            if (typeof this.player.setTint === 'function') {
+                this.player.setTint(0xff0000);
+            }
+            if (this.player.body && typeof this.player.setVelocityY === 'function') {
+                this.player.setVelocityY(-200);
+            }
+        }
 
         if (this.hp <= 0) {
-            this.showWorldBanner('💀 Kamu Gugur! Mengulang level...', '#ef4444');
-            this.time.delayedCall(1500, () => {
-                this.scene.restart({ worldData: this.worldData });
-            });
+            this.isGameOver = true;
+            if (this.player && this.player.body && typeof this.player.setVelocity === 'function') {
+                this.player.setVelocity(0, 0);
+            }
+            if (this.cameras && this.cameras.main && typeof this.cameras.main.shake === 'function') {
+                this.cameras.main.shake(350, 0.018);
+            }
+            if (this.gameOverModal && typeof this.gameOverModal.show === 'function') {
+                this.gameOverModal.show({
+                    retryText: 'Ulangi Level Ini',
+                    onRetry: () => {
+                        this.isGameOver = false;
+                        this.scene.restart({ worldData: this.worldData, projectId: this.projectId, sceneId: this.sceneId });
+                    },
+                    onMenu: () => {
+                        this.isGameOver = false;
+                        this.scene.start('TitleScene');
+                    }
+                });
+            }
             return;
         }
 
         this.time.delayedCall(800, () => {
-            this.player.clearTint();
+            if (this.player && typeof this.player.clearTint === 'function') {
+                this.player.clearTint();
+            }
             this.isInvincible = false;
         });
     }
@@ -1507,16 +1965,6 @@ export class CustomWorldScene extends Phaser.Scene {
             }
         }
 
-        // Update Patroli Monster Aman (Terkunci dalam radius patroli agar tidak jatuh ke air)
-        this.monsters.forEach(m => {
-            if (m && m.body) {
-                const rad = m.patrolRadius || 30;
-                if (m.x > m.startX + rad) {
-                    m.body.setVelocityX(-40);
-                } else if (m.x < m.startX - rad) {
-                    m.body.setVelocityX(40);
-                }
-            }
-        });
+        // Monster kini bergerak mulus otomatis via tween terpasang dengan body.moves = false (anti-jatuh)
     }
 }

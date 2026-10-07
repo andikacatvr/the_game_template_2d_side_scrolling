@@ -99,14 +99,24 @@ export class HongKongScene extends Phaser.Scene {
         this.engineMenuBar = new EngineMenuBar(this);
         this.engineMenuBar.show(this);
 
-        // Setup Batas Dunia Fisika & Kamera (Lebar 2000px agar mencakup dermaga penuh sampai feri ekspedisi)
+        // Setup Batas Dunia Fisika & Kamera (Lebar 2000px, Tinggi 850px agar mencakup dermaga dan kedalaman laut penuh tanpa celah hitam)
         const worldWidth = 2000;
-        this.physics.world.setBounds(0, 0, worldWidth, 450);
-        this.cameras.main.setBounds(0, 0, worldWidth, 450);
+        const worldHeight = 850;
+        this.physics.world.setBounds(0, 0, worldWidth, worldHeight);
+        this.cameras.main.setBounds(0, 0, worldWidth, worldHeight);
         this.cameras.main.setRoundPixels(true);
+        this.cameras.main.setBackgroundColor('#070e1b');
 
-        // Kamera otomatis mengikuti karakter pemain dengan pergerakan lerp halus (0.08)
-        this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
+        // Smart Ground Clamp Camera Anchor (Identik dengan GameScene & CustomWorldScene):
+        // Menjaga permukaan tanah tetap di bagian bawah layar saat di daratan,
+        // dan adaptif terhadap layar ultra-wide / zoom out tanpa celah hitam.
+        this.cameraAnchor = {
+            x: this.player ? this.player.x : 175,
+            y: Math.max(225, (this.player ? this.player.y : 378) - 160)
+        };
+
+        // Kamera otomatis mengikuti cameraAnchor dengan pergerakan lerp halus (0.08)
+        this.cameras.main.startFollow(this.cameraAnchor, true, 0.08, 0.08);
 
         // Inisialisasi Zoom Kamera (Touchpad, Mouse, Layar Sentuh HP, & Tombol HUD)
         const camCfg = CONFIG_SKELETON.kamera || {};
@@ -114,7 +124,7 @@ export class HongKongScene extends Phaser.Scene {
             minZoom: camCfg.zoomMinimal !== undefined ? camCfg.zoomMinimal : 0.85,
             maxZoom: camCfg.zoomMaksimal || 1.6,
             defaultZoom: camCfg.zoomAwal !== undefined ? camCfg.zoomAwal : 0.85,
-            followTarget: this.player,
+            followTarget: this.cameraAnchor,
             centerOnZoomOut: false
         });
         const rightEdge = this.scale.width;
@@ -161,24 +171,29 @@ export class HongKongScene extends Phaser.Scene {
     // PEMBUATAN DUNIA HONG KONG DENGAN 5 LAYER PARALLAX
     // ===============================================================
     createHongKongWorld() {
-        const W = 3200; // Lebar extra agar mencakup seluruh jangkauan zoom-out tanpa celah hitam
-        const H = 500;
+        const worldWidth = 2000;
+        const worldHeight = 850;
 
-        // LAYER 1: Langit Badai & Siluet Gunung Victoria Peak
-        this.layer1Sky = this.add.tileSprite(960, 230, W, H, 'hk_layer_1_sky')
-            .setScrollFactor(0, 0)
+        // 1. Latar Belakang Gelap Victoria Harbour
+        this.cameras.main.setBackgroundColor('#070e1b');
+
+        // Latar langit malam ultra-luas di belakang (mencegah celah hitam saat zoom-out maksimal)
+        this.add.rectangle(worldWidth / 2, 230, worldWidth + 2400, 600, 0x091424).setDepth(-30);
+
+        // LAYER 1: Langit Badai & Siluet Gunung Victoria Peak (1:1 Presisi dengan World)
+        this.layer1Sky = this.add.image(worldWidth / 2, 230, 'hk_layer_1_sky')
+            .setDisplaySize(worldWidth, 500)
             .setDepth(-20);
 
-        // LAYER 2: Gedung Pencakar Langit Hong Kong
-        this.layer2City = this.add.tileSprite(960, 230, W, H, 'hk_layer_2_city')
-            .setScrollFactor(0, 0)
+        // LAYER 2: Gedung Pencakar Langit Hong Kong (1:1 Presisi dengan World)
+        this.layer2City = this.add.image(worldWidth / 2, 230, 'hk_layer_2_city')
+            .setDisplaySize(worldWidth, 500)
             .setDepth(-15);
 
         // LAYER 3: Kapal Star Ferry yang Mengapung & Berlayar
         this.boatStartX = 1480;
         this.boatStartY = 356;
         this.boat = this.add.image(this.boatStartX, this.boatStartY, 'hk_layer_3_boat')
-            .setScrollFactor(0.40, 0)
             .setDepth(-12);
 
         // Animasi 1: Ombang-ambing Naik-Turun Mengikuti Alunan Ombak
@@ -211,15 +226,31 @@ export class HongKongScene extends Phaser.Scene {
             ease: 'Linear'
         });
 
-        // LAYER 4: Ombak Laut Bergulung
-        this.layer4Waves = this.add.tileSprite(960, 230, W, H, 'hk_layer_4_waves')
-            .setScrollFactor(0, 0)
+        // LAYER 4: Ombak Laut Bergulung (1:1 Presisi dengan World)
+        this.layer4Waves = this.add.image(worldWidth / 2, 230, 'hk_layer_4_waves')
+            .setDisplaySize(worldWidth, 500)
             .setDepth(-10);
 
-        // LAYER 5: Bebatuan Dermaga & Pijakan Tanah
-        this.layer5Pier = this.add.tileSprite(960, 230, W, H, 'hk_layer_5_pier')
-            .setScrollFactor(1.0, 1.0)
+        // Animasi Ayunan Ombak Vertikal Halus
+        this.tweens.add({
+            targets: this.layer4Waves,
+            y: 234,
+            duration: 2200,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+
+        // LAYER 5: Bebatuan Dermaga & Pijakan Tanah (1:1 Presisi dengan World)
+        this.layer5Pier = this.add.image(worldWidth / 2, 230, 'hk_layer_5_pier')
+            .setDisplaySize(worldWidth, 500)
             .setDepth(5);
+
+        // -------------------------------------------------------------
+        // BLOK AIR GROWTOPIA TELUK VICTORIA (Row 8 y=415 .. worldHeight)
+        // Pola gelombang diagonal 45° khas Growtopia, wave crest permukaan & gelembung
+        // -------------------------------------------------------------
+        this.createGrowtopiaWaterBlocks(worldWidth, worldHeight);
 
         // -------------------------------------------------------------
         // PLATFORMS FISIKA (Pijakan karakter di atas dermaga batu, Row 8 y=400)
@@ -236,10 +267,11 @@ export class HongKongScene extends Phaser.Scene {
         }
 
         // Platform bebatuan tinggi / peti pelabuhan (Snap Presisi Grid 50px)
-        this.createPierCrate(8, 7, 2);   // col 8..9, row 7 (surface y=350)
-        this.createPierCrate(14, 6, 2);  // col 14..15, row 6 (surface y=300)
-        this.createPierCrate(22, 5, 2);  // col 22..23, row 5 (surface y=250)
-        this.createPierCrate(29, 6, 2);  // col 29..30, row 6 (surface y=300)
+        this.pierCrates = [];
+        this.pierCrates.push(this.createPierCrate(8, 7, 2, 'platform_hk1'));   // col 8..9, row 7 (surface y=350)
+        this.pierCrates.push(this.createPierCrate(14, 6, 2, 'platform_hk2'));  // col 14..15, row 6 (surface y=300)
+        this.pierCrates.push(this.createPierCrate(22, 5, 2, 'platform_hk3'));  // col 22..23, row 5 (surface y=250)
+        this.pierCrates.push(this.createPierCrate(29, 6, 2, 'platform_hk4'));  // col 29..30, row 6 (surface y=300)
 
         // -------------------------------------------------------------
         // ITEM QUEST: Mutiara Victoria (Di atas platform tinggi col=22, row=4)
@@ -334,7 +366,7 @@ export class HongKongScene extends Phaser.Scene {
         });
     }
 
-    createPierCrate(col, row, tileCount = 2) {
+    createPierCrate(col, row, tileCount = 2, id = '') {
         const width = tileCount * 50;
         const height = 24;
         const x = col * 50 + width / 2; // Center X tepat di tengah sel-sel grid
@@ -346,7 +378,7 @@ export class HongKongScene extends Phaser.Scene {
         const phys = this.add.rectangle(x, y, width, height, 0x000000, 0);
         this.physics.add.existing(phys, true);
         this.platforms.add(phys);
-        return { visual: crateVisual, phys, col, row, tileCount };
+        return { id, visual: crateVisual, highlight: crateHighlight, phys, col, row, tileCount };
     }
 
     // ===============================================================
@@ -816,28 +848,7 @@ export class HongKongScene extends Phaser.Scene {
             this.activeFloatingToast.destroy();
             this.activeFloatingToast = null;
         }
-        const toast = this.add.container(this.scale.width / 2, 80).setDepth(50).setScrollFactor(0);
-        const bg = this.add.rectangle(0, 0, Math.max(260, text.length * 9), 32, 0x0f172a, 0.95)
-            .setStrokeStyle(1.5, color);
-        const txt = this.add.text(0, 0, text, {
-            fontSize: '12px', fontStyle: 'bold', fill: '#f8fafc', fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-        toast.add([bg, txt]);
-        this.activeFloatingToast = toast;
-
-        this.tweens.add({
-            targets: toast,
-            y: 65,
-            alpha: { from: 1, to: 0 },
-            delay: 1500,
-            duration: 400,
-            onComplete: () => {
-                if (this.activeFloatingToast === toast) {
-                    this.activeFloatingToast = null;
-                }
-                toast.destroy();
-            }
-        });
+        return;
     }
 
     openNPCDialogEditor(npcRef = null) {
@@ -935,22 +946,152 @@ export class HongKongScene extends Phaser.Scene {
     }
 
     // ===============================================================
+    // GROWTOPIA WATER BLOCKS: TEXTURE GENERATOR & AMBIENT ANIMATION
+    // ===============================================================
+    createGrowtopiaWaterBlocks(worldWidth, worldHeight) {
+        this.worldWidth = worldWidth;
+        this.worldHeight = worldHeight;
+
+        // 1. Buat Tekstur Seamless Growtopia Water Tile (64x64 px)
+        if (!this.textures.exists('gt_water_tile')) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+
+            // Warna Dasar Biru Samudra Tropis Growtopia
+            ctx.fillStyle = '#0284c7';
+            ctx.fillRect(0, 0, 64, 64);
+
+            // Garis Gelombang Diagonal 45 Derajat Khas Growtopia (Seamless modulo 64)
+            ctx.fillStyle = '#0369a1';
+            for (let offset = -64; offset <= 128; offset += 16) {
+                ctx.beginPath();
+                ctx.moveTo(offset, 64);
+                ctx.lineTo(offset + 8, 64);
+                ctx.lineTo(offset + 64 + 8, 0);
+                ctx.lineTo(offset + 64, 0);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Garis Aksen Kilau Cyan Terang di Sepanjang Tepi Gelombang
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+            ctx.lineWidth = 1.5;
+            for (let offset = -64; offset <= 128; offset += 16) {
+                ctx.beginPath();
+                ctx.moveTo(offset + 8, 64);
+                ctx.lineTo(offset + 64 + 8, 0);
+                ctx.stroke();
+            }
+
+            this.textures.addCanvas('gt_water_tile', canvas);
+        }
+
+        // 2. Buat Tekstur Puncak Gelombang Permukaan (Water Crest 64x16 px)
+        if (!this.textures.exists('gt_water_crest')) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 16;
+            const ctx = canvas.getContext('2d');
+
+            ctx.clearRect(0, 0, 64, 16);
+
+            // Lengkungan ombak permukaan
+            ctx.fillStyle = '#0284c7';
+            ctx.beginPath();
+            ctx.moveTo(0, 16);
+            for (let i = 0; i < 4; i++) {
+                const x = i * 16;
+                ctx.lineTo(x, 4);
+                ctx.quadraticCurveTo(x + 8, 11, x + 16, 4);
+            }
+            ctx.lineTo(64, 16);
+            ctx.closePath();
+            ctx.fill();
+
+            // Lengkungan bayangan biru tua di dalam lekukan ombak
+            ctx.fillStyle = '#0369a1';
+            for (let i = 0; i < 4; i++) {
+                const x = i * 16;
+                ctx.beginPath();
+                ctx.moveTo(x + 2, 6);
+                ctx.quadraticCurveTo(x + 8, 11, x + 14, 6);
+                ctx.lineTo(x + 14, 16);
+                ctx.lineTo(x + 2, 16);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Garis Buih Ombak Cyan Menyala
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            for (let i = 0; i < 4; i++) {
+                const x = i * 16;
+                if (i === 0) ctx.moveTo(x, 4);
+                ctx.quadraticCurveTo(x + 8, 11, x + 16, 4);
+            }
+            ctx.stroke();
+
+            // Titik Buih Putih pada Puncak Ombak
+            ctx.fillStyle = '#ffffff';
+            for (let i = 0; i <= 4; i++) {
+                const x = i * 16;
+                ctx.fillRect(x - 1, 3, 2, 2);
+            }
+
+            this.textures.addCanvas('gt_water_crest', canvas);
+        }
+
+        // 3. TileSprite Badan Air Growtopia (Membentang dari y=415 ke bawah hingga dasar dunia)
+        const waterStartY = 415;
+        const waterBottomY = worldHeight + 300;
+        const waterHeight = waterBottomY - waterStartY;
+        const waterCenterY = waterStartY + waterHeight / 2;
+        const waterTotalWidth = worldWidth + 2400;
+
+        this.gtWaterBody = this.add.tileSprite(
+            worldWidth / 2,
+            waterCenterY,
+            waterTotalWidth,
+            waterHeight,
+            'gt_water_tile'
+        ).setDepth(6).setAlpha(0.96);
+
+        // 4. TileSprite Puncak Ombak (Crest) di Garis Permukaan y=415
+        this.gtWaterCrest = this.add.tileSprite(
+            worldWidth / 2,
+            waterStartY + 4,
+            waterTotalWidth,
+            16,
+            'gt_water_crest'
+        ).setDepth(7);
+
+        // 5. Partikel Gelembung Udara Bawah Air yang Melayang Naik
+        this.gtWaterBubbles = [];
+        for (let i = 0; i < 28; i++) {
+            const bx = Phaser.Math.Between(-800, worldWidth + 800);
+            const by = Phaser.Math.Between(waterStartY + 10, worldHeight + 100);
+            const radius = Phaser.Math.Between(2, 4);
+            const bubble = this.add.circle(bx, by, radius, 0xbae6fd, Phaser.Math.FloatBetween(0.4, 0.75)).setDepth(7);
+            bubble.speedY = Phaser.Math.Between(25, 60);
+            bubble.phase = Phaser.Math.FloatBetween(0, Math.PI * 2);
+            this.gtWaterBubbles.push(bubble);
+        }
+    }
+
+    // ===============================================================
     // UPDATE LOOP: PARALLAX, HUJAN, & KONTROL
     // ===============================================================
     update(time, delta) {
-        // 1. Gerakan Parallax Mengikuti Kamera & Ombak Berayun Dinamis
-        const camX = this.cameras.main.scrollX;
-        if (this.layer1Sky) {
-            this.layer1Sky.tilePositionX = camX * 0.08;
-        }
-        if (this.layer2City) {
-            this.layer2City.tilePositionX = camX * 0.25;
-        }
-        if (this.layer4Waves) {
-            this.layer4Waves.tilePositionX = camX * 0.65 + Math.sin(time * 0.0016) * 8;
+        // 1. Smart Ground Clamp Camera Anchor Update
+        if (this.cameraAnchor && this.player) {
+            this.cameraAnchor.x = this.player.x;
+            this.cameraAnchor.y = Math.max(225, this.player.y - 160);
         }
 
-        // 2. Simulasi Butir Hujan Jatuh Menukik Miring
+        // 2. Simulasi Butir Hujan Jatuh Menukik Miring Menembus ke Laut
         if (this.rainDrops) {
             const dt = (delta || 16) / 1000;
             for (let i = 0; i < this.rainDrops.length; i++) {
@@ -958,9 +1099,30 @@ export class HongKongScene extends Phaser.Scene {
                 drop.y += drop.speedY * dt;
                 drop.x += drop.speedX * dt;
 
-                if (drop.y > 450) {
+                if (drop.y > 850) {
                     drop.y = Phaser.Math.Between(-30, -5);
-                    drop.x = Phaser.Math.Between(0, 1980);
+                    drop.x = Phaser.Math.Between(0, 2000);
+                }
+            }
+        }
+
+        // 3. Animasi Aliran Air & Gelombang Ombak Growtopia Water Blocks
+        if (this.gtWaterBody) {
+            this.gtWaterBody.tilePositionX -= 0.45;
+            this.gtWaterBody.tilePositionY += 0.45;
+        }
+        if (this.gtWaterCrest) {
+            this.gtWaterCrest.tilePositionX -= 0.65;
+        }
+        if (this.gtWaterBubbles) {
+            const dt = (delta || 16) / 1000;
+            for (let i = 0; i < this.gtWaterBubbles.length; i++) {
+                const b = this.gtWaterBubbles[i];
+                b.y -= b.speedY * dt;
+                b.x += Math.sin(time * 0.003 + b.phase) * 0.4;
+                if (b.y < 415) {
+                    b.y = Phaser.Math.Between(this.worldHeight || 850, (this.worldHeight || 850) + 60);
+                    b.x = Phaser.Math.Between(-400, (this.worldWidth || 2000) + 400);
                 }
             }
         }

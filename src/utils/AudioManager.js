@@ -94,6 +94,10 @@ class AudioManagerClass {
         osc.stop(now + 0.22);
     }
 
+    playHazardHit() {
+        this.playHurt();
+    }
+
     // SFX 4: Dialogue Blip (subtle typewriter pip)
     playDialogBeep() {
         this.init();

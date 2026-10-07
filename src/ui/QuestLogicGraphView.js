@@ -1,9 +1,14 @@
 // ===============================================================
-// VISUAL QUEST & NPC LOGIC GRAPH (NODE-BASED VISUAL SCRIPTING)
+// VISUAL QUEST & NPC LOGIC GRAPH (FOLDER-BASED MACRO & MICRO ENGINE)
 // ===============================================================
-// Menghubungkan interaksi karakter NPC, syarat koin/item,
-// percakapan dialog, dan aktivasi portal finish secara visual.
-// Terinspirasi dari Unreal Blueprints, RapidMiner, dan Blender Shader Nodes.
+// Arsitektur 2 Tingkat (Hierarchical State Graph):
+// 1. MACRO VIEW (Alur Cerita Global):
+//    - Folder-folder logika (New Folder 1, New Folder 2, dst.)
+//    - Dihubungkan dengan kabel alur sekuensial (Out ➔ In)
+//    - Pengguna bebas me-rename nama folder kapan saja.
+// 2. MICRO VIEW (Isi Logika Internal Folder):
+//    - Klik 2x / Buka folder untuk masuk ke kanvas detail
+//    - Berisi NPC Trigger, Syarat Koin/Item, Dialog RPG, Buka Portal, & Selesai.
 // ===============================================================
 
 import { ProjectManager } from '../utils/ProjectManager.js';
@@ -141,6 +146,23 @@ export const QUEST_NODE_TEMPLATES = {
             { id: 'exec', label: 'Beri (In)', color: '#94a3b8' }
         ],
         outputs: []
+    },
+    folder_complete: {
+        type: 'folder_complete',
+        category: 'action',
+        title: 'Babak / Folder Selesai',
+        icon: '🏁',
+        badgeColor: '#059669',
+        headerBg: 'linear-gradient(135deg, #047857, #10b981)',
+        desc: 'Menandai folder ini selesai dan melanjutkan alur cerita ke folder berikutnya.',
+        defaultConfig: {
+            bannerMsg: '🎉 Babak misi selesai! Lanjut ke babak berikutnya.',
+            rewardCoins: 5
+        },
+        inputs: [
+            { id: 'exec', label: 'Tamat (In)', color: '#94a3b8' }
+        ],
+        outputs: []
     }
 };
 
@@ -158,13 +180,22 @@ export class QuestLogicGraphView {
         this.panStart = { x: 0, y: 0 };
 
         this.draggedNodeId = null;
+        this.draggedFolderId = null;
         this.dragOffset = { x: 0, y: 0 };
 
-        this.wiring = null; // { fromNodeId, fromPortId, startX, startY, currentX, currentY }
-        this.selectedSourcePort = null; // { nodeId, portId }
+        this.wiring = null; // { type: 'node'|'folder', fromId, fromPort, startX, startY, currentX, currentY }
+        this.selectedSourcePort = null; // Port selection state
+        this.selectedSourceFolderPort = null;
 
         this.selectedNodeId = null;
+        this.selectedFolderId = null;
 
+        // Folder & Sub-graph state
+        this.currentFolderId = null; // null = Macro View (Overview Folder), string = Micro View (Inside Folder)
+        this.folders = [];
+        this.folderWires = [];
+
+        // Active folder's internal graph
         this.nodes = [];
         this.wires = [];
 
@@ -268,6 +299,29 @@ export class QuestLogicGraphView {
                     box-shadow: 0 0 12px rgba(147, 51, 234, 0.4);
                 }
 
+                /* Breadcrumb Navigation */
+                .gt-qg-breadcrumb {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    font-size: 11.5px;
+                    font-weight: 700;
+                    color: #cbd5e1;
+                    padding: 0 4px;
+                }
+
+                .gt-qg-breadcrumb-item {
+                    cursor: pointer;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 4px;
+                    transition: color 0.15s ease;
+                }
+
+                .gt-qg-breadcrumb-item:hover {
+                    color: #38bdf8;
+                }
+
                 .gt-qg-btn {
                     background: #182234;
                     border: 1px solid #334155;
@@ -299,14 +353,24 @@ export class QuestLogicGraphView {
                     background: linear-gradient(135deg, #7e22ce, #9333ea);
                 }
 
-                /* Left Operators Palette Bar (RapidMiner Style) */
+                .gt-qg-btn-folder {
+                    background: linear-gradient(135deg, #b45309, #f59e0b);
+                    border: 1px solid #fbbf24;
+                    color: #fff;
+                }
+
+                .gt-qg-btn-folder:hover {
+                    background: linear-gradient(135deg, #92400e, #d97706);
+                }
+
+                /* Left Sidebar Bar (Explorer Folders + Operators) */
                 .gt-qg-palette {
                     position: absolute;
                     top: 60px;
                     left: 18px;
                     bottom: 24px;
-                    width: 220px;
-                    background: rgba(15, 23, 42, 0.9);
+                    width: 240px;
+                    background: rgba(15, 23, 42, 0.94);
                     backdrop-filter: blur(12px);
                     -webkit-backdrop-filter: blur(12px);
                     border: 1px solid #1e293b;
@@ -316,7 +380,6 @@ export class QuestLogicGraphView {
                     z-index: 90;
                     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
                     overflow: hidden;
-                    transition: transform 0.2s ease, opacity 0.2s ease;
                 }
 
                 .gt-qg-palette-header {
@@ -342,6 +405,70 @@ export class QuestLogicGraphView {
                     gap: 6px;
                 }
 
+                /* Folder Explorer Section */
+                .gt-qg-folder-section {
+                    border-bottom: 1px solid #1e293b;
+                    padding-bottom: 8px;
+                    margin-bottom: 8px;
+                }
+
+                .gt-qg-folder-item {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    background: #111827;
+                    border: 1px solid #1f2937;
+                    border-radius: 6px;
+                    padding: 6px 8px;
+                    margin-bottom: 5px;
+                    cursor: pointer;
+                    transition: all 0.15s ease;
+                }
+
+                .gt-qg-folder-item:hover {
+                    background: #1e293b;
+                    border-color: #f59e0b;
+                }
+
+                .gt-qg-folder-item.active {
+                    background: rgba(245, 158, 11, 0.15);
+                    border-color: #fbbf24;
+                }
+
+                .gt-qg-folder-item-title {
+                    font-size: 11px;
+                    font-weight: 700;
+                    color: #f1f5f9;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    flex: 1;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .gt-qg-folder-item-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                }
+
+                .gt-qg-folder-action-btn {
+                    background: none;
+                    border: none;
+                    color: #94a3b8;
+                    cursor: pointer;
+                    font-size: 11px;
+                    padding: 2px 4px;
+                    border-radius: 4px;
+                }
+
+                .gt-qg-folder-action-btn:hover {
+                    color: #fff;
+                    background: rgba(255, 255, 255, 0.1);
+                }
+
                 .gt-qg-cat-title {
                     font-size: 9.5px;
                     font-weight: 800;
@@ -355,12 +482,12 @@ export class QuestLogicGraphView {
                     align-items: center;
                     gap: 8px;
                     padding: 7px 10px;
-                    background: #111827;
+                    background: #0f172a;
                     border: 1px solid #1e293b;
                     border-radius: 6px;
-                    color: #e2e8f0;
+                    color: #cbd5e1;
                     font-size: 11px;
-                    font-weight: 600;
+                    font-weight: 700;
                     cursor: pointer;
                     transition: all 0.15s ease;
                 }
@@ -372,7 +499,7 @@ export class QuestLogicGraphView {
                     transform: translateX(3px);
                 }
 
-                /* Center Canvas Viewport */
+                /* Canvas Viewport */
                 .gt-qg-canvas-viewport {
                     position: absolute;
                     inset: 0;
@@ -381,77 +508,65 @@ export class QuestLogicGraphView {
 
                 .gt-qg-canvas-wrap {
                     position: absolute;
-                    inset: 0;
+                    width: 6000px;
+                    height: 4000px;
                     transform-origin: 0 0;
                 }
 
                 .gt-qg-svg-layer {
                     position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 10000px;
-                    height: 10000px;
+                    inset: 0;
+                    width: 100%;
+                    height: 100%;
                     pointer-events: none;
                     z-index: 10;
                 }
 
-                /* Wires Style */
-                .gt-qg-wire {
-                    fill: none;
-                    stroke: #a855f7;
-                    stroke-width: 3.5px;
-                    stroke-linecap: round;
-                    cursor: pointer;
+                .gt-qg-svg-layer * {
                     pointer-events: stroke;
-                    transition: stroke 0.15s ease, stroke-width 0.15s ease;
-                    filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.45));
                 }
 
                 .gt-qg-wire-hit {
                     fill: none;
                     stroke: transparent;
                     stroke-width: 24px;
-                    stroke-linecap: round;
                     cursor: pointer;
-                    pointer-events: stroke;
                 }
 
-                .gt-qg-wire-hit:hover + .gt-qg-wire,
-                .gt-qg-wire:hover {
-                    stroke: #ef4444 !important;
-                    stroke-width: 5px !important;
-                    filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.8));
-                }
-
-                .gt-qg-wire-pulse {
+                .gt-qg-wire {
                     fill: none;
-                    stroke: #ffffff;
-                    stroke-width: 1.5px;
-                    stroke-dasharray: 6 12;
+                    stroke-width: 3px;
+                    filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.5));
+                    transition: stroke 0.15s ease, stroke-width 0.15s ease;
+                }
+
+                .gt-qg-wire:hover, .gt-qg-wire-hit:hover + .gt-qg-wire {
+                    stroke: #ef4444 !important;
+                    stroke-width: 4.5px !important;
+                    cursor: pointer;
+                }
+
+                .gt-qg-wire-folder {
+                    fill: none;
+                    stroke: url(#gtQGFolderGrad);
+                    stroke-width: 3.5px;
+                    stroke-dasharray: 8, 4;
                     animation: gtQGDash 1.2s linear infinite;
-                    pointer-events: none;
+                    filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.6));
                 }
 
                 @keyframes gtQGDash {
-                    from { stroke-dashoffset: 36; }
-                    to { stroke-dashoffset: 0; }
+                    to { stroke-dashoffset: -24; }
                 }
 
                 .gt-qg-live-wire {
                     fill: none;
-                    stroke: #a855f7;
+                    stroke: #38bdf8;
                     stroke-width: 3px;
-                    stroke-dasharray: 5 5;
-                    animation: gtQGLiveDash 0.8s linear infinite;
-                    pointer-events: none;
+                    stroke-dasharray: 6, 6;
+                    animation: gtQGDash 1s linear infinite;
                 }
 
-                @keyframes gtQGLiveDash {
-                    from { stroke-dashoffset: 20; }
-                    to { stroke-dashoffset: 0; }
-                }
-
-                /* Node Cards */
                 .gt-qg-nodes-layer {
                     position: absolute;
                     inset: 0;
@@ -459,35 +574,36 @@ export class QuestLogicGraphView {
                     pointer-events: none;
                 }
 
+                /* Node Card (Micro View) */
                 .gt-qg-node {
                     position: absolute;
-                    width: 230px;
-                    background: #0d121d;
+                    width: 220px;
+                    background: rgba(15, 23, 42, 0.94);
                     border: 1px solid #1e293b;
-                    border-radius: 9px;
-                    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
-                    pointer-events: auto;
+                    border-radius: 8px;
+                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65);
                     cursor: default;
+                    pointer-events: auto;
                     transition: border-color 0.15s ease, box-shadow 0.15s ease;
                 }
 
                 .gt-qg-node:hover {
-                    border-color: #475569;
-                    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.85);
+                    border-color: #38bdf8;
+                    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8), 0 0 16px rgba(56, 189, 248, 0.25);
                 }
 
                 .gt-qg-node.selected {
-                    border-color: #38bdf8 !important;
-                    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.4), 0 16px 36px rgba(0, 0, 0, 0.9) !important;
+                    border-color: #a855f7 !important;
+                    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(168, 85, 247, 0.45) !important;
                 }
 
                 .gt-qg-node-header {
                     padding: 8px 12px;
+                    border-top-left-radius: 7px;
+                    border-top-right-radius: 7px;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    border-top-left-radius: 8px;
-                    border-top-right-radius: 8px;
                     cursor: grab;
                 }
 
@@ -582,19 +698,117 @@ export class QuestLogicGraphView {
                     animation: gtQGPulsePort 1s ease-in-out infinite alternate;
                 }
 
-                @keyframes gtQGPulsePort {
-                    from { box-shadow: 0 0 8px #c084fc; }
-                    to { box-shadow: 0 0 20px #e879f9; transform: scale(1.5); }
+                /* FOLDER NODE CARD (Macro View) */
+                .gt-qg-folder-card {
+                    position: absolute;
+                    width: 260px;
+                    background: rgba(15, 23, 42, 0.95);
+                    border: 2px solid #f59e0b;
+                    border-radius: 10px;
+                    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.75), 0 0 20px rgba(245, 158, 11, 0.2);
+                    cursor: default;
+                    pointer-events: auto;
+                    transition: all 0.2s ease;
                 }
 
-                /* Right Parameters Inspector (RapidMiner Style) */
+                .gt-qg-folder-card:hover {
+                    border-color: #fbbf24;
+                    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 26px rgba(251, 191, 36, 0.35);
+                    transform: translateY(-2px);
+                }
+
+                .gt-qg-folder-card.selected {
+                    border-color: #38bdf8 !important;
+                    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 26px rgba(56, 189, 248, 0.5) !important;
+                }
+
+                .gt-qg-folder-header {
+                    padding: 10px 14px;
+                    background: linear-gradient(135deg, #b45309, #d97706);
+                    border-top-left-radius: 8px;
+                    border-top-right-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    cursor: grab;
+                }
+
+                .gt-qg-folder-header:active {
+                    cursor: grabbing;
+                }
+
+                .gt-qg-folder-title {
+                    font-size: 13px;
+                    font-weight: 800;
+                    color: #fff;
+                    display: flex;
+                    align-items: center;
+                    gap: 7px;
+                    flex: 1;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+
+                .gt-qg-folder-body {
+                    padding: 12px 14px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    background: #0b101b;
+                }
+
+                .gt-qg-folder-preview {
+                    font-size: 11px;
+                    color: #94a3b8;
+                    line-height: 1.4;
+                    background: rgba(255, 255, 255, 0.03);
+                    border: 1px dashed rgba(255, 255, 255, 0.1);
+                    border-radius: 6px;
+                    padding: 6px 10px;
+                }
+
+                .gt-qg-folder-btn-open {
+                    width: 100%;
+                    padding: 7px 10px;
+                    background: linear-gradient(135deg, #1e293b, #334155);
+                    border: 1px solid #475569;
+                    color: #38bdf8;
+                    font-size: 11px;
+                    font-weight: 800;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 6px;
+                    transition: all 0.15s ease;
+                }
+
+                .gt-qg-folder-btn-open:hover {
+                    background: #0284c7;
+                    border-color: #38bdf8;
+                    color: #fff;
+                }
+
+                .gt-qg-folder-ports {
+                    display: flex;
+                    justify-content: space-between;
+                    padding: 8px 12px 10px 12px;
+                    background: #070a12;
+                    border-top: 1px solid #1e293b;
+                    border-bottom-left-radius: 8px;
+                    border-bottom-right-radius: 8px;
+                }
+
+                /* Right Parameters Inspector */
                 .gt-qg-inspector {
                     position: absolute;
                     top: 60px;
                     right: 18px;
                     bottom: 24px;
                     width: 280px;
-                    background: rgba(15, 23, 42, 0.92);
+                    background: rgba(15, 23, 42, 0.94);
                     backdrop-filter: blur(12px);
                     -webkit-backdrop-filter: blur(12px);
                     border: 1px solid #1e293b;
@@ -648,33 +862,27 @@ export class QuestLogicGraphView {
                     border-radius: 5px;
                     color: #f1f5f9;
                     font-size: 11px;
-                    padding: 6px 8px;
-                    outline: none;
-                    transition: border-color 0.15s ease;
+                    padding: 6px 10px;
+                    font-family: inherit;
                 }
 
                 .gt-qg-field-input:focus, .gt-qg-field-textarea:focus {
+                    outline: none;
                     border-color: #38bdf8;
-                }
-
-                .gt-qg-field-textarea {
-                    min-height: 70px;
-                    resize: vertical;
-                    line-height: 1.4;
                 }
 
                 .gt-qg-hint {
                     position: absolute;
-                    bottom: 14px;
-                    left: 250px;
-                    font-size: 11px;
-                    color: #64748b;
-                    background: rgba(15, 23, 42, 0.8);
-                    padding: 4px 10px;
-                    border-radius: 6px;
+                    bottom: 24px;
+                    left: 275px;
+                    background: rgba(15, 23, 42, 0.9);
                     border: 1px solid #1e293b;
+                    border-radius: 6px;
+                    padding: 6px 14px;
+                    font-size: 11px;
+                    color: #94a3b8;
+                    z-index: 50;
                     pointer-events: none;
-                    z-index: 80;
                 }
             </style>
 
@@ -693,14 +901,24 @@ export class QuestLogicGraphView {
 
                     <div style="width: 1px; height: 16px; background: #334155;"></div>
 
+                    <!-- Breadcrumbs -->
+                    <div class="gt-qg-breadcrumb" id="gt-qg-breadcrumb">
+                        <span class="gt-qg-breadcrumb-item" id="bc-root">🌐 Alur Utama (Peta Folder)</span>
+                    </div>
+
+                    <div style="width: 1px; height: 16px; background: #334155;"></div>
+
+                    <button class="gt-qg-btn gt-qg-btn-folder" id="btn-qg-add-folder" title="Buat Folder Baru untuk Mengelompokkan Alur Cerita">
+                        <span>➕ New Folder</span>
+                    </button>
                     <button class="gt-qg-btn" id="btn-qg-auto-layout" title="Rapikan Tata Letak Node Secara Otomatis">
-                        <span>📐</span> Auto-Layout
+                        <span>📐 Auto-Layout</span>
                     </button>
                     <button class="gt-qg-btn" id="btn-qg-simulate" style="color: #4ade80; border-color: rgba(74, 222, 128, 0.4);" title="Uji Simulasi Interaksi Logika">
-                        <span>▶</span> Uji Simulasi
+                        <span>▶ Uji Simulasi</span>
                     </button>
                     <button class="gt-qg-btn" id="btn-qg-reset-default" title="Kembalikan ke Contoh Alur Misi Default">
-                        <span>🔄</span> Reset Logika
+                        <span>🔄 Reset Logika</span>
                     </button>
                 </div>
 
@@ -711,43 +929,30 @@ export class QuestLogicGraphView {
                 </div>
             </div>
 
-            <!-- Left Operators Palette (RapidMiner Style) -->
+            <!-- Left Sidebar (Folder Explorer + Node Palette) -->
             <div class="gt-qg-palette">
+                <!-- Folder Explorer Section -->
                 <div class="gt-qg-palette-header">
-                    <span>⚡ Operator &amp; Node</span>
+                    <span>📁 DAFTAR FOLDER</span>
+                    <button class="gt-qg-folder-action-btn" id="btn-qg-palette-add-folder" title="Tambah Folder Baru" style="color: #f59e0b; font-weight: bold;">+ New</button>
                 </div>
-                <div class="gt-qg-palette-list">
-                    <div class="gt-qg-cat-title">1. Trigger (Pemicu)</div>
-                    <div class="gt-qg-palette-item" data-type="npc_trigger" title="Dipicu ketika pemain bicara dengan NPC">
-                        <span>🧙</span> NPC Trigger
-                    </div>
-                    <div class="gt-qg-palette-item" data-type="chest_trigger" title="Dipicu saat peti harta dibuka">
-                        <span>📦</span> Peti Harta
-                    </div>
+                <div class="gt-qg-palette-list" id="gt-qg-folder-explorer-list" style="max-height: 180px; border-bottom: 1px solid #1e293b;">
+                    <!-- Rendered Folder List -->
+                </div>
 
-                    <div class="gt-qg-cat-title">2. Kondisi (Logika)</div>
-                    <div class="gt-qg-palette-item" data-type="condition_coins" title="Cek apakah koin pemain memenuhi syarat">
-                        <span>🪙</span> Syarat Koin
+                <!-- Operators Palette (Micro View or Info) -->
+                <div id="gt-qg-palette-operators-section" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                    <div class="gt-qg-palette-header" id="gt-qg-palette-ops-header">
+                        <span>⚡ OPERATOR &amp; NODE</span>
                     </div>
-                    <div class="gt-qg-palette-item" data-type="condition_item" title="Cek apakah pemain membawa item/kunci">
-                        <span>🔑</span> Syarat Item
-                    </div>
-
-                    <div class="gt-qg-cat-title">3. Aksi &amp; Respon</div>
-                    <div class="gt-qg-palette-item" data-type="dialogue" title="Tampilkan kotak pesan dialog ke pemain">
-                        <span>💬</span> Pesan Dialog
-                    </div>
-                    <div class="gt-qg-palette-item" data-type="action_unlock" title="Buka segel portal finish agar bisa tamat">
-                        <span>🌀</span> Buka Portal
-                    </div>
-                    <div class="gt-qg-palette-item" data-type="give_reward" title="Pulihkan HP atau beri koin bonus">
-                        <span>❤️</span> Beri Hadiah
+                    <div class="gt-qg-palette-list" id="gt-qg-palette-ops-list">
+                        <!-- Rendered Operators or Macro Guide -->
                     </div>
                 </div>
             </div>
 
             <div class="gt-qg-hint" id="gt-qg-hint">
-                💡 <b>Tips:</b> Klik node untuk edit parameter di kanan. Tarik port output (kanan) ke port input (kiri) untuk menyambung alur!
+                💡 <b>Tips:</b> Tarik kabel dari port <b>Selesai (Out)</b> ke <b>Masuk (In)</b> untuk menghubungkan alur cerita antar-folder. Klik 2x kotak folder untuk membuka isinya!
             </div>
 
             <!-- Canvas Viewport -->
@@ -759,6 +964,10 @@ export class QuestLogicGraphView {
                                 <stop offset="0%" stop-color="#a855f7" />
                                 <stop offset="100%" stop-color="#38bdf8" />
                             </linearGradient>
+                            <linearGradient id="gtQGFolderGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#f59e0b" />
+                                <stop offset="100%" stop-color="#a855f7" />
+                            </linearGradient>
                         </defs>
                         <g id="gt-qg-wires-group"></g>
                         <path id="gt-qg-live-wire" class="gt-qg-live-wire" d="" style="display: none;"></path>
@@ -767,14 +976,14 @@ export class QuestLogicGraphView {
                 </div>
             </div>
 
-            <!-- Right Parameters Inspector (RapidMiner Style) -->
+            <!-- Right Parameters Inspector -->
             <div class="gt-qg-inspector" id="gt-qg-inspector">
                 <div class="gt-qg-inspector-header">
                     <span>⚙️ Parameters</span>
                 </div>
                 <div class="gt-qg-inspector-body" id="gt-qg-inspector-body">
                     <div style="font-size: 11px; color: #64748b; text-align: center; margin-top: 40px;">
-                        Pilih salah satu node di kanvas untuk mengubah teks, dialog, atau parameter logika di sini.
+                        Pilih salah satu folder atau node untuk mengubah nama atau parameter logika di sini.
                     </div>
                 </div>
             </div>
@@ -787,6 +996,11 @@ export class QuestLogicGraphView {
         this.liveWirePath = this.dom.querySelector('#gt-qg-live-wire');
         this.nodesLayer = this.dom.querySelector('#gt-qg-nodes-layer');
         this.inspectorBody = this.dom.querySelector('#gt-qg-inspector-body');
+        this.folderExplorerList = this.dom.querySelector('#gt-qg-folder-explorer-list');
+        this.paletteOpsList = this.dom.querySelector('#gt-qg-palette-ops-list');
+        this.paletteOpsHeader = this.dom.querySelector('#gt-qg-palette-ops-header');
+        this.breadcrumbEl = this.dom.querySelector('#gt-qg-breadcrumb');
+        this.hintEl = this.dom.querySelector('#gt-qg-hint');
     }
 
     loadData() {
@@ -796,25 +1010,419 @@ export class QuestLogicGraphView {
         }
 
         const questData = ProjectManager.getQuestLogic(this.projectId, this.sceneId);
-        this.nodes = Array.isArray(questData.nodes) ? JSON.parse(JSON.stringify(questData.nodes)) : [];
-        this.wires = Array.isArray(questData.wires) ? JSON.parse(JSON.stringify(questData.wires)) : [];
 
-        this.renderNodes();
-        this.renderWires();
+        // Migrasi atau muat data folder
+        if (Array.isArray(questData.folders) && questData.folders.length > 0) {
+            this.folders = JSON.parse(JSON.stringify(questData.folders));
+            this.folderWires = Array.isArray(questData.folderWires) ? JSON.parse(JSON.stringify(questData.folderWires)) : [];
+        } else {
+            // Migrasi otomatis data flat lama menjadi "New Folder 1"
+            const legacyNodes = Array.isArray(questData.nodes) && questData.nodes.length > 0 ? questData.nodes : [];
+            const legacyWires = Array.isArray(questData.wires) && questData.wires.length > 0 ? questData.wires : [];
+            this.folders = [
+                {
+                    id: 'folder_default_' + Date.now().toString(36),
+                    name: 'New Folder 1',
+                    x: 80,
+                    y: 120,
+                    nodes: JSON.parse(JSON.stringify(legacyNodes)),
+                    wires: JSON.parse(JSON.stringify(legacyWires))
+                }
+            ];
+            this.folderWires = [];
+        }
+
+        // Validasi folder aktif
+        if (this.currentFolderId && !this.folders.some(f => f.id === this.currentFolderId)) {
+            this.currentFolderId = null;
+        }
+
+        this.syncActiveFolderData();
+        this.renderAll();
         this.applyTransform();
-        if (this.nodes.length > 0) {
-            this.selectNode(this.nodes[0].id);
+    }
+
+    syncActiveFolderData() {
+        if (this.currentFolderId) {
+            const folder = this.folders.find(f => f.id === this.currentFolderId);
+            if (folder) {
+                this.nodes = folder.nodes || [];
+                this.wires = folder.wires || [];
+            }
         }
     }
 
     saveData() {
         if (!this.projectId) return;
+
+        // Sinkronisasi data folder aktif jika sedang di Micro View
+        if (this.currentFolderId) {
+            const folder = this.folders.find(f => f.id === this.currentFolderId);
+            if (folder) {
+                folder.nodes = this.nodes;
+                folder.wires = this.wires;
+            }
+        }
+
+        // Sediakan fallback flat nodes/wires untuk engine lama
+        const firstFolder = this.folders[0];
+        const flatNodes = firstFolder ? firstFolder.nodes : [];
+        const flatWires = firstFolder ? firstFolder.wires : [];
+
         ProjectManager.saveQuestLogic(this.projectId, this.sceneId, {
-            nodes: this.nodes,
-            wires: this.wires
+            folders: this.folders,
+            folderWires: this.folderWires,
+            nodes: flatNodes,
+            wires: flatWires
         });
     }
 
+    renderAll() {
+        this.renderBreadcrumbs();
+        this.renderSidebarFolders();
+        this.renderSidebarPalette();
+
+        if (this.currentFolderId === null) {
+            // MACRO VIEW (Folder Nodes & Folder Wires)
+            this.hintEl.innerHTML = `💡 <b>Alur Global:</b> Tarik kabel dari port <b>Selesai (Out)</b> ke <b>Masuk (In)</b> untuk menyambungkan antar-folder. Klik 2x kotak folder untuk membuka isinya!`;
+            this.renderFolderNodes();
+            this.renderFolderWires();
+            this.renderFolderInspector();
+        } else {
+            // MICRO VIEW (Detail Nodes & Logic Wires inside folder)
+            const currentFolder = this.folders.find(f => f.id === this.currentFolderId);
+            const folderName = currentFolder ? currentFolder.name : 'Folder';
+            this.hintEl.innerHTML = `📁 <b>Di Dalam: ${folderName}</b>. Klik operator di kiri untuk menambah node, dan sambungkan logika interaksinya.`;
+            this.renderNodes();
+            this.renderWires();
+            this.renderNodeInspector();
+        }
+    }
+
+    renderBreadcrumbs() {
+        if (!this.breadcrumbEl) return;
+        if (this.currentFolderId === null) {
+            this.breadcrumbEl.innerHTML = `
+                <span class="gt-qg-breadcrumb-item" style="color: #f59e0b;">🌐 Alur Utama (Peta Folder)</span>
+            `;
+        } else {
+            const currentFolder = this.folders.find(f => f.id === this.currentFolderId);
+            const name = currentFolder ? currentFolder.name : 'Folder';
+            this.breadcrumbEl.innerHTML = `
+                <span class="gt-qg-breadcrumb-item" id="bc-back-macro" title="Kembali ke Alur Utama">🏠 Alur Utama</span>
+                <span style="color: #64748b;">➔</span>
+                <span class="gt-qg-breadcrumb-item" style="color: #38bdf8;">📁 ${name}</span>
+                <button class="gt-qg-btn" id="btn-bc-back" style="padding: 2px 7px; font-size: 10px; margin-left: 6px; background: rgba(56, 189, 248, 0.15); border-color: #38bdf8; color: #38bdf8;">
+                    <span>⬅ Kembali</span>
+                </button>
+            `;
+            this.breadcrumbEl.querySelector('#bc-back-macro')?.addEventListener('click', () => this.closeFolderToMacro());
+            this.breadcrumbEl.querySelector('#btn-bc-back')?.addEventListener('click', () => this.closeFolderToMacro());
+        }
+    }
+
+    renderSidebarFolders() {
+        if (!this.folderExplorerList) return;
+        this.folderExplorerList.innerHTML = '';
+
+        this.folders.forEach((folder, idx) => {
+            const item = document.createElement('div');
+            item.className = `gt-qg-folder-item ${(this.currentFolderId === folder.id || this.selectedFolderId === folder.id) ? 'active' : ''}`;
+            item.setAttribute('data-folder-id', folder.id);
+
+            const nodeCount = Array.isArray(folder.nodes) ? folder.nodes.length : 0;
+            item.innerHTML = `
+                <div class="gt-qg-folder-item-title" title="${folder.name} (${nodeCount} nodes)">
+                    <span>📁</span>
+                    <span class="gt-qg-folder-label">${folder.name}</span>
+                </div>
+                <div class="gt-qg-folder-item-actions">
+                    <span style="font-size: 9.5px; color: #64748b; margin-right: 2px;">${nodeCount}</span>
+                    <button class="gt-qg-folder-action-btn btn-rename" title="Ganti Nama">✏️</button>
+                    <button class="gt-qg-folder-action-btn btn-open" title="Buka Isi Folder">🔍</button>
+                    ${this.folders.length > 1 ? `<button class="gt-qg-folder-action-btn btn-del" title="Hapus Folder" style="color: #ef4444;">🗑️</button>` : ''}
+                </div>
+            `;
+
+            // Rename on pencil click
+            item.querySelector('.btn-rename')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.promptRenameFolder(folder.id);
+            });
+
+            // Open folder
+            item.querySelector('.btn-open')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.openFolder(folder.id);
+            });
+
+            // Delete folder
+            item.querySelector('.btn-del')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.deleteFolder(folder.id);
+            });
+
+            // Click item to select or open
+            item.addEventListener('click', () => {
+                if (this.currentFolderId === null) {
+                    this.selectFolder(folder.id);
+                } else {
+                    this.openFolder(folder.id);
+                }
+            });
+
+            this.folderExplorerList.appendChild(item);
+        });
+    }
+
+    renderSidebarPalette() {
+        if (!this.paletteOpsList) return;
+        this.paletteOpsList.innerHTML = '';
+
+        if (this.currentFolderId === null) {
+            // Di Macro View: Tampilkan info & panduan alur
+            this.paletteOpsHeader.innerHTML = `<span>⚡ PANDUAN ALUR CERITA</span>`;
+            this.paletteOpsList.innerHTML = `
+                <div style="font-size: 11px; color: #94a3b8; line-height: 1.5; padding: 6px;">
+                    <p style="margin: 0 0 8px 0; color: #f1f5f9; font-weight: 700;">🌐 Mode Peta Cerita Global</p>
+                    <p style="margin: 0 0 8px 0;">Di kanvas ini, kamu mengatur urutan babak cerita lewat garis penghubung:</p>
+                    <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 6px; padding: 8px; font-size: 10.5px; color: #fbbf24; margin-bottom: 8px;">
+                        <b>1. Tarik Garis:</b> Hubungkan port <b>Selesai (Out)</b> di folder awal ke port <b>Masuk (In)</b> di folder berikutnya.
+                    </div>
+                    <div style="background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 6px; padding: 8px; font-size: 10.5px; color: #38bdf8;">
+                        <b>2. Buka Folder:</b> Klik 2x pada kotak folder untuk menyusun detail dialog dan misinya!
+                    </div>
+                </div>
+            `;
+        } else {
+            // Di Micro View: Tampilkan Operator & Node
+            const cur = this.folders.find(f => f.id === this.currentFolderId);
+            this.paletteOpsHeader.innerHTML = `<span>⚡ OPERATOR &amp; NODE</span>`;
+            this.paletteOpsList.innerHTML = `
+                <div class="gt-qg-cat-title">1. Trigger (Pemicu)</div>
+                <div class="gt-qg-palette-item" data-type="npc_trigger" title="Dipicu ketika pemain bicara dengan NPC">
+                    <span>🧙</span> NPC Trigger
+                </div>
+                <div class="gt-qg-palette-item" data-type="chest_trigger" title="Dipicu saat peti harta dibuka">
+                    <span>📦</span> Peti Harta
+                </div>
+
+                <div class="gt-qg-cat-title">2. Kondisi (Logika)</div>
+                <div class="gt-qg-palette-item" data-type="condition_coins" title="Cek apakah koin pemain memenuhi syarat">
+                    <span>🪙</span> Syarat Koin
+                </div>
+                <div class="gt-qg-palette-item" data-type="condition_item" title="Cek apakah pemain membawa item/kunci">
+                    <span>🔑</span> Syarat Item
+                </div>
+
+                <div class="gt-qg-cat-title">3. Aksi &amp; Respon</div>
+                <div class="gt-qg-palette-item" data-type="dialogue" title="Tampilkan kotak pesan dialog ke pemain">
+                    <span>💬</span> Pesan Dialog
+                </div>
+                <div class="gt-qg-palette-item" data-type="action_unlock" title="Buka segel portal finish agar bisa tamat">
+                    <span>🌀</span> Buka Portal
+                </div>
+                <div class="gt-qg-palette-item" data-type="give_reward" title="Pulihkan HP atau beri koin bonus">
+                    <span>❤️</span> Beri Hadiah
+                </div>
+                <div class="gt-qg-palette-item" data-type="folder_complete" title="Tandai folder selesai dan lanjut ke folder berikutnya" style="border-color: #059669; color: #34d399;">
+                    <span>🏁</span> Selesai (Lanjut Folder)
+                </div>
+            `;
+
+            // Bind click to add node inside folder
+            this.paletteOpsList.querySelectorAll('.gt-qg-palette-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const type = item.getAttribute('data-type');
+                    this.addNode(type);
+                });
+            });
+        }
+    }
+
+    // ===============================================================
+    // MACRO VIEW: RENDER FOLDER NODES & FOLDER WIRES
+    // ===============================================================
+    renderFolderNodes() {
+        this.nodesLayer.innerHTML = '';
+
+        this.folders.forEach(folder => {
+            const card = document.createElement('div');
+            card.className = `gt-qg-folder-card ${this.selectedFolderId === folder.id ? 'selected' : ''}`;
+            card.id = `qg-folder-${folder.id}`;
+            card.setAttribute('data-folder-id', folder.id);
+            card.style.left = `${folder.x || 80}px`;
+            card.style.top = `${folder.y || 120}px`;
+
+            // Rangkum isi node di dalam folder
+            const nodeCount = Array.isArray(folder.nodes) ? folder.nodes.length : 0;
+            let previewText = `${nodeCount} Node Logika`;
+            if (nodeCount > 0) {
+                const firstType = folder.nodes[0]?.type;
+                const tmpl = QUEST_NODE_TEMPLATES[firstType];
+                previewText = `${nodeCount} Node: ${tmpl?.icon || '⚙️'} ${folder.nodes[0]?.title || 'Awal'}`;
+                if (nodeCount > 1) previewText += ` ➔ ...`;
+            }
+
+            card.innerHTML = `
+                <div class="gt-qg-folder-header" data-drag-handle="folder" title="Tahan & geser untuk memindahkan posisi folder">
+                    <div class="gt-qg-folder-title">
+                        <span>📁</span>
+                        <span class="folder-title-text">${folder.name}</span>
+                    </div>
+                    <button class="gt-qg-folder-action-btn btn-card-rename" title="Ganti Nama" style="color: #fff; font-size: 12px;">✏️</button>
+                </div>
+                <div class="gt-qg-folder-body">
+                    <div class="gt-qg-folder-preview">${previewText}</div>
+                    <button class="gt-qg-folder-btn-open btn-card-open" title="Buka isi folder untuk mengedit logika internal">
+                        <span>🔍 Buka Isi Folder (Klik 2x)</span>
+                    </button>
+                </div>
+                <div class="gt-qg-folder-ports">
+                    <div class="gt-qg-port-item in" title="Titik Masuk Alur Cerita">
+                        <div class="gt-qg-port-dot is-in" data-folder="${folder.id}" data-fport="in" style="border-color: #38bdf8;"></div>
+                        <span>Masuk (In)</span>
+                    </div>
+                    <div class="gt-qg-port-item out" title="Titik Selesai Alur Cerita">
+                        <div class="gt-qg-port-dot is-out" data-folder="${folder.id}" data-fport="out" style="border-color: #f59e0b;"></div>
+                        <span>Selesai (Out)</span>
+                    </div>
+                </div>
+            `;
+
+            // Event Listeners pada kartu folder
+            card.addEventListener('mousedown', (e) => {
+                if (e.target.closest('.gt-qg-port-dot')) return;
+                this.selectFolder(folder.id);
+            });
+
+            // Double click to open folder
+            card.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                this.openFolder(folder.id);
+            });
+
+            // Rename button on card
+            card.querySelector('.btn-card-rename')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.promptRenameFolder(folder.id);
+            });
+
+            // Open button on card
+            card.querySelector('.btn-card-open')?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.openFolder(folder.id);
+            });
+
+            this.nodesLayer.appendChild(card);
+        });
+    }
+
+    renderFolderWires() {
+        this.wiresGroup.innerHTML = '';
+
+        this.folderWires.forEach((wire, index) => {
+            const outDot = this.dom.querySelector(`.gt-qg-port-dot.is-out[data-folder="${wire.fromFolder}"][data-fport="out"]`);
+            const inDot = this.dom.querySelector(`.gt-qg-port-dot.is-in[data-folder="${wire.toFolder}"][data-fport="in"]`);
+
+            if (!outDot || !inDot) return;
+
+            const outRect = outDot.getBoundingClientRect();
+            const inRect = inDot.getBoundingClientRect();
+            const wrapRect = this.canvasWrap.getBoundingClientRect();
+
+            const x1 = (outRect.left + outRect.width / 2 - wrapRect.left) / this.zoom;
+            const y1 = (outRect.top + outRect.height / 2 - wrapRect.top) / this.zoom;
+            const x2 = (inRect.left + inRect.width / 2 - wrapRect.left) / this.zoom;
+            const y2 = (inRect.top + inRect.height / 2 - wrapRect.top) / this.zoom;
+
+            const dx = Math.max(80, Math.abs(x2 - x1) * 0.55);
+            const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+
+            // Hitbox
+            const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            hitPath.setAttribute('d', d);
+            hitPath.setAttribute('class', 'gt-qg-wire-hit');
+            hitPath.setAttribute('title', 'Klik garis untuk memutus sambungan antar-folder');
+
+            const delHandler = (e) => {
+                e.stopPropagation();
+                AudioManager.playClick();
+                this.folderWires.splice(index, 1);
+                this.saveData();
+                this.renderFolderWires();
+            };
+            hitPath.addEventListener('click', delHandler);
+
+            // Wire path
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            path.setAttribute('class', 'gt-qg-wire-folder');
+            path.setAttribute('title', 'Klik garis untuk memutus sambungan antar-folder');
+            path.addEventListener('click', delHandler);
+
+            this.wiresGroup.appendChild(hitPath);
+            this.wiresGroup.appendChild(path);
+        });
+    }
+
+    renderFolderInspector() {
+        if (!this.inspectorBody) return;
+        const folder = this.folders.find(f => f.id === this.selectedFolderId);
+        if (!folder) {
+            this.inspectorBody.innerHTML = `
+                <div style="font-size: 11px; color: #64748b; text-align: center; margin-top: 40px; line-height: 1.5;">
+                    Pilih salah satu folder di kanvas atau buat folder baru dengan tombol <b>+ New Folder</b>.
+                </div>
+            `;
+            return;
+        }
+
+        const nodeCount = Array.isArray(folder.nodes) ? folder.nodes.length : 0;
+        this.inspectorBody.innerHTML = `
+            <div class="gt-qg-field">
+                <span class="gt-qg-field-label">Nama Folder</span>
+                <input type="text" class="gt-qg-field-input" id="inp-folder-name" value="${folder.name}" />
+            </div>
+
+            <div style="font-size: 11px; color: #94a3b8; background: #090e17; border: 1px solid #1e293b; border-radius: 6px; padding: 10px; margin-top: 8px;">
+                <div style="margin-bottom: 6px;">Total Node di Dalam: <b style="color: #38bdf8;">${nodeCount}</b></div>
+                <div>ID Folder: <code style="font-size: 9.5px; color: #64748b;">${folder.id}</code></div>
+            </div>
+
+            <button class="gt-qg-btn gt-qg-btn-primary" id="btn-insp-open-folder" style="width: 100%; justify-content: center; padding: 8px; margin-top: 10px;">
+                <span>🔍 Buka &amp; Edit Isi Folder</span>
+            </button>
+
+            ${this.folders.length > 1 ? `
+            <button class="gt-qg-btn" id="btn-insp-del-folder" style="width: 100%; justify-content: center; padding: 6px; margin-top: 8px; color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
+                <span>🗑️ Hapus Folder Ini</span>
+            </button>` : ''}
+        `;
+
+        const inpName = this.inspectorBody.querySelector('#inp-folder-name');
+        if (inpName) {
+            inpName.addEventListener('input', () => {
+                folder.name = inpName.value;
+                this.saveData();
+                this.renderSidebarFolders();
+                const cardTitle = this.dom.querySelector(`#qg-folder-${folder.id} .folder-title-text`);
+                if (cardTitle) cardTitle.textContent = folder.name;
+            });
+        }
+
+        this.inspectorBody.querySelector('#btn-insp-open-folder')?.addEventListener('click', () => {
+            this.openFolder(folder.id);
+        });
+
+        this.inspectorBody.querySelector('#btn-insp-del-folder')?.addEventListener('click', () => {
+            this.deleteFolder(folder.id);
+        });
+    }
+
+    // ===============================================================
+    // MICRO VIEW: RENDER DETAIL NODES & WIRES INSIDE FOLDER
+    // ===============================================================
     renderNodes() {
         this.nodesLayer.innerHTML = '';
 
@@ -858,6 +1466,8 @@ export class QuestLogicGraphView {
                 summaryText = `Peti: +${node.config.rewardCoins || 5} Koin`;
             } else if (node.type === 'give_reward') {
                 summaryText = `Hadiah: +${node.config.amount || 20} ${node.config.rewardType?.toUpperCase() || 'HP'}`;
+            } else if (node.type === 'folder_complete') {
+                summaryText = `Lanjut ke: <b>Folder Berikutnya</b>`;
             }
 
             card.innerHTML = `
@@ -907,11 +1517,11 @@ export class QuestLogicGraphView {
             const dx = Math.max(60, Math.abs(x2 - x1) * 0.55);
             const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
 
-            // Hitbox tebal 24px transparan agar mudah di-klik
+            // Hitbox
             const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             hitPath.setAttribute('d', d);
             hitPath.setAttribute('class', 'gt-qg-wire-hit');
-            hitPath.setAttribute('title', 'Klik garis ini untuk memutuskan sambungan logika');
+            hitPath.setAttribute('title', 'Klik garis untuk memutus sambungan logika');
 
             const delHandler = (e) => {
                 e.stopPropagation();
@@ -930,26 +1540,12 @@ export class QuestLogicGraphView {
             path.setAttribute('title', 'Klik garis untuk memutus');
             path.addEventListener('click', delHandler);
 
-            // Pulse
-            const pulse = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            pulse.setAttribute('d', d);
-            pulse.setAttribute('class', 'gt-qg-wire-pulse');
-
             this.wiresGroup.appendChild(hitPath);
             this.wiresGroup.appendChild(path);
-            this.wiresGroup.appendChild(pulse);
         });
     }
 
-    selectNode(nodeId) {
-        this.selectedNodeId = nodeId;
-        this.dom.querySelectorAll('.gt-qg-node').forEach(n => {
-            n.classList.toggle('selected', n.getAttribute('data-node-id') === nodeId);
-        });
-        this.renderInspector();
-    }
-
-    renderInspector() {
+    renderNodeInspector() {
         if (!this.inspectorBody) return;
         const node = this.nodes.find(n => n.id === this.selectedNodeId);
         if (!node) {
@@ -987,9 +1583,6 @@ export class QuestLogicGraphView {
                     <span class="gt-qg-field-label">Jumlah Koin Minimal Diperlukan</span>
                     <input type="number" class="gt-qg-field-input" id="inp-qg-req-coins" value="${node.config.reqCoins || 3}" min="1" max="99" />
                 </div>
-                <div style="font-size: 10.5px; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 8px; border-radius: 5px; border: 1px dashed rgba(245, 158, 11, 0.3); line-height: 1.4;">
-                    🪙 Jika pemain memiliki koin ≥ nilai ini, alur akan mengalir ke pin <b>Hijau (Pass)</b>. Jika kurang, mengalir ke pin <b>Merah (Fail)</b>.
-                </div>
             `;
         } else if (node.type === 'dialogue') {
             const linesStr = (node.config.lines || []).join('\n');
@@ -1013,15 +1606,16 @@ export class QuestLogicGraphView {
                     <span class="gt-qg-field-label">Bonus Pemulihan HP</span>
                     <input type="number" class="gt-qg-field-input" id="inp-qg-reward-hp" value="${node.config.rewardHp || 20}" min="0" max="100" />
                 </div>
-                <div style="font-size: 10.5px; color: #10b981; background: rgba(16, 185, 129, 0.1); padding: 8px; border-radius: 5px; border: 1px dashed rgba(16, 185, 129, 0.3); line-height: 1.4;">
-                    🌀 Begitu node ini terpicu, segel portal finish langsung terbuka dan banner ucapan selamat muncul di layar!
-                </div>
             `;
         } else if (node.type === 'chest_trigger') {
             fieldsHTML += `
                 <div class="gt-qg-field">
-                    <span class="gt-qg-field-label">Hadiah Koin dari Peti</span>
-                    <input type="number" class="gt-qg-field-input" id="inp-qg-chest-coins" value="${node.config.rewardCoins || 5}" min="1" max="100" />
+                    <span class="gt-qg-field-label">Nama Peti</span>
+                    <input type="text" class="gt-qg-field-input" id="inp-qg-chest-name" value="${node.config.chestName || 'Peti Kuno'}" />
+                </div>
+                <div class="gt-qg-field">
+                    <span class="gt-qg-field-label">Hadiah Koin</span>
+                    <input type="number" class="gt-qg-field-input" id="inp-qg-chest-coins" value="${node.config.rewardCoins || 5}" min="1" max="99" />
                 </div>
             `;
         } else if (node.type === 'give_reward') {
@@ -1029,23 +1623,28 @@ export class QuestLogicGraphView {
                 <div class="gt-qg-field">
                     <span class="gt-qg-field-label">Tipe Hadiah</span>
                     <select class="gt-qg-field-input" id="inp-qg-reward-type">
-                        <option value="hp" ${node.config.rewardType === 'hp' ? 'selected' : ''}>Pulihkan HP Darah (+HP)</option>
-                        <option value="coins" ${node.config.rewardType === 'coins' ? 'selected' : ''}>Koin Emas (+Coins)</option>
+                        <option value="hp" ${node.config.rewardType === 'hp' ? 'selected' : ''}>Pulihkan Darah (HP)</option>
+                        <option value="coins" ${node.config.rewardType === 'coins' ? 'selected' : ''}>Bonus Koin Emas</option>
                     </select>
                 </div>
                 <div class="gt-qg-field">
-                    <span class="gt-qg-field-label">Jumlah Hadiah</span>
+                    <span class="gt-qg-field-label">Jumlah Bonus</span>
                     <input type="number" class="gt-qg-field-input" id="inp-qg-reward-amount" value="${node.config.amount || 25}" min="1" max="100" />
+                </div>
+            `;
+        } else if (node.type === 'folder_complete') {
+            fieldsHTML += `
+                <div class="gt-qg-field">
+                    <span class="gt-qg-field-label">Pesan Banner Selesai</span>
+                    <input type="text" class="gt-qg-field-input" id="inp-qg-complete-msg" value="${node.config.bannerMsg || '🎉 Babak misi selesai! Lanjut ke babak berikutnya.'}" />
                 </div>
             `;
         }
 
         fieldsHTML += `
-            <div style="margin-top: 14px; border-top: 1px solid #1e293b; padding-top: 12px;">
-                <button class="gt-qg-btn" id="btn-qg-delete-node" style="width: 100%; justify-content: center; color: #f87171; border-color: rgba(248, 113, 113, 0.4); background: rgba(239, 68, 68, 0.08);">
-                    <span>🗑️</span> Hapus Node Ini
-                </button>
-            </div>
+            <button class="gt-qg-btn" id="btn-qg-delete-node" style="width: 100%; justify-content: center; padding: 7px; margin-top: 10px; color: #ef4444; border-color: rgba(239, 68, 68, 0.4);">
+                <span>🗑️ Hapus Node Ini</span>
+            </button>
         `;
 
         this.inspectorBody.innerHTML = fieldsHTML;
@@ -1135,12 +1734,145 @@ export class QuestLogicGraphView {
             });
         }
 
+        const inpCompMsg = this.inspectorBody.querySelector('#inp-qg-complete-msg');
+        if (inpCompMsg) {
+            inpCompMsg.addEventListener('input', () => {
+                node.config.bannerMsg = inpCompMsg.value;
+                this.saveData();
+            });
+        }
+
         const btnDelete = this.inspectorBody.querySelector('#btn-qg-delete-node');
         if (btnDelete) {
             btnDelete.addEventListener('click', () => {
                 this.deleteNode(node.id);
             });
         }
+    }
+
+    // ===============================================================
+    // FOLDER MANAGEMENT METHODS
+    // ===============================================================
+    addNewFolder(customName = null) {
+        const count = this.folders.length + 1;
+        const folderName = customName || `New Folder ${count}`;
+        const newFolderId = `folder_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 3)}`;
+
+        // Penempatan otomatis di samping folder terakhir
+        const lastFolder = this.folders[this.folders.length - 1];
+        const posX = lastFolder ? (lastFolder.x + 320) : 80;
+        const posY = lastFolder ? lastFolder.y : 120;
+
+        const newFolder = {
+            id: newFolderId,
+            name: folderName,
+            x: posX,
+            y: posY,
+            nodes: [
+                {
+                    id: `node_npc_${Date.now().toString(36)}`,
+                    type: 'npc_trigger',
+                    title: 'Bicara dengan Karakter',
+                    x: 60,
+                    y: 120,
+                    config: {
+                        speakerName: 'Karakter',
+                        avatar: '🧙',
+                        promptText: 'Tekan E untuk bicara'
+                    }
+                },
+                {
+                    id: `node_dlg_${Date.now().toString(36)}`,
+                    type: 'dialogue',
+                    title: 'Pesan Dialog',
+                    x: 340,
+                    y: 100,
+                    config: {
+                        speakerName: 'Karakter',
+                        lines: ['Halo! Selesaikan tugas di folder ini.']
+                    }
+                }
+            ],
+            wires: []
+        };
+
+        this.folders.push(newFolder);
+        this.selectedFolderId = newFolderId;
+        AudioManager.playClick();
+        this.saveData();
+        this.renderAll();
+    }
+
+    promptRenameFolder(folderId) {
+        const folder = this.folders.find(f => f.id === folderId);
+        if (!folder) return;
+        const newName = prompt(`Ubah nama folder:`, folder.name);
+        if (newName !== null && newName.trim().length > 0) {
+            folder.name = newName.trim();
+            this.saveData();
+            this.renderAll();
+        }
+    }
+
+    deleteFolder(folderId) {
+        if (this.folders.length <= 1) {
+            alert('Minimal harus ada 1 folder dalam alur logika!');
+            return;
+        }
+        if (!confirm(`Hapus folder ini beserta seluruh node di dalamnya?`)) return;
+
+        this.folders = this.folders.filter(f => f.id !== folderId);
+        this.folderWires = this.folderWires.filter(w => w.fromFolder !== folderId && w.toFolder !== folderId);
+        if (this.currentFolderId === folderId) {
+            this.currentFolderId = null;
+        }
+        if (this.selectedFolderId === folderId) {
+            this.selectedFolderId = this.folders[0]?.id || null;
+        }
+        AudioManager.playClick();
+        this.saveData();
+        this.renderAll();
+    }
+
+    selectFolder(folderId) {
+        this.selectedFolderId = folderId;
+        this.dom.querySelectorAll('.gt-qg-folder-card').forEach(c => {
+            c.classList.toggle('selected', c.getAttribute('data-folder-id') === folderId);
+        });
+        this.renderSidebarFolders();
+        this.renderFolderInspector();
+    }
+
+    openFolder(folderId) {
+        const folder = this.folders.find(f => f.id === folderId);
+        if (!folder) return;
+        this.currentFolderId = folderId;
+        this.pan = { x: 40, y: 40 };
+        this.zoom = 1;
+        this.syncActiveFolderData();
+        AudioManager.playClick();
+        this.renderAll();
+        this.applyTransform();
+    }
+
+    closeFolderToMacro() {
+        if (this.currentFolderId) {
+            this.saveData();
+        }
+        this.currentFolderId = null;
+        this.pan = { x: 40, y: 40 };
+        this.zoom = 1;
+        AudioManager.playClick();
+        this.renderAll();
+        this.applyTransform();
+    }
+
+    selectNode(nodeId) {
+        this.selectedNodeId = nodeId;
+        this.dom.querySelectorAll('.gt-qg-node').forEach(n => {
+            n.classList.toggle('selected', n.getAttribute('data-node-id') === nodeId);
+        });
+        this.renderNodeInspector();
     }
 
     addNode(type, x = null, y = null) {
@@ -1178,6 +1910,9 @@ export class QuestLogicGraphView {
         this.selectNode(this.nodes.length > 0 ? this.nodes[0].id : null);
     }
 
+    // ===============================================================
+    // EVENTS & USER INTERACTIONS
+    // ===============================================================
     bindEvents() {
         // Subtab: Kembali ke Scene Flow
         const btnTabSceneFlow = this.dom.querySelector('#btn-tab-scene-flow');
@@ -1190,13 +1925,9 @@ export class QuestLogicGraphView {
             });
         }
 
-        // Palette Item Click / Drag
-        this.dom.querySelectorAll('.gt-qg-palette-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const type = item.getAttribute('data-type');
-                this.addNode(type);
-            });
-        });
+        // Tombol Tambah Folder
+        this.dom.querySelector('#btn-qg-add-folder')?.addEventListener('click', () => this.addNewFolder());
+        this.dom.querySelector('#btn-qg-palette-add-folder')?.addEventListener('click', () => this.addNewFolder());
 
         // Auto-Layout
         const btnAutoLayout = this.dom.querySelector('#btn-qg-auto-layout');
@@ -1220,7 +1951,7 @@ export class QuestLogicGraphView {
         const btnReset = this.dom.querySelector('#btn-qg-reset-default');
         if (btnReset) {
             btnReset.addEventListener('click', () => {
-                if (confirm('Reset logika misi ke contoh default Kapten Chen & Syarat 3 Koin?')) {
+                if (confirm('Reset logika misi ke contoh default New Folder 1 & Kapten Chen?')) {
                     AudioManager.playClick();
                     const proj = ProjectManager.getProject(this.projectId);
                     if (proj && proj.questLogicMap) {
@@ -1232,37 +1963,82 @@ export class QuestLogicGraphView {
             });
         }
 
-        // Zoom & Pan
-        this.dom.querySelector('#btn-qg-zoom-in').addEventListener('click', () => {
+        // Zoom & Pan Buttons
+        this.dom.querySelector('#btn-qg-zoom-in')?.addEventListener('click', () => {
             this.zoom = Math.min(2.0, this.zoom + 0.15);
             this.applyTransform();
         });
-        this.dom.querySelector('#btn-qg-zoom-out').addEventListener('click', () => {
+        this.dom.querySelector('#btn-qg-zoom-out')?.addEventListener('click', () => {
             this.zoom = Math.max(0.4, this.zoom - 0.15);
             this.applyTransform();
         });
-        this.dom.querySelector('#btn-qg-zoom-reset').addEventListener('click', () => {
+        this.dom.querySelector('#btn-qg-zoom-reset')?.addEventListener('click', () => {
             this.zoom = 1;
             this.pan = { x: 30, y: 30 };
             this.applyTransform();
         });
 
-        // Mouse Drag / Wiring / Panning
+        // Mouse Down Handler (Port click, Drag Node/Folder, Canvas Pan)
         this.dom.addEventListener('mousedown', (e) => {
-            const dragHandle = e.target.closest('[data-drag-handle="true"]');
+            const dragNodeHandle = e.target.closest('[data-drag-handle="true"]');
+            const dragFolderHandle = e.target.closest('[data-drag-handle="folder"]');
             const portDot = e.target.closest('.gt-qg-port-dot');
 
-            // Kasus A: Interaksi Port (Klik atau Tarik)
+            // 1. INTERAKSI PORT (KABEL)
             if (portDot) {
                 e.preventDefault();
                 e.stopPropagation();
+
+                // Kasus Folder Port (Macro View)
+                const isFolderPort = portDot.hasAttribute('data-folder');
+                if (isFolderPort) {
+                    const fId = portDot.getAttribute('data-folder');
+                    const fPort = portDot.getAttribute('data-fport'); // 'in' | 'out'
+
+                    // Jika klik port IN setelah klik port OUT
+                    if (fPort === 'in' && this.selectedSourceFolderPort) {
+                        if (this.selectedSourceFolderPort.folderId !== fId) {
+                            // Hapus kabel lama jika ada
+                            this.folderWires = this.folderWires.filter(w => !(w.fromFolder === this.selectedSourceFolderPort.folderId && w.toFolder === fId));
+                            this.folderWires.push({
+                                fromFolder: this.selectedSourceFolderPort.folderId,
+                                toFolder: fId
+                            });
+                            AudioManager.playSuccess();
+                            this.saveData();
+                            this.renderFolderWires();
+                        }
+                        this.clearPortSelection();
+                        return;
+                    }
+
+                    // Jika klik port OUT
+                    if (fPort === 'out') {
+                        this.selectSourceFolderPort(fId, portDot);
+                        const rect = portDot.getBoundingClientRect();
+                        const wrapRect = this.canvasWrap.getBoundingClientRect();
+                        const startX = (rect.left + rect.width / 2 - wrapRect.left) / this.zoom;
+                        const startY = (rect.top + rect.height / 2 - wrapRect.top) / this.zoom;
+
+                        this.wiring = {
+                            type: 'folder',
+                            fromFolderId: fId,
+                            startX,
+                            startY,
+                            currentX: startX,
+                            currentY: startY
+                        };
+                        this.liveWirePath.style.display = 'block';
+                        return;
+                    }
+                }
+
+                // Kasus Node Port (Micro View)
                 const portNodeId = portDot.getAttribute('data-node');
                 const portId = portDot.getAttribute('data-port');
 
-                // Jika sedang memilih target (Klik port IN setelah klik port OUT)
                 if (portDot.classList.contains('is-in') && this.selectedSourcePort) {
                     if (this.selectedSourcePort.nodeId !== portNodeId) {
-                        // Hapus koneksi lama dari port yang sama jika ada
                         this.wires = this.wires.filter(w => !(w.fromNode === this.selectedSourcePort.nodeId && w.fromPort === this.selectedSourcePort.portId));
                         this.wires.push({
                             fromNode: this.selectedSourcePort.nodeId,
@@ -1278,16 +2054,15 @@ export class QuestLogicGraphView {
                     return;
                 }
 
-                // Klik port OUT untuk mode drag ATAU klik
                 if (portDot.classList.contains('is-out')) {
                     this.selectSourcePort(portNodeId, portId, portDot);
-
                     const rect = portDot.getBoundingClientRect();
                     const wrapRect = this.canvasWrap.getBoundingClientRect();
                     const startX = (rect.left + rect.width / 2 - wrapRect.left) / this.zoom;
                     const startY = (rect.top + rect.height / 2 - wrapRect.top) / this.zoom;
 
                     this.wiring = {
+                        type: 'node',
                         fromNodeId: portNodeId,
                         fromPortId: portId,
                         startX,
@@ -1295,21 +2070,39 @@ export class QuestLogicGraphView {
                         currentX: startX,
                         currentY: startY
                     };
-
                     this.liveWirePath.style.display = 'block';
                     return;
                 }
             }
 
-            // Batalkan seleksi port jika klik di kanvas
-            if (this.selectedSourcePort && !e.target.closest('.gt-qg-port-dot')) {
-                this.clearPortSelection();
+            // Bersihkan seleksi port jika klik sembarang
+            if (this.selectedSourcePort || this.selectedSourceFolderPort) {
+                if (!e.target.closest('.gt-qg-port-dot')) {
+                    this.clearPortSelection();
+                }
             }
 
-            // Kasus B: Dragging Node
-            if (dragHandle) {
+            // 2. DRAGGING FOLDER CARD (Macro View)
+            if (dragFolderHandle) {
                 e.preventDefault();
-                const nodeCard = dragHandle.closest('.gt-qg-node');
+                const folderCard = dragFolderHandle.closest('.gt-qg-folder-card');
+                const fId = folderCard.getAttribute('data-folder-id');
+                this.draggedFolderId = fId;
+
+                const folder = this.folders.find(f => f.id === fId);
+                if (folder) {
+                    this.dragOffset = {
+                        x: (e.clientX / this.zoom) - (folder.x || 80),
+                        y: (e.clientY / this.zoom) - (folder.y || 120)
+                    };
+                }
+                return;
+            }
+
+            // 3. DRAGGING NODE CARD (Micro View)
+            if (dragNodeHandle) {
+                e.preventDefault();
+                const nodeCard = dragNodeHandle.closest('.gt-qg-node');
                 const nodeId = nodeCard.getAttribute('data-node-id');
                 this.draggedNodeId = nodeId;
 
@@ -1323,56 +2116,59 @@ export class QuestLogicGraphView {
                 return;
             }
 
-            // Kasus C: Pan Canvas
-            if (!e.target.closest('.gt-qg-node') && !e.target.closest('.gt-qg-palette') && !e.target.closest('.gt-qg-inspector') && !e.target.closest('.gt-qg-topbar')) {
-                this.isPanning = true;
-                this.panStart = {
-                    x: e.clientX - this.pan.x,
-                    y: e.clientY - this.pan.y
-                };
-            }
+            // 4. PANNING KANVAS
+            if (e.target.closest('.gt-qg-palette') || e.target.closest('.gt-qg-inspector') || e.target.closest('.gt-qg-topbar')) return;
+            this.isPanning = true;
+            this.panStart = { x: e.clientX - this.pan.x, y: e.clientY - this.pan.y };
         });
 
+        // Mouse Move Handler
         window.addEventListener('mousemove', (e) => {
-            // Live Wiring
+            // Drag Live Wire
             if (this.wiring) {
                 const wrapRect = this.canvasWrap.getBoundingClientRect();
-                const cx = (e.clientX - wrapRect.left) / this.zoom;
-                const cy = (e.clientY - wrapRect.top) / this.zoom;
+                const curX = (e.clientX - wrapRect.left) / this.zoom;
+                const curY = (e.clientY - wrapRect.top) / this.zoom;
 
-                const dx = Math.max(50, Math.abs(cx - this.wiring.startX) * 0.5);
-                const d = `M ${this.wiring.startX} ${this.wiring.startY} C ${this.wiring.startX + dx} ${this.wiring.startY}, ${cx - dx} ${cy}, ${cx} ${cy}`;
+                const dx = Math.max(60, Math.abs(curX - this.wiring.startX) * 0.55);
+                const d = `M ${this.wiring.startX} ${this.wiring.startY} C ${this.wiring.startX + dx} ${this.wiring.startY}, ${curX - dx} ${curY}, ${curX} ${curY}`;
                 this.liveWirePath.setAttribute('d', d);
-
-                // Highlight port di bawah kursor
-                this.dom.querySelectorAll('.gt-qg-port-dot.is-in').forEach(dot => {
-                    const r = dot.getBoundingClientRect();
-                    const isInside = (e.clientX >= r.left - 8 && e.clientX <= r.right + 8 && e.clientY >= r.top - 8 && e.clientY <= r.bottom + 8);
-                    dot.classList.toggle('is-hovered', isInside);
-                });
                 return;
             }
 
-            // Drag Node
-            if (this.draggedNodeId) {
-                const nx = Math.round((e.clientX / this.zoom) - this.dragOffset.x);
-                const ny = Math.round((e.clientY / this.zoom) - this.dragOffset.y);
+            // Drag Folder Card
+            if (this.draggedFolderId) {
+                const folder = this.folders.find(f => f.id === this.draggedFolderId);
+                if (folder) {
+                    folder.x = Math.max(20, Math.round(e.clientX / this.zoom - this.dragOffset.x));
+                    folder.y = Math.max(20, Math.round(e.clientY / this.zoom - this.dragOffset.y));
+                    const card = this.dom.querySelector(`#qg-folder-${folder.id}`);
+                    if (card) {
+                        card.style.left = `${folder.x}px`;
+                        card.style.top = `${folder.y}px`;
+                    }
+                    this.renderFolderWires();
+                }
+                return;
+            }
 
+            // Drag Node Card
+            if (this.draggedNodeId) {
                 const node = this.nodes.find(n => n.id === this.draggedNodeId);
                 if (node) {
-                    node.x = nx;
-                    node.y = ny;
-                    const nodeEl = this.dom.querySelector(`#qg-node-${node.id}`);
-                    if (nodeEl) {
-                        nodeEl.style.left = `${nx}px`;
-                        nodeEl.style.top = `${ny}px`;
+                    node.x = Math.max(20, Math.round(e.clientX / this.zoom - this.dragOffset.x));
+                    node.y = Math.max(20, Math.round(e.clientY / this.zoom - this.dragOffset.y));
+                    const card = this.dom.querySelector(`#qg-node-${node.id}`);
+                    if (card) {
+                        card.style.left = `${node.x}px`;
+                        card.style.top = `${node.y}px`;
                     }
                     this.renderWires();
                 }
                 return;
             }
 
-            // Panning
+            // Panning Kanvas
             if (this.isPanning) {
                 this.pan.x = e.clientX - this.panStart.x;
                 this.pan.y = e.clientY - this.panStart.y;
@@ -1380,42 +2176,52 @@ export class QuestLogicGraphView {
             }
         });
 
+        // Mouse Up Handler
         window.addEventListener('mouseup', (e) => {
-            // Selesaikan penarikan kabel
             if (this.wiring) {
-                const hoveredInPort = document.elementFromPoint(e.clientX, e.clientY)?.closest('.gt-qg-port-dot.is-in');
-                if (hoveredInPort) {
-                    const toNodeId = hoveredInPort.getAttribute('data-node');
-                    const toPortId = hoveredInPort.getAttribute('data-port');
-
-                    if (toNodeId && toNodeId !== this.wiring.fromNodeId) {
-                        this.wires = this.wires.filter(w => !(w.fromNode === this.wiring.fromNodeId && w.fromPort === this.wiring.fromPortId));
-                        this.wires.push({
-                            fromNode: this.wiring.fromNodeId,
-                            fromPort: this.wiring.fromPortId,
-                            toNode: toNodeId,
-                            toPort: toPortId
-                        });
-                        AudioManager.playSuccess();
-                        this.saveData();
+                const portDot = e.target.closest('.gt-qg-port-dot');
+                if (portDot && portDot.classList.contains('is-in')) {
+                    if (this.wiring.type === 'folder' && portDot.hasAttribute('data-folder')) {
+                        const targetFolderId = portDot.getAttribute('data-folder');
+                        if (targetFolderId !== this.wiring.fromFolderId) {
+                            this.folderWires = this.folderWires.filter(w => !(w.fromFolder === this.wiring.fromFolderId && w.toFolder === targetFolderId));
+                            this.folderWires.push({
+                                fromFolder: this.wiring.fromFolderId,
+                                toFolder: targetFolderId
+                            });
+                            AudioManager.playSuccess();
+                            this.saveData();
+                            this.renderFolderWires();
+                        }
+                    } else if (this.wiring.type === 'node' && portDot.hasAttribute('data-node')) {
+                        const targetNodeId = portDot.getAttribute('data-node');
+                        const targetPortId = portDot.getAttribute('data-port');
+                        if (targetNodeId !== this.wiring.fromNodeId) {
+                            this.wires = this.wires.filter(w => !(w.fromNode === this.wiring.fromNodeId && w.fromPort === this.wiring.fromPortId));
+                            this.wires.push({
+                                fromNode: this.wiring.fromNodeId,
+                                fromPort: this.wiring.fromPortId,
+                                toNode: targetNodeId,
+                                toPort: targetPortId
+                            });
+                            AudioManager.playSuccess();
+                            this.saveData();
+                            this.renderWires();
+                        }
                     }
                 }
-
-                this.dom.querySelectorAll('.gt-qg-port-dot').forEach(d => d.classList.remove('is-hovered'));
-                this.liveWirePath.style.display = 'none';
                 this.wiring = null;
-                this.renderWires();
-                return;
+                this.liveWirePath.style.display = 'none';
+                this.clearPortSelection();
             }
 
-            if (this.draggedNodeId) {
+            if (this.draggedFolderId || this.draggedNodeId) {
+                this.draggedFolderId = null;
                 this.draggedNodeId = null;
                 this.saveData();
             }
 
-            if (this.isPanning) {
-                this.isPanning = false;
-            }
+            this.isPanning = false;
         });
 
         // Wheel Zoom
@@ -1423,7 +2229,7 @@ export class QuestLogicGraphView {
             if (e.target.closest('.gt-qg-palette') || e.target.closest('.gt-qg-inspector')) return;
             e.preventDefault();
             const delta = e.deltaY < 0 ? 0.08 : -0.08;
-            this.zoom = Math.max(0.4, Math.min(2.0, this.zoom + delta));
+            this.zoom = Math.min(2.0, Math.max(0.4, this.zoom + delta));
             this.applyTransform();
         }, { passive: false });
     }
@@ -1431,51 +2237,59 @@ export class QuestLogicGraphView {
     selectSourcePort(nodeId, portId, portEl) {
         this.clearPortSelection();
         this.selectedSourcePort = { nodeId, portId };
-        if (portEl) portEl.classList.add('is-source-active');
-        const hintEl = this.dom.querySelector('#gt-qg-hint');
-        if (hintEl) {
-            hintEl.innerHTML = `🔗 <b>Mode Sambung:</b> Port output terpilih! Sekarang klik port <b>Input (Kiri)</b> pada node tujuan untuk menghubungkan alur logika.`;
-            hintEl.style.color = '#38bdf8';
-        }
+        portEl.classList.add('is-source-active');
+    }
+
+    selectSourceFolderPort(folderId, portEl) {
+        this.clearPortSelection();
+        this.selectedSourceFolderPort = { folderId };
+        portEl.classList.add('is-source-active');
     }
 
     clearPortSelection() {
         this.selectedSourcePort = null;
-        if (this.dom) {
-            this.dom.querySelectorAll('.gt-qg-port-dot').forEach(d => {
-                d.classList.remove('is-source-active');
-                d.classList.remove('is-hovered');
-            });
-            const hintEl = this.dom.querySelector('#gt-qg-hint');
-            if (hintEl) {
-                hintEl.innerHTML = `💡 <b>Tips:</b> Klik node untuk edit parameter di kanan. Tarik port output (kanan) ke port input (kiri) untuk menyambung alur!`;
-                hintEl.style.color = '#64748b';
-            }
-        }
+        this.selectedSourceFolderPort = null;
+        this.dom.querySelectorAll('.gt-qg-port-dot').forEach(d => {
+            d.classList.remove('is-source-active');
+        });
     }
 
     applyTransform() {
         if (!this.canvasWrap) return;
         this.canvasWrap.style.transform = `translate(${this.pan.x}px, ${this.pan.y}px) scale(${this.zoom})`;
-        const zoomResetBtn = this.dom.querySelector('#btn-qg-zoom-reset');
-        if (zoomResetBtn) {
-            zoomResetBtn.textContent = `${Math.round(this.zoom * 100)}%`;
-        }
+        const btnReset = this.dom.querySelector('#btn-qg-zoom-reset');
+        if (btnReset) btnReset.textContent = `${Math.round(this.zoom * 100)}%`;
     }
 
     autoLayout() {
-        // Urutkan node ke dalam kolom berdasarkan dependensi alur
-        let startX = 60;
-        let startY = 100;
-        this.nodes.forEach((n, idx) => {
-            n.x = startX + (idx % 3) * 310;
-            n.y = startY + Math.floor(idx / 3) * 200;
-        });
-        this.saveData();
-        this.renderNodes();
-        this.renderWires();
+        if (this.currentFolderId === null) {
+            // Auto layout folder cards
+            this.folders.forEach((f, idx) => {
+                f.x = 80 + idx * 340;
+                f.y = 120 + (idx % 2 === 1 ? 50 : 0);
+            });
+            this.pan = { x: 40, y: 40 };
+            this.zoom = 1;
+            this.applyTransform();
+            this.saveData();
+            this.renderFolderNodes();
+            this.renderFolderWires();
+        } else {
+            // Auto layout internal nodes
+            this.nodes.forEach((n, idx) => {
+                n.x = 60 + idx * 280;
+                n.y = 100 + (idx % 2 === 1 ? 60 : 0);
+            });
+            this.pan = { x: 30, y: 30 };
+            this.zoom = 1;
+            this.applyTransform();
+            this.saveData();
+            this.renderNodes();
+            this.renderWires();
+        }
     }
 
+    // Modal Simulasi Interaktif
     openSimulationDialog() {
         const old = document.getElementById('gt-qg-sim-modal');
         if (old) old.remove();
@@ -1488,17 +2302,20 @@ export class QuestLogicGraphView {
         `;
 
         let simCoins = 0;
+        const targetNodes = this.currentFolderId ? this.nodes : (this.folders[0]?.nodes || []);
+        const targetWires = this.currentFolderId ? this.wires : (this.folders[0]?.wires || []);
+
         const updateSim = () => {
-            const condNode = this.nodes.find(n => n.type === 'condition_coins');
+            const condNode = targetNodes.find(n => n.type === 'condition_coins');
             const reqCoins = (condNode && condNode.config.reqCoins) || 3;
             const isPass = simCoins >= reqCoins;
 
-            const wiresFromCond = this.wires.filter(w => w.fromNode === (condNode?.id));
+            const wiresFromCond = targetWires.filter(w => w.fromNode === (condNode?.id));
             const passWire = wiresFromCond.find(w => w.fromPort === 'pass');
             const failWire = wiresFromCond.find(w => w.fromPort === 'fail');
 
-            const passTarget = passWire ? this.nodes.find(n => n.id === passWire.toNode) : null;
-            const failTarget = failWire ? this.nodes.find(n => n.id === failWire.toNode) : null;
+            const passTarget = passWire ? targetNodes.find(n => n.id === passWire.toNode) : null;
+            const failTarget = failWire ? targetNodes.find(n => n.id === failWire.toNode) : null;
 
             const targetNode = isPass ? passTarget : failTarget;
             const resultMsg = targetNode ? (targetNode.title || targetNode.type) : '(Belum ada kabel tersambung)';
@@ -1513,11 +2330,11 @@ export class QuestLogicGraphView {
                 </div>
                 ${isPass ? `
                     <div style="margin-top: 8px; font-size: 11px; color: #4ade80;">
-                        🎉 Portal finish akan TERBUKA saat pemain bicara dengan NPC!
+                        🎉 Portal / Babak berikutnya akan TERBUKA saat pemain bicara dengan NPC!
                     </div>
                 ` : `
                     <div style="margin-top: 8px; font-size: 11px; color: #fca5a5;">
-                        🔒 Portal finish tetap TERKUNCI dan NPC meminta koin lagi.
+                        🔒 Misi belum tercapai dan NPC meminta koin lagi.
                     </div>
                 `}
             `;
@@ -1551,14 +2368,14 @@ export class QuestLogicGraphView {
 
         document.body.appendChild(simDialog);
 
-        simDialog.querySelector('#btn-close-sim').addEventListener('click', () => simDialog.remove());
-        simDialog.querySelector('#btn-done-sim').addEventListener('click', () => simDialog.remove());
-        simDialog.querySelector('#btn-sim-dec').addEventListener('click', () => {
+        simDialog.querySelector('#btn-close-sim')?.addEventListener('click', () => simDialog.remove());
+        simDialog.querySelector('#btn-done-sim')?.addEventListener('click', () => simDialog.remove());
+        simDialog.querySelector('#btn-sim-dec')?.addEventListener('click', () => {
             simCoins = Math.max(0, simCoins - 1);
             AudioManager.playClick();
             updateSim();
         });
-        simDialog.querySelector('#btn-sim-inc').addEventListener('click', () => {
+        simDialog.querySelector('#btn-sim-inc')?.addEventListener('click', () => {
             simCoins++;
             AudioManager.playCoin();
             updateSim();

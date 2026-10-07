@@ -484,7 +484,6 @@ export class SceneFlowGraphView {
         }
 
         const flow = ProjectManager.getFlowGraph(this.projectId);
-        this.connections = Array.isArray(flow.connections) ? [...flow.connections] : [];
         this.nodePositions = (flow.positions && typeof flow.positions === 'object') ? { ...flow.positions } : {};
 
         // Inisialisasi posisi default jika belum ada
@@ -497,8 +496,9 @@ export class SceneFlowGraphView {
             }
         });
 
-        // Jika belum ada koneksi sama sekali, hubungkan secara default 1 -> 2 -> 3
-        if (this.connections.length === 0 && project.scenes.length > 1) {
+        // HANYA hubungkan secara default 1 -> 2 -> 3 jika project BELUM pernah mengonfigurasi Flow Graph
+        if (flow.connections === null && !flow.hasConfiguredFlowGraph && project.scenes.length > 1) {
+            this.connections = [];
             for (let i = 0; i < project.scenes.length - 1; i++) {
                 this.connections.push({
                     fromSceneId: project.scenes[i].id,
@@ -508,6 +508,8 @@ export class SceneFlowGraphView {
                 });
             }
             this.saveGraph();
+        } else {
+            this.connections = Array.isArray(flow.connections) ? [...flow.connections] : [];
         }
 
         this.renderNodes(project.scenes);

@@ -364,7 +364,7 @@ export class ProjectHubModal {
                 }
 
                 .gt-uhub-row.gt-uhub-cols-3 {
-                    grid-template-columns: 3fr 1.2fr 1.6fr;
+                    grid-template-columns: 2.6fr 1.2fr 1.8fr;
                 }
 
                 .gt-uhub-row:hover {
@@ -509,26 +509,135 @@ export class ProjectHubModal {
                     gap: 8px;
                 }
 
+                /* Pure CSS Folder Icon */
+                .css-folder-icon {
+                    display: inline-block;
+                    position: relative;
+                    width: 14px;
+                    height: 10px;
+                    background-color: currentColor;
+                    border-radius: 0 2px 2px 2px;
+                    flex-shrink: 0;
+                    vertical-align: middle;
+                    margin-right: 4px;
+                    transition: transform 0.15s ease;
+                }
+
+                .css-folder-icon::before {
+                    content: '';
+                    position: absolute;
+                    bottom: 100%;
+                    left: 0;
+                    width: 6px;
+                    height: 2.5px;
+                    background-color: currentColor;
+                    border-radius: 1.5px 1.5px 0 0;
+                }
+
+                .css-folder-icon::after {
+                    content: '';
+                    position: absolute;
+                    top: 2px;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(255, 255, 255, 0.28);
+                    border-radius: 1px 2px 2px 2px;
+                }
+
                 .gt-uhub-btn-open {
-                    padding: 6px 16px;
-                    background: #252525;
-                    border: 1px solid #383838;
-                    border-radius: 5px;
-                    color: #ffffff;
+                    padding: 6px 14px;
+                    background: #1e1e24;
+                    border: 1px solid #32323f;
+                    border-radius: 6px;
+                    color: #e2e8f0;
                     font-size: 12px;
-                    font-weight: 600;
+                    font-weight: 500;
                     cursor: pointer;
-                    display: flex;
+                    display: inline-flex;
                     align-items: center;
                     gap: 6px;
+                    white-space: nowrap;
                     transition: all 0.15s ease;
                 }
 
                 .gt-uhub-btn-open:hover {
+                    background: #2a2a38;
+                    border-color: #4b4b5e;
+                    color: #ffffff;
+                }
+
+                .btn-open-project {
+                    background: rgba(14, 165, 233, 0.12);
+                    border: 1px solid rgba(14, 165, 233, 0.35);
+                    color: #38bdf8;
+                }
+
+                .btn-open-project:hover {
                     background: #0284c7;
                     border-color: #0284c7;
                     color: #ffffff;
-                    box-shadow: 0 0 10px rgba(2, 132, 199, 0.4);
+                    box-shadow: 0 2px 10px rgba(2, 132, 199, 0.35);
+                }
+
+                .btn-open-project svg {
+                    transition: transform 0.15s ease;
+                }
+
+                .btn-open-project:hover svg {
+                    transform: translateY(-1px);
+                }
+
+                .btn-delete-project, .btn-delete-scene {
+                    background: rgba(239, 68, 68, 0.08);
+                    border: 1px solid rgba(239, 68, 68, 0.25);
+                    color: #f87171;
+                    border-radius: 6px;
+                    padding: 6px 10px;
+                    cursor: pointer;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.15s ease;
+                }
+
+                .btn-delete-project:hover, .btn-delete-scene:hover {
+                    background: #ef4444;
+                    border-color: #ef4444;
+                    color: #ffffff;
+                    box-shadow: 0 2px 10px rgba(239, 68, 68, 0.4);
+                }
+
+                .btn-delete-project svg, .btn-delete-scene svg {
+                    transition: transform 0.15s ease;
+                }
+
+                .btn-delete-project:hover svg, .btn-delete-scene:hover svg {
+                    transform: scale(1.08);
+                }
+
+                .gt-btn-icon-subtle {
+                    width: 34px;
+                    height: 34px;
+                    padding: 0;
+                    background: #1e1e24;
+                    border: 1px solid #32323f;
+                    border-radius: 6px;
+                    color: #e2e8f0;
+                    font-size: 19px;
+                    line-height: 1;
+                    font-weight: 500;
+                    cursor: pointer;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.15s ease;
+                }
+
+                .gt-btn-icon-subtle:hover {
+                    background: #2a2a38;
+                    border-color: #4b4b5e;
+                    color: #ffffff;
                 }
 
                 /* Templates Grid View */
@@ -666,24 +775,9 @@ export class ProjectHubModal {
                     <!-- Left Sidebar -->
                     <div class="gt-uhub-sidebar">
                         <div class="gt-uhub-nav-item active" data-tab="projects">
-                            <span class="gt-uhub-nav-icon">📁</span>
                             <span>Projects</span>
                         </div>
-                        <div class="gt-uhub-nav-item" data-tab="templates">
-                            <span class="gt-uhub-nav-icon">🗂️</span>
-                            <span>Templates</span>
-                        </div>
-                        <div class="gt-uhub-nav-item" data-tab="tutorials">
-                            <span class="gt-uhub-nav-icon">📖</span>
-                            <span>Tutorials</span>
-                        </div>
 
-                        <div class="gt-uhub-sidebar-divider"></div>
-
-                        <div class="gt-uhub-sidebar-footer">
-                            <b>Tips Developer:</b><br/>
-                            Buka <b>Sandbox World (Scene 3)</b> untuk mulai merancang dan membangun dunia game kamu.
-                        </div>
                     </div>
 
                     <!-- Right Content Area -->
@@ -723,10 +817,6 @@ export class ProjectHubModal {
 
         if (this.currentTab === 'projects') {
             this.renderProjectsTab(container);
-        } else if (this.currentTab === 'templates') {
-            this.renderTemplatesTab(container);
-        } else if (this.currentTab === 'tutorials') {
-            this.renderTutorialsTab(container);
         }
     }
 
@@ -777,22 +867,29 @@ export class ProjectHubModal {
                 <div class="gt-uhub-row gt-uhub-cols-3" data-name="${(proj.name || '').toLowerCase()}">
                     <div class="gt-uhub-col-name">
                         <span class="gt-uhub-project-name">
-                            <span>📁</span> ${proj.name || 'Project Tanpa Judul'}
+                            ${proj.name || 'Project Tanpa Judul'}
                         </span>
-                        <span class="gt-uhub-project-path">Start Level: ${startSceneName} • (${scenesCount} Scene)</span>
+
                     </div>
                     <div class="gt-uhub-col-date">
-                        <span>📅</span> ${formatDate(proj)}
+                        ${formatDate(proj)}
                     </div>
-                    <div class="gt-uhub-col-action" style="display: flex; gap: 6px; justify-content: flex-end;">
-                        <button class="gt-uhub-btn-open btn-open-project" data-id="${proj.id}" style="background: #1e293b; border-color: #0284c7; color: #38bdf8;">
-                            <span>📂</span> Buka Project
+                    <div class="gt-uhub-col-action" style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
+                        <button class="gt-uhub-btn-open btn-open-project" data-id="${proj.id}" title="Buka Project" style="padding: 6px 10px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width: 16px; height: 16px; flex-shrink: 0; display: block;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+                            </svg>
                         </button>
                         <button class="gt-uhub-btn-open btn-play-project" data-id="${proj.id}">
-                            <span>▶</span> Play
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 12px; height: 12px; flex-shrink: 0; display: block;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                            </svg>
+                            <span>Play</span>
                         </button>
-                        <button class="btn-delete-project" data-id="${proj.id}" title="Hapus Project" style="background: transparent; border: 1px solid #451a1a; color: #f87171; border-radius: 5px; padding: 4px 8px; cursor: pointer; font-size: 12px;">
-                            🗑️
+                        <button class="btn-delete-project" data-id="${proj.id}" title="Hapus Project">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width: 15px; height: 15px; flex-shrink: 0; display: block;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                            </svg>
                         </button>
                     </div>
                 </div>
@@ -803,7 +900,6 @@ export class ProjectHubModal {
             <div class="gt-uhub-content-header">
                 <div>
                     <h1 class="gt-uhub-content-title">Projects</h1>
-                    <p style="font-size: 12px; color: #94a3b8; margin: 4px 0 0 0;">Kelola game kamu. Setiap project dapat menampung banyak scene/level berurutan.</p>
                 </div>
                 <div class="gt-uhub-header-actions">
                     <div class="gt-uhub-search-box">
@@ -903,68 +999,38 @@ export class ProjectHubModal {
 
         const sceneRowsHTML = (project.scenes || []).map((scene, idx) => {
             const isStart = (scene.id === project.startingSceneId) || (!project.startingSceneId && idx === 0);
-            const nextScene = (project.scenes || [])[idx + 1];
             const biomeLabel = biomeIcons[scene.biome] || '🌍 Kustom';
 
             return `
-                <div class="gt-uhub-row" data-name="${(scene.name || '').toLowerCase()}" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-bottom: 1px solid #27272a; gap: 16px;">
-                    <!-- Kiri: Nomor & Nama Level -->
-                    <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
-                        <span style="font-size: 12px; font-weight: 800; color: #38bdf8; font-family: 'JetBrains Mono', monospace; background: rgba(56, 189, 248, 0.12); padding: 3px 8px; border-radius: 5px; flex-shrink: 0;">
+                <div class="gt-uhub-row" data-name="${(scene.name || '').toLowerCase()}" style="display: flex; align-items: center; justify-content: space-between; padding: 13px 20px; border-bottom: 1px solid #27272a; gap: 16px; transition: background 0.15s ease;">
+                    <!-- Kiri: Nomor, Nama Level & Info -->
+                    <div style="display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1;">
+                        <span style="font-size: 12px; font-weight: 800; color: #38bdf8; font-family: 'JetBrains Mono', monospace; background: rgba(56, 189, 248, 0.12); padding: 4px 10px; border-radius: 6px; flex-shrink: 0; border: 1px solid rgba(56, 189, 248, 0.25);">
                             #${idx + 1}
                         </span>
                         <div style="min-width: 0;">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 14px; font-weight: 700; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                    ${scene.name || 'Level ' + (idx + 1)}
-                                </span>
-                                <button class="btn-quick-rename-scene" data-scene-id="${scene.id}" title="Ganti Nama Level" style="background: transparent; border: none; color: #64748b; cursor: pointer; font-size: 12px; padding: 0;">
-                                    ✏️
-                                </button>
-                                ${isStart ? '<span style="font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: rgba(34, 197, 94, 0.18); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.4);">Awal</span>' : ''}
-                            </div>
-                            <div style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
-                                ${biomeLabel} • Ukuran ${scene.worldWidth || 1800}px
-                            </div>
+                            <span style="font-size: 14.5px; font-weight: 700; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                ${scene.name || 'Level ' + (idx + 1)}
+                            </span>
                         </div>
                     </div>
 
-                    <!-- Tengah: Alur Portal -->
-                    <div style="flex-shrink: 0;">
-                        ${nextScene ? `
-                            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: #94a3b8; background: rgba(255, 255, 255, 0.04); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.08);">
-                                <span>Lanjut ke:</span>
-                                <b style="color: #38bdf8;">#${idx + 2} ${nextScene.name || 'Level ' + (idx + 2)}</b>
-                            </span>
-                        ` : `
-                            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: #facc15; background: rgba(234, 179, 8, 0.1); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(234, 179, 8, 0.25); font-weight: 700;">
-                                🏆 Tamat (Final Stage)
-                            </span>
-                        `}
-                    </div>
-
                     <!-- Kanan: Tombol Aksi -->
-                    <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-                        <button class="btn-edit-scene" data-scene-id="${scene.id}" title="Edit di Scene Builder" style="padding: 6px 14px; background: #0284c7; border: 1px solid #38bdf8; color: #ffffff; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                        <button class="btn-edit-scene" data-scene-id="${scene.id}" title="Ubah Nama Level" style="padding: 7px 16px; background: #0284c7; border: 1px solid #38bdf8; color: #ffffff; border-radius: 6px; font-size: 12.5px; font-weight: 700; cursor: pointer; transition: all 0.15s ease;">
                             Edit
                         </button>
-                        <button class="btn-test-scene" data-scene-id="${scene.id}" title="Mainkan Stage Ini" style="padding: 6px 12px; background: #27272a; border: 1px solid #3f3f46; color: #f4f4f5; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
-                            Play
+                        <button class="btn-test-scene" data-scene-id="${scene.id}" title="Mainkan Stage Ini" style="padding: 7px 14px; background: #27272a; border: 1px solid #3f3f46; color: #f4f4f5; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s ease;">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 12px; height: 12px; flex-shrink: 0; display: block;">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                            </svg>
+                            <span>Play</span>
                         </button>
-                        ${!isStart ? `
-                            <button class="btn-set-start-scene" data-scene-id="${scene.id}" title="Jadikan Level Awal" style="padding: 5px 8px; background: #14281e; border: 1px solid #16a34a; color: #4ade80; border-radius: 6px; font-size: 11px; cursor: pointer;">
-                                🏁
-                            </button>
-                        ` : ''}
                         ${(project.scenes.length > 1) ? `
-                            <button class="btn-move-scene" data-scene-id="${scene.id}" data-dir="up" ${idx === 0 ? 'disabled style="opacity: 0.2; cursor: not-allowed;"' : 'style="cursor: pointer;"'} title="Geser ke Atas" style="padding: 5px 8px; background: #27272a; border: 1px solid #3f3f46; color: #cbd5e1; border-radius: 6px; font-size: 11px;">
-                                ↑
-                            </button>
-                            <button class="btn-move-scene" data-scene-id="${scene.id}" data-dir="down" ${idx === (project.scenes.length - 1) ? 'disabled style="opacity: 0.2; cursor: not-allowed;"' : 'style="cursor: pointer;"'} title="Geser ke Bawah" style="padding: 5px 8px; background: #27272a; border: 1px solid #3f3f46; color: #cbd5e1; border-radius: 6px; font-size: 11px;">
-                                ↓
-                            </button>
-                            <button class="btn-delete-scene" data-scene-id="${scene.id}" title="Hapus Level" style="padding: 5px 8px; background: transparent; border: 1px solid #451a1a; color: #f87171; border-radius: 6px; font-size: 11px; cursor: pointer;">
-                                🗑️
+                            <button class="btn-delete-scene" data-scene-id="${scene.id}" title="Hapus Level">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" style="width: 14px; height: 14px; flex-shrink: 0; display: block;">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                </svg>
                             </button>
                         ` : ''}
                     </div>
@@ -979,32 +1045,27 @@ export class ProjectHubModal {
                         <span>←</span> Kembali
                     </button>
                     <div>
-                        <h1 class="gt-uhub-content-title" style="display: flex; align-items: center; gap: 8px;">
-                            <span>📁</span> <span id="gt-header-proj-name">${project.name}</span>
-                            <button id="btn-rename-project" title="Ubah Nama Project" style="background: transparent; border: none; color: #94a3b8; cursor: pointer; font-size: 14px; padding: 2px 4px;">✏️</button>
+                        <h1 class="gt-uhub-content-title">
+                            <span id="gt-header-proj-name" title="Klik untuk ubah nama project" style="cursor: pointer;">${project.name}</span>
                         </h1>
-                        <p style="font-size: 12px; color: #94a3b8; margin: 4px 0 0 0;">
-                            <b>${(project.scenes || []).length} Scene</b> terhubung otomatis berurutan via portal finish
-                        </p>
                     </div>
                 </div>
-                <div class="gt-uhub-header-actions">
-                    <button class="gt-uhub-btn-primary" id="btn-open-flow-graph" style="background: #0284c7; box-shadow: 0 0 12px rgba(2, 132, 199, 0.4);" title="Buka Visual Flow Graph (Hubungkan Rute Antar-Scene)">
-                        <span>⚡</span> Flow Graph
+                <div class="gt-uhub-header-actions" style="display: flex; align-items: center; gap: 8px;">
+                    <button class="gt-btn-icon-subtle" id="btn-add-scene-to-proj" title="Tambah Scene Baru">
+                        +
                     </button>
-                    <button class="gt-uhub-btn-primary" id="btn-add-scene-to-proj" style="background: #2563eb;">
-                        <span>+</span> Tambah Scene Baru
-                    </button>
-                    <button class="gt-uhub-btn-primary" id="btn-play-full-project" style="background: #16a34a;">
-                        <span>▶</span> Mainkan Project Ini
+                    <button class="gt-uhub-btn-primary" id="btn-play-full-project" style="background: #16a34a; display: inline-flex; align-items: center; gap: 6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 14px; height: 14px; flex-shrink: 0; display: block;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+                        </svg>
+                        <span>Play this project</span>
                     </button>
                 </div>
             </div>
 
             <div class="gt-uhub-table-container">
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; border-bottom: 1px solid #27272a; color: #64748b; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-                    <div>Level &amp; Tema</div>
-                    <div>Alur Portal</div>
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; border-bottom: 1px solid #27272a; color: #64748b; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <div>Daftar</div>
                     <div style="text-align: right;">Aksi</div>
                 </div>
 
@@ -1023,10 +1084,10 @@ export class ProjectHubModal {
             this.renderContent();
         });
 
-        // Ganti Nama Project
-        const btnRenameProj = container.querySelector('#btn-rename-project');
-        if (btnRenameProj) {
-            btnRenameProj.addEventListener('click', () => {
+        // Ganti Nama Project (klik nama project)
+        const headerProjName = container.querySelector('#gt-header-proj-name');
+        if (headerProjName) {
+            headerProjName.addEventListener('click', () => {
                 const newName = prompt(`Ubah Nama Project:`, project.name);
                 if (newName && newName.trim() && newName.trim() !== project.name) {
                     ProjectManager.renameProject(project.id, newName.trim());
@@ -1041,17 +1102,6 @@ export class ProjectHubModal {
             this.playProject(project);
         });
 
-        // Buka Visual Flow Graph Langsung
-        const btnOpenFlow = container.querySelector('#btn-open-flow-graph');
-        if (btnOpenFlow) {
-            btnOpenFlow.addEventListener('click', () => {
-                this.hide();
-                AudioManager.playClick();
-                if (CommandConsole.instance) {
-                    CommandConsole.instance.openSceneBuilder('flow', project.id);
-                }
-            });
-        }
 
         // Tambah Scene Baru ke Project (Dialog Wizard Dinamis)
         container.querySelector('#btn-add-scene-to-proj').addEventListener('click', () => {
@@ -1059,56 +1109,14 @@ export class ProjectHubModal {
             this.showCreateSceneDialog(project);
         });
 
-        // Ubah Urutan Scene (Move Up / Down)
-        container.querySelectorAll('.btn-move-scene').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const sId = btn.getAttribute('data-scene-id');
-                const dir = btn.getAttribute('data-dir');
-                ProjectManager.moveScene(project.id, sId, dir);
-                AudioManager.playClick();
-                this.renderContent();
-            });
-        });
-
-        // Quick Rename Scene
-        container.querySelectorAll('.btn-quick-rename-scene').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const sId = btn.getAttribute('data-scene-id');
-                const targetScene = (project.scenes || []).find(s => s.id === sId);
-                if (!targetScene) return;
-                const newName = prompt(`Ubah Nama Level:`, targetScene.name);
-                if (newName && newName.trim() && newName.trim() !== targetScene.name) {
-                    ProjectManager.renameScene(project.id, sId, newName.trim());
-                    AudioManager.playClick();
-                    this.renderContent();
-                }
-            });
-        });
-
-        // Duplikasi Scene
-        container.querySelectorAll('.btn-dup-scene').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const sId = btn.getAttribute('data-scene-id');
-                ProjectManager.duplicateScene(project.id, sId);
-                AudioManager.playClick();
-                this.renderContent();
-            });
-        });
-
-        // Edit Scene di Scene Builder
+        // Edit / Rename Scene
         container.querySelectorAll('.btn-edit-scene').forEach(btn => {
             btn.addEventListener('click', () => {
                 const sId = btn.getAttribute('data-scene-id');
                 const targetScene = (project.scenes || []).find(s => s.id === sId);
                 if (targetScene) {
-                    this.hide();
                     AudioManager.playClick();
-                    const builder = new SceneBuilderModal(this.scene, { projectId: project.id, sceneId: sId, name: targetScene.name, biome: targetScene.biome });
-                    builder.loadWorldData(targetScene, project.id, sId);
-                    builder.show();
+                    this.showEditSceneDialog(project, targetScene);
                 }
             });
         });
@@ -1128,16 +1136,6 @@ export class ProjectHubModal {
             });
         });
 
-        // Set Start Scene
-        container.querySelectorAll('.btn-set-start-scene').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const sId = btn.getAttribute('data-scene-id');
-                ProjectManager.setStartingScene(project.id, sId);
-                AudioManager.playClick();
-                this.renderContent();
-            });
-        });
-
         // Hapus Scene
         container.querySelectorAll('.btn-delete-scene').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -1150,6 +1148,65 @@ export class ProjectHubModal {
                     this.renderContent();
                 }
             });
+        });
+    }
+
+    showEditSceneDialog(project, scene) {
+        const oldDialog = document.getElementById('gt-uhub-edit-scene-dialog');
+        if (oldDialog) oldDialog.remove();
+
+        const dialog = document.createElement('div');
+        dialog.id = 'gt-uhub-edit-scene-dialog';
+        dialog.className = 'gt-uhub-wizard-overlay';
+        dialog.innerHTML = `
+            <div class="gt-uhub-wizard-card" style="width: min(440px, 94vw);">
+                <div class="gt-uhub-wizard-title">✏️ Ubah Nama Level</div>
+                <div class="gt-uhub-wizard-desc">
+                    Ketik nama baru untuk level ini lalu tekan Simpan.
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;">
+                    <div>
+                        <label style="display: block; font-size: 11px; font-weight: 700; color: #cbd5e1; margin-bottom: 5px;">NAMA LEVEL</label>
+                        <input type="text" id="gt-edit-scene-name" style="width: 100%; height: 36px; background: #141414; border: 1px solid #3b4252; border-radius: 6px; padding: 0 12px; color: #fff; font-size: 13px; box-sizing: border-box; outline: none;" value="${scene.name || ''}" />
+                    </div>
+                </div>
+                <div class="gt-uhub-wizard-actions" style="margin-top: 20px;">
+                    <button class="gt-uhub-btn-cancel" id="btn-cancel-edit-scene">Batal</button>
+                    <button class="gt-uhub-btn-primary" id="btn-save-edit-scene" style="padding: 0 20px;">
+                        <span>✓</span> Simpan Perubahan
+                    </button>
+                </div>
+            </div>
+        `;
+
+        const win = this.overlay.querySelector('.gt-uhub-window') || document.body;
+        win.appendChild(dialog);
+
+        const input = dialog.querySelector('#gt-edit-scene-name');
+        input.focus();
+        input.select();
+
+        const saveHandler = () => {
+            const newName = input.value.trim();
+            if (newName && newName !== scene.name) {
+                ProjectManager.renameScene(project.id, scene.id, newName);
+                AudioManager.playSuccess();
+                dialog.remove();
+                this.renderContent();
+            } else {
+                dialog.remove();
+            }
+        };
+
+        dialog.querySelector('#btn-save-edit-scene').addEventListener('click', saveHandler);
+        dialog.querySelector('#btn-cancel-edit-scene').addEventListener('click', () => {
+            AudioManager.playClick();
+            dialog.remove();
+        });
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') saveHandler();
+            if (e.key === 'Escape') dialog.remove();
         });
     }
 
@@ -1307,121 +1364,11 @@ export class ProjectHubModal {
         }
     }
 
-    renderTemplatesTab(container) {
-        container.innerHTML = `
-            <div class="gt-uhub-content-header">
-                <h1 class="gt-uhub-content-title">Starter Templates</h1>
-                <p style="font-size: 13px; color: #888; margin: 0;">Pilih template awal untuk dijadikan pondasi pembuatan game baru.</p>
-            </div>
 
-            <div class="gt-uhub-templates-grid">
-                <div class="gt-uhub-template-card">
-                    <div class="gt-uhub-card-header">
-                        <div class="gt-uhub-card-icon">🧱</div>
-                        <div>
-                            <div class="gt-uhub-card-title">Blank Platformer</div>
-                            <span class="gt-uhub-badge-tag gt-tag-sandbox">Scene 3 Sandbox</span>
-                        </div>
-                    </div>
-                    <div class="gt-uhub-card-desc">
-                        Kanvas berlantai kosong yang bersih. Siap ditambah platform melayang, NPC, dialog, dan koin dengan perintah <b>/create</b>.
-                    </div>
-                    <button class="gt-uhub-btn-open" style="width: 100%; justify-content: center; margin-top: auto;" id="btn-tmpl-sandbox">
-                        Gunakan Template Ini →
-                    </button>
-                </div>
 
-                <div class="gt-uhub-template-card">
-                    <div class="gt-uhub-card-header">
-                        <div class="gt-uhub-card-icon">🌃</div>
-                        <div>
-                            <div class="gt-uhub-card-title">Parallax & Weather</div>
-                            <span class="gt-uhub-badge-tag gt-tag-sample">Advanced</span>
-                        </div>
-                    </div>
-                    <div class="gt-uhub-card-desc">
-                        Template level dengan 3 lapis latar parallax (langit, gedung, ombak laut) dan simulasi butir hujan menukik miring.
-                    </div>
-                    <button class="gt-uhub-btn-open" style="width: 100%; justify-content: center; margin-top: auto;" id="btn-tmpl-hk">
-                        Buka & Pelajari Kode →
-                    </button>
-                </div>
 
-                <div class="gt-uhub-template-card">
-                    <div class="gt-uhub-card-header">
-                        <div class="gt-uhub-card-icon">🗺️</div>
-                        <div>
-                            <div class="gt-uhub-card-title">Data-Driven RPG</div>
-                            <span class="gt-uhub-badge-tag gt-tag-tutorial">cerita.js</span>
-                        </div>
-                    </div>
-                    <div class="gt-uhub-card-desc">
-                        Membangun level tanpa koding file baru! Cukup isi daftar platform, koin, rintangan, dan portal di file <b>cerita.js</b>.
-                    </div>
-                    <button class="gt-uhub-btn-open" style="width: 100%; justify-content: center; margin-top: auto;" id="btn-tmpl-snow">
-                        Mainkan Contoh →
-                    </button>
-                </div>
-            </div>
-        `;
 
-        container.querySelector('#btn-tmpl-sandbox').addEventListener('click', () => this.launchScene('Scene3'));
-        container.querySelector('#btn-tmpl-hk').addEventListener('click', () => this.launchScene('Scene2'));
-        container.querySelector('#btn-tmpl-snow').addEventListener('click', () => this.launchScene('GameScene'));
-    }
 
-    renderTutorialsTab(container) {
-        container.innerHTML = `
-            <div class="gt-uhub-content-header">
-                <h1 class="gt-uhub-content-title">Tutorial Levels</h1>
-                <p style="font-size: 13px; color: #888; margin: 0;">Mainkan petualangan tutorial resmi untuk memahami mekanika game.</p>
-            </div>
-
-            <div class="gt-uhub-table-container">
-                <div class="gt-uhub-table-header">
-                    <div>Tutorial</div>
-                    <div>Topik Pelajaran</div>
-                    <div>Status</div>
-                    <div style="text-align: right;">Action</div>
-                </div>
-
-                <div class="gt-uhub-row">
-                    <div class="gt-uhub-col-name">
-                        <span class="gt-uhub-project-name">🏔️ Level 1: Lembah Bersalju</span>
-                        <span class="gt-uhub-project-path">Tutorial &amp; Command Engine</span>
-                    </div>
-                    <div>
-                        <span style="font-size: 12px; color: #cbd5e1;">Kontrol Dasar, Command Console (/speed, /god), Wrench Edit NPC</span>
-                    </div>
-                    <div>
-                        <span class="gt-uhub-badge-tag gt-tag-tutorial">Tutorial Interaktif</span>
-                    </div>
-                    <div class="gt-uhub-col-action">
-                        <button class="gt-uhub-btn-open" id="btn-tut-1">▶ Mulai Level 1</button>
-                    </div>
-                </div>
-
-                <div class="gt-uhub-row">
-                    <div class="gt-uhub-col-name">
-                        <span class="gt-uhub-project-name">🌃 Level 2: Teluk Hong Kong</span>
-                        <span class="gt-uhub-project-path">Tutorial Mahakarya</span>
-                    </div>
-                    <div>
-                        <span style="font-size: 12px; color: #cbd5e1;">Parallax 3-Layer, Cuaca Hujan, Kapal Feri</span>
-                    </div>
-                    <div>
-                        <span class="gt-uhub-badge-tag gt-tag-sample">Level Lanjut</span>
-                    </div>
-                    <div class="gt-uhub-col-action">
-                        <button class="gt-uhub-btn-open" id="btn-tut-2">▶ Mulai Level 2</button>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        container.querySelector('#btn-tut-1').addEventListener('click', () => this.launchScene('GameScene'));
-        container.querySelector('#btn-tut-2').addEventListener('click', () => this.launchScene('Scene2'));
-    }
 
 
     showNewProjectWizard() {

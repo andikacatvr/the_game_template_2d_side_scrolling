@@ -238,14 +238,16 @@ export class DialogBox {
         window.addEventListener('keydown', this.keyboardHandler, true);
     }
 
-    start(speakerName, lines, onComplete, portraitKey = null) {
+    start(speakerName, lines, onComplete, portraitKey = null, choices = null) {
         if (!lines || lines.length === 0) return;
         this.lines = Array.isArray(lines) ? lines : [lines];
         this.currentLineIdx = 0;
+        this.defaultSpeaker = speakerName || 'Karakter';
         this.onCompleteCallback = onComplete;
+        this.choices = choices || null;
 
         if (this.nameBadge) {
-            this.nameBadge.textContent = speakerName || 'Karakter';
+            this.nameBadge.textContent = this.defaultSpeaker;
         }
 
         // Cek texture portrait hanya jika portraitKey eksplisit diberikan
@@ -270,10 +272,15 @@ export class DialogBox {
         this.typeCurrentLine();
     }
 
+    // Alias showDialogue(...) untuk integrasi seamless
+    showDialogue(lines, speaker = 'NPC', onComplete = null, portraitKey = null, choices = null) {
+        return this.start(speaker, lines, onComplete, portraitKey, choices);
+    }
+
     // Alias show({...}) untuk fleksibilitas pemanggilan
     show(options) {
         if (typeof options === 'object' && options !== null && !Array.isArray(options)) {
-            return this.start(options.name || options.speakerName, options.lines || options.dialog, options.onComplete, options.portraitKey);
+            return this.start(options.name || options.speakerName, options.lines || options.dialog, options.onComplete, options.portraitKey, options.choices);
         }
         return this.start(...arguments);
     }
@@ -299,13 +306,48 @@ export class DialogBox {
             this.typingTimer = null;
         }
 
-        const fullText = this.lines[this.currentLineIdx] || '';
+        const lineData = this.lines[this.currentLineIdx];
+        let currentSpeaker = this.defaultSpeaker || 'Karakter';
+        let fullText = '';
+        let isPlayerSpeaker = false;
+
+        if (typeof lineData === 'object' && lineData !== null) {
+            fullText = lineData.text || '';
+            isPlayerSpeaker = lineData.speaker === 'player';
+            currentSpeaker = lineData.name || (isPlayerSpeaker ? 'Pemain' : (this.defaultSpeaker || 'NPC'));
+        } else if (typeof lineData === 'string') {
+            const match = lineData.match(/^\[(.*?)\]\s*(.*)$/);
+            if (match) {
+                currentSpeaker = match[1];
+                fullText = match[2];
+                isPlayerSpeaker = currentSpeaker.toLowerCase().includes('player') || currentSpeaker.toLowerCase().includes('pemain');
+            } else {
+                fullText = lineData;
+            }
+        }
+
+        this.currentRenderedFullText = fullText;
         this.currentCharIdx = 0;
         this.isTyping = true;
 
+        if (this.nameBadge) {
+            this.nameBadge.textContent = currentSpeaker;
+            if (isPlayerSpeaker) {
+                this.nameBadge.style.color = '#38bdf8';
+                this.nameBadge.style.borderColor = '#0284c7';
+                this.nameBadge.style.background = 'rgba(14, 165, 233, 0.2)';
+                if (this.card) this.card.style.borderColor = '#0284c7';
+            } else {
+                this.nameBadge.style.color = '#c084fc';
+                this.nameBadge.style.borderColor = '#9333ea';
+                this.nameBadge.style.background = 'rgba(147, 51, 234, 0.2)';
+                if (this.card) this.card.style.borderColor = '#a855f7';
+            }
+        }
+
         if (this.textBody) this.textBody.textContent = '';
         if (this.cursor) this.cursor.style.display = 'inline-block';
-        if (this.hintText) this.hintText.textContent = 'Mengetik...';
+        if (this.hintText) this.hintText.textContent = `(${this.currentLineIdx + 1}/${this.lines.length}) Mengetik...`;
 
         const speed = SettingsManager.dialogueSpeedFast ? 10 : 32;
 
@@ -330,14 +372,16 @@ export class DialogBox {
             clearInterval(this.typingTimer);
             this.typingTimer = null;
         }
-        const fullText = this.lines[this.currentLineIdx] || '';
+        const fullText = this.currentRenderedFullText || (typeof this.lines[this.currentLineIdx] === 'object' ? this.lines[this.currentLineIdx]?.text : this.lines[this.currentLineIdx]) || '';
         if (this.textBody) this.textBody.textContent = fullText;
         if (this.cursor) this.cursor.style.display = 'none';
         this.isTyping = false;
 
         const isLast = this.currentLineIdx >= this.lines.length - 1;
         if (this.hintText) {
-            this.hintText.textContent = isLast ? 'Selesai [E]' : 'Lanjut [E]';
+            this.hintText.textContent = isLast 
+                ? `(${this.currentLineIdx + 1}/${this.lines.length}) Selesai [E]` 
+                : `(${this.currentLineIdx + 1}/${this.lines.length}) Lanjut [E] ▶`;
         }
     }
 

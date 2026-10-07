@@ -9,7 +9,14 @@ export const ITEM_TEMPLATES = {
     npc: { type: 'npc', label: 'NPC', icon: '🧙', cat: 'creature', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Karakter interaktif pemberi dialog' },
     slime: { type: 'slime', label: 'Slime', icon: '🟢', cat: 'creature', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Monster slime melompat berlendir' },
     skeleton: { type: 'skeleton', label: 'Skeleton', icon: '💀', cat: 'creature', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Monster tengkorak berpatroli' },
-    platforms: { type: 'platforms', label: 'Pijakan', icon: '🧱', cat: 'solid', wTiles: 1, hTiles: 1, defaultRow: 5, desc: 'Balok pijakan melayang' },
+    platforms: { type: 'platforms', label: 'Pijakan', icon: '🪨', cat: 'solid', wTiles: 1, hTiles: 1, defaultRow: 5, desc: 'Balok pijakan melayang' },
+    brick: { type: 'brick', label: 'Batu Bata', icon: '🧱', cat: 'building', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Dinding bata merah terakota kokoh' },
+    sidewalk: { type: 'sidewalk', label: 'Trotoar', icon: '🚶', cat: 'building', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Paving trotoar beton jalan kota' },
+    glass: { type: 'glass', label: 'Kaca', icon: '🪟', cat: 'building', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Blok kaca modern transparan berkilau' },
+    street_lamp: { type: 'street_lamp', label: 'Lampu Jalan', icon: '🏮', cat: 'building', wTiles: 1, hTiles: 2, defaultRow: 6, desc: 'Tiang lampu jalan besi dengan lentera bercahaya' },
+    ladder: { type: 'ladder', label: 'Tangga', icon: '🪜', cat: 'building', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Tangga panjat vertikal' },
+    roof: { type: 'roof', label: 'Atap', icon: '🏠', cat: 'building', wTiles: 1, hTiles: 1, defaultRow: 6, desc: 'Atap genteng miring bangunan' },
+    fence: { type: 'fence', label: 'Pagar', icon: '🚧', cat: 'building', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Pagar pembatas teralis balkon/jalanan' },
     spikes: { type: 'spikes', label: 'Duri', icon: '⚠️', cat: 'solid', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Jebakan duri runcing berbahaya' },
     chest: { type: 'chest', label: 'Peti', icon: '📦', cat: 'solid', wTiles: 1, hTiles: 1, defaultRow: 7, desc: 'Peti harta karun hadiah' },
     coins: { type: 'coins', label: 'Koin', icon: '🪙', cat: 'solid', wTiles: 1, hTiles: 1, defaultRow: 4, desc: 'Koin emas koleksi skor' },
@@ -17,6 +24,71 @@ export const ITEM_TEMPLATES = {
     water: { type: 'water', label: 'Air', icon: '🌊', cat: 'fluid', wTiles: 1, hTiles: 1, defaultRow: 8, desc: 'Blok cairan air danau/kolam' },
     lava: { type: 'lava', label: 'Lava', icon: '🌋', cat: 'fluid', wTiles: 1, hTiles: 1, defaultRow: 8, desc: 'Blok cairan lahar panas mematikan' }
 };
+
+// Definisi Kategori Folder Otomatis untuk Panel Hierarchy
+export const HIERARCHY_CATEGORIES = [
+    {
+        id: 'spawn_goal',
+        label: 'Titik Awal & Akhir',
+        icon: '🚪',
+        types: ['player', 'portal'],
+        color: '#38bdf8'
+    },
+    {
+        id: 'monsters',
+        label: 'Monster & Musuh',
+        icon: '👾',
+        types: ['slime', 'skeleton'],
+        color: '#f43f5e'
+    },
+    {
+        id: 'npcs',
+        label: 'Karakter & NPC',
+        icon: '🧙',
+        types: ['npc'],
+        color: '#a855f7'
+    },
+    {
+        id: 'buildings',
+        label: 'Struktur & Bangunan',
+        icon: '🏢',
+        types: ['brick', 'sidewalk', 'glass', 'street_lamp', 'ladder', 'roof', 'fence'],
+        color: '#f97316'
+    },
+    {
+        id: 'platforms',
+        label: 'Pijakan & Blok',
+        icon: '🧱',
+        types: ['platforms', 'dirt'],
+        color: '#fbbf24'
+    },
+    {
+        id: 'hazards',
+        label: 'Rintangan & Bahaya',
+        icon: '⚠️',
+        types: ['spikes', 'water', 'lava'],
+        color: '#fb7185'
+    },
+    {
+        id: 'collectibles',
+        label: 'Koleksi & Peti',
+        icon: '🪙',
+        types: ['coins', 'chest'],
+        color: '#34d399'
+    },
+    {
+        id: 'others',
+        label: 'Objek Lainnya',
+        icon: '📦',
+        types: [],
+        color: '#94a3b8'
+    }
+];
+
+export function getHierarchyCategory(type) {
+    const found = HIERARCHY_CATEGORIES.find(cat => cat.types.includes(type));
+    return found || HIERARCHY_CATEGORIES[HIERARCHY_CATEGORIES.length - 1];
+}
 
 export class SceneBuilderModal {
     constructor(scene, options = {}) {
@@ -41,10 +113,11 @@ export class SceneBuilderModal {
             worldWidth: 3600,
             worldHeight: 1000,
 
-            // Dynamic Entity List (Default bersih: Pintu Kedatangan & Portal Kemenangan)
+            // Dynamic Entity List (Default bersih: Pintu Kedatangan & Portal Kemenangan + Lava Acak di 2 Baris Bawah)
             entities: [
                 { id: 'player_1', type: 'player', col: 2, row: 7, x: 125, y: 400, label: 'Letak Spawn (Pintu Putih)', cat: 'spawn', icon: '🚪', wTiles: 1, hTiles: 1 },
-                { id: 'portal_1', type: 'portal', col: 70, row: 7, x: 3525, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 }
+                { id: 'portal_1', type: 'portal', col: 70, row: 7, x: 3525, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 },
+                ...ProjectManager.generateIrregularBottomLava(72, 18, 19)
             ]
         };
 
@@ -61,6 +134,8 @@ export class SceneBuilderModal {
         this.isCanvasDragging = false;
         this.canvasDragEntity = null;
         this.draggedHierarchyId = null;
+        this.draggedHierarchyCat = null;
+        this.collapsedHierarchyFolders = new Set();
         this.clipboardEntity = null; // Clipboard untuk Ctrl+C dan Ctrl+V
         this.dragStartCol = 0;
         this.dragStartRow = 0;
@@ -70,9 +145,15 @@ export class SceneBuilderModal {
         this.isBoxSelecting = false;
         this.dragPixelBox = null; // { startX, startY, currentX, currentY } untuk 60fps pixel-smooth drag
         this.selectionFlashes = []; // Feedback visual flash saat batch fill / delete
-        this.isTestPlayMode = false;
-        this.testPlayer = null;
-        this.testKeys = { w: false, a: false, s: false, d: false, space: false };
+        // Dynamic Camera Follow & Viewport Pan untuk POV Preview
+        this.isCameraFollow = true; // Mode POV Camera Follow berpusat ke Spawn Awal
+        this.currentCamOffsetX = null;
+        this.currentCanvasOffsetX = 0;
+        this.currentCanvasOffsetY = 0;
+        this.currentCanvasScale = 1;
+        this.isPanningCanvas = false;
+        this.panStartMouseX = 0;
+        this.panStartCamOffset = 0;
 
         // History Stacks untuk Undo & Redo (Ctrl+Z & Ctrl+Y / Ctrl+Shift+Z)
         this.undoStack = [];
@@ -100,8 +181,7 @@ export class SceneBuilderModal {
 
         this.createDOM();
         this.preventAllOverlaps();
-        window.__gtSceneBuilderInstance = this;
-        if (this.scene) {
+        if (this.scene && !this.options.isNewWorld) {
             this.syncWithActiveScene(this.scene);
         }
     }
@@ -582,6 +662,108 @@ export class SceneBuilderModal {
                 .gt-sb-hierarchy-list::-webkit-scrollbar-thumb {
                     background: #27272a;
                     border-radius: 2px;
+                }
+
+                /* Hierarchy Folder System (Ultra-Smooth Accordion) */
+                .gt-sb-tree-folder {
+                    margin-bottom: 4px;
+                    border-radius: 5px;
+                    background: rgba(18, 18, 24, 0.7);
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                    overflow: hidden;
+                    transition: border-color 0.15s ease;
+                }
+
+                .gt-sb-tree-folder:hover {
+                    border-color: rgba(255, 255, 255, 0.12);
+                }
+
+                .gt-sb-folder-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 7px 10px;
+                    background: #141419;
+                    cursor: pointer;
+                    user-select: none;
+                    transition: background 0.15s ease;
+                }
+
+                .gt-sb-folder-header:hover {
+                    background: #1e1e26;
+                }
+
+                .gt-sb-folder-header:active {
+                    background: #252532;
+                }
+
+                .gt-sb-folder-header.drag-over {
+                    background: #1e293b;
+                    outline: 1px dashed #38bdf8;
+                }
+
+                .gt-sb-folder-left {
+                    display: flex;
+                    align-items: center;
+                    gap: 7px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    letter-spacing: 0.3px;
+                    pointer-events: none;
+                }
+
+                .gt-sb-folder-arrow {
+                    font-size: 9px;
+                    color: #94a3b8;
+                    display: inline-block;
+                    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+                    width: 12px;
+                    text-align: center;
+                    pointer-events: none;
+                }
+
+                .gt-sb-folder-arrow.collapsed {
+                    transform: rotate(-90deg);
+                }
+
+                .gt-sb-folder-badge {
+                    font-size: 9.5px;
+                    font-weight: 700;
+                    font-family: 'JetBrains Mono', monospace;
+                    padding: 1px 7px;
+                    border-radius: 12px;
+                    background: #24242e;
+                    color: #38bdf8;
+                    border: 1px solid rgba(56, 189, 248, 0.2);
+                    pointer-events: none;
+                }
+
+                /* Accordion Smooth Expand/Collapse */
+                .gt-sb-folder-wrapper {
+                    display: grid;
+                    grid-template-rows: 1fr;
+                    transition: grid-template-rows 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+
+                .gt-sb-folder-wrapper.collapsed {
+                    grid-template-rows: 0fr;
+                }
+
+                .gt-sb-folder-content {
+                    overflow: hidden;
+                    min-height: 0;
+                    display: flex;
+                    flex-direction: column;
+                    border-left: 2px solid rgba(255, 255, 255, 0.08);
+                    margin-left: 12px;
+                    padding-left: 3px;
+                    opacity: 1;
+                    transition: opacity 0.18s ease;
+                }
+
+                .gt-sb-folder-wrapper.collapsed .gt-sb-folder-content {
+                    opacity: 0;
+                    border-left-color: transparent;
                 }
 
                 /* Hierarchy Tree Item (HTML5 Draggable) */
@@ -1076,22 +1258,6 @@ export class SceneBuilderModal {
                     color: inherit;
                 }
 
-                .gt-sb-drawer-right {
-                    display: flex;
-                    align-items: center;
-                }
-
-                .gt-sb-drawer-hint {
-                    font-size: 9px;
-                    font-weight: 700;
-                    color: #38bdf8;
-                    font-family: 'JetBrains Mono', monospace;
-                    background: rgba(56, 189, 248, 0.08);
-                    border: 1px solid rgba(56, 189, 248, 0.2);
-                    padding: 2px 7px;
-                    border-radius: 4px;
-                    white-space: nowrap;
-                }
 
                 /* Horizontal Hotbar Slots di Bawah (Left-Aligned Hotbar) */
                 .gt-sb-palette-grid {
@@ -1178,6 +1344,234 @@ export class SceneBuilderModal {
                 .gt-sb-chip:hover .gt-sb-chip-label {
                     color: #38bdf8;
                 }
+
+                /* Floating Toast Notification */
+                .gt-sb-toast {
+                    position: absolute;
+                    top: 56px;
+                    left: 50%;
+                    transform: translate(-50%, -15px);
+                    background: rgba(15, 23, 42, 0.95);
+                    border: 1px solid #38bdf8;
+                    color: #f8fafc;
+                    padding: 8px 18px;
+                    border-radius: 8px;
+                    font-family: 'JetBrains Mono', monospace;
+                    font-size: 12px;
+                    font-weight: 700;
+                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6), 0 0 15px rgba(56, 189, 248, 0.35);
+                    z-index: 2000;
+                    pointer-events: none;
+                    opacity: 0;
+                    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+
+                .gt-sb-toast.show {
+                    transform: translate(-50%, 0);
+                    opacity: 1;
+                }
+
+                .gt-sb-toast-success {
+                    border-color: #22c55e;
+                    color: #86efac;
+                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6), 0 0 15px rgba(34, 197, 94, 0.35);
+                }
+
+                .gt-sb-toast-info {
+                    border-color: #38bdf8;
+                    color: #7dd3fc;
+                }
+
+                /* Keyboard Shortcut Cheatsheet Modal */
+                .gt-sb-shortcuts-modal {
+                    position: absolute;
+                    inset: 0;
+                    z-index: 3000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .gt-sb-shortcuts-backdrop {
+                    position: absolute;
+                    inset: 0;
+                    background: rgba(4, 7, 15, 0.75);
+                    backdrop-filter: blur(4px);
+                }
+
+                .gt-sb-shortcuts-dialog {
+                    position: relative;
+                    z-index: 1;
+                    width: 90%;
+                    max-width: 780px;
+                    max-height: 85vh;
+                    background: #111118;
+                    border: 1px solid rgba(56, 189, 248, 0.35);
+                    border-radius: 12px;
+                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(56, 189, 248, 0.15);
+                    display: flex;
+                    flex-direction: column;
+                    overflow: hidden;
+                    animation: gtSbScaleIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+                }
+
+                @keyframes gtSbScaleIn {
+                    from { transform: scale(0.95); opacity: 0; }
+                    to { transform: scale(1); opacity: 1; }
+                }
+
+                .gt-sb-shortcuts-head {
+                    padding: 14px 18px;
+                    background: #161622;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                }
+
+                .gt-sb-shortcuts-title {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                }
+
+                .gt-sb-shortcuts-icon {
+                    font-size: 24px;
+                }
+
+                .gt-sb-shortcuts-head h3 {
+                    margin: 0;
+                    font-size: 14px;
+                    font-weight: 800;
+                    color: #38bdf8;
+                    letter-spacing: 0.5px;
+                }
+
+                .gt-sb-shortcuts-head p {
+                    margin: 2px 0 0 0;
+                    font-size: 11px;
+                    color: #94a3b8;
+                }
+
+                .gt-sb-shortcuts-close {
+                    background: rgba(255, 255, 255, 0.06);
+                    border: 1px solid rgba(255, 255, 255, 0.12);
+                    color: #cbd5e1;
+                    font-size: 14px;
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.12s ease;
+                }
+
+                .gt-sb-shortcuts-close:hover {
+                    background: #ef4444;
+                    border-color: #ef4444;
+                    color: #ffffff;
+                }
+
+                .gt-sb-shortcuts-body {
+                    padding: 16px;
+                    overflow-y: auto;
+                    flex: 1;
+                }
+
+                .gt-sb-sc-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+                    gap: 14px;
+                }
+
+                .gt-sb-sc-card {
+                    background: rgba(24, 24, 34, 0.85);
+                    border: 1px solid rgba(255, 255, 255, 0.07);
+                    border-radius: 8px;
+                    padding: 12px 14px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 9px;
+                }
+
+                .gt-sb-sc-card h4 {
+                    margin: 0 0 2px 0;
+                    font-size: 11.5px;
+                    font-weight: 800;
+                    color: #f1f5f9;
+                    letter-spacing: 0.3px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                    padding-bottom: 6px;
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                }
+
+                .gt-sb-sc-row {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 10px;
+                    font-size: 11px;
+                }
+
+                .gt-sb-sc-keys {
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                    flex-shrink: 0;
+                }
+
+                .gt-sb-sc-keys kbd {
+                    background: #1e1e2c;
+                    border: 1px solid #475569;
+                    border-bottom: 2px solid #334155;
+                    border-radius: 4px;
+                    padding: 2px 6px;
+                    font-family: 'JetBrains Mono', monospace;
+                    font-size: 10px;
+                    font-weight: 800;
+                    color: #38bdf8;
+                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+                }
+
+                .gt-sb-sc-desc {
+                    color: #94a3b8;
+                    font-size: 11px;
+                    text-align: right;
+                }
+
+                .gt-sb-shortcuts-foot {
+                    padding: 10px 18px;
+                    background: #14141e;
+                    border-top: 1px solid rgba(255, 255, 255, 0.08);
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 12px;
+                    font-size: 11px;
+                    color: #94a3b8;
+                }
+
+                .gt-sb-sc-btn-ok {
+                    background: #0284c7;
+                    border: 1px solid #38bdf8;
+                    color: #ffffff;
+                    padding: 6px 14px;
+                    border-radius: 6px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 0.12s ease;
+                    white-space: nowrap;
+                }
+
+                .gt-sb-sc-btn-ok:hover {
+                    background: #0369a1;
+                    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+                }
             </style>
 
             <!-- 1. Top Unity-Style Toolbar -->
@@ -1185,7 +1579,7 @@ export class SceneBuilderModal {
                 <div class="gt-sb-topbar-left">
                     <div class="gt-sb-unity-brand">
                         <span class="gt-sb-unity-logo">🛠️</span>
-                        <span class="gt-sb-unity-title">Preview</span>
+                        <span class="gt-sb-unity-title">Scene Builder</span>
                     </div>
 
                     <!-- Mode Switcher: Scene View vs Flow Graph -->
@@ -1210,19 +1604,37 @@ export class SceneBuilderModal {
 
                     <div class="gt-sb-topbar-divider"></div>
 
-                    <button class="gt-sb-tool-toggle ${this.state.showGrid ? 'active' : ''}" id="gt-sb-btn-grid" title="Toggle Grid Persegi 50px">
+                    <button class="gt-sb-tool-toggle ${this.state.showGrid ? 'active' : ''}" id="gt-sb-btn-grid" title="Toggle Garis Grid 50px (G)">
                         <span>⊞ Grid: ON</span>
                     </button>
                     <button class="gt-sb-tool-toggle ${this.state.showGizmos ? 'active' : ''}" id="gt-sb-btn-gizmo" title="Toggle Transform Gizmo">
                         <span>◈ Gizmos</span>
                     </button>
-                    <button class="gt-sb-tool-toggle" id="gt-sb-btn-testplay" title="Uji Gerak Karakter dengan WASD / Spasi (Shortcut: Tab)">
-                        <span>🎮 Uji Gerak (WASD)</span>
+                    <button class="gt-sb-tool-toggle ${this.isCameraFollow ? 'active' : ''}" id="gt-sb-btn-camfollow" title="Pusatkan Tampilan ke Titik Spawn (H / F)">
+                        <span>🎯 Fokus Spawn</span>
                     </button>
+
+                    <div class="gt-sb-topbar-divider"></div>
+
+                    <!-- REAL-TIME CUSTOM BACKGROUND COLOR PICKER -->
+                    <div class="gt-sb-bg-picker-wrap" style="display: flex; align-items: center; gap: 7px; background: rgba(24, 24, 32, 0.9); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.25);">
+                        <div style="display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;" id="gt-sb-color-trigger" title="Klik untuk mengubah warna latar dunia">
+                            <span style="font-size: 11px; font-weight: 700; color: #94a3b8;">🎨 Warna Latar:</span>
+                            <span class="gt-sb-color-swatch" id="gt-sb-color-preview" style="width: 20px; height: 20px; border-radius: 4px; border: 2px solid rgba(255, 255, 255, 0.45); box-shadow: 0 1px 4px rgba(0,0,0,0.5); display: inline-block; background-color: ${this.state.bgColor || '#dcff78'}; cursor: pointer;"></span>
+                        </div>
+                        <input type="color" id="gt-sb-color-picker" value="${this.state.bgColor || '#dcff78'}" title="Pilih Warna Latar" style="width: 0; height: 0; padding: 0; margin: 0; border: 0; opacity: 0; position: absolute; pointer-events: none;" />
+                        <input type="text" id="gt-sb-color-hex" value="${this.state.bgColor || '#dcff78'}" maxlength="7" spellcheck="false" title="Ketik kode warna HEX (contoh: #062817)" style="width: 65px; background: #101015; border: 1px solid rgba(255, 255, 255, 0.15); color: #38bdf8; font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase;" />
+                    </div>
                 </div>
 
-                <div class="gt-sb-topbar-right">
-                    <button class="gt-sb-btn-play" id="gt-sb-btn-enter" title="Terapkan Pembaruan & Mainkan (Play)">▶</button>
+                <div class="gt-sb-topbar-right" style="display: flex; align-items: center; gap: 7px;">
+                    <button class="gt-sb-tool-btn" id="gt-sb-btn-save" title="Simpan Level ke Proyek (Ctrl+S)" style="background: rgba(34, 197, 94, 0.16); border: 1px solid rgba(34, 197, 94, 0.45); color: #4ade80; font-weight: 700; height: 26px; padding: 0 9px;">
+                        <span>💾 Simpan</span>
+                    </button>
+                    <button class="gt-sb-tool-btn" id="gt-sb-btn-shortcuts" title="Daftar Shortcut Keyboard Lengkap (Ctrl+/ atau ?)" style="background: rgba(56, 189, 248, 0.14); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-weight: 700; height: 26px; padding: 0 9px;">
+                        <span>⌨️ Shortcut</span>
+                    </button>
+                    <button class="gt-sb-btn-play" id="gt-sb-btn-enter" title="Terapkan Pembaruan & Mainkan (Ctrl+Enter)">▶ Mainkan</button>
                     <button class="gt-sb-btn-close" id="gt-sb-close-btn" title="Tutup Studio (ESC)">✕</button>
                 </div>
             </div>
@@ -1310,10 +1722,6 @@ export class SceneBuilderModal {
                             </button>
                         </div>
                     </div>
-
-                    <div class="gt-sb-drawer-right">
-                        <span class="gt-sb-drawer-hint" title="Tarik kartu ke kanvas atau klik untuk mode stempel">💡 Drag / Klik Item ke Kanvas</span>
-                    </div>
                 </div>
 
                 <!-- Baris Bawah: Deretan Kartu Objek (Tanah, Player, dll ditaruh di bawah) -->
@@ -1324,6 +1732,138 @@ export class SceneBuilderModal {
 
             <!-- 4. Visual Flow Graph Overlay View (When Mode Flow is Active) -->
             <div class="gt-sb-flow-wrapper" id="gt-sb-flow-wrapper" style="display: none; position: absolute; top: 48px; left: 0; right: 0; bottom: 0; z-index: 50;">
+            </div>
+
+            <!-- 5. Keyboard Shortcuts Cheatsheet Modal (PC / Laptop) -->
+            <div class="gt-sb-shortcuts-modal" id="gt-sb-shortcuts-modal" style="display: none;">
+                <div class="gt-sb-shortcuts-backdrop" id="gt-sb-shortcuts-backdrop"></div>
+                <div class="gt-sb-shortcuts-dialog">
+                    <div class="gt-sb-shortcuts-head">
+                        <div class="gt-sb-shortcuts-title">
+                            <span class="gt-sb-shortcuts-icon">⌨️</span>
+                            <div>
+                                <h3>PANDUAN SHORTCUT KEYBOARD (PC & LAPTOP)</h3>
+                                <p>Gunakan tombol pintasan cepat di keyboard untuk mempercepat desain level game</p>
+                            </div>
+                        </div>
+                        <button class="gt-sb-shortcuts-close" id="gt-sb-shortcuts-close" title="Tutup (ESC)">✕</button>
+                    </div>
+                    <div class="gt-sb-shortcuts-body">
+                        <div class="gt-sb-sc-grid">
+                            <!-- Kategori 1: Edit Objek & Clipboard -->
+                            <div class="gt-sb-sc-card">
+                                <h4>📋 Edit Objek &amp; Clipboard</h4>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>Ctrl</kbd> + <kbd>C</kbd></span>
+                                    <span class="gt-sb-sc-desc">Salin (Copy) objek terpilih</span>
+                                </div>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>Ctrl</kbd> + <kbd>V</kbd></span>
+                                    <span class="gt-sb-sc-desc">Tempel (Paste) di kursor mouse</span>
+                                </div>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>Ctrl</kbd> + <kbd>X</kbd></span>
+                                    <span class="gt-sb-sc-desc">Potong (Cut) objek terpilih</span>
+                                </div>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>Ctrl</kbd> + <kbd>D</kbd></span>
+                                    <span class="gt-sb-sc-desc">Duplikasi instan (bebas timpa)</span>
+                                </div>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>Del</kbd> / <kbd>Backspace</kbd></span>
+                                    <span class="gt-sb-sc-desc">Hapus objek / area seleksi</span>
+                                </div>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>Ctrl</kbd> + <kbd>Z</kbd></span>
+                                    <span class="gt-sb-sc-desc">Batalkan aksi (Undo)</span>
+                                </div>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>Ctrl</kbd> + <kbd>Y</kbd></span>
+                                    <span class="gt-sb-sc-desc">Ulangi aksi (Redo)</span>
+                                </div>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>Ctrl</kbd> + <kbd>A</kbd></span>
+                                    <span class="gt-sb-sc-desc">Pilih semua petak (Select All)</span>
+                                </div>
+                            </div>
+
+                            <!-- Kategori 2: Navigasi Kamera & Kanvas -->
+                            <div class="gt-sb-sc-card">
+                                <h4>🗺️ Navigasi Kamera &amp; Kanvas</h4>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>F</kbd></span>
+                                    <span class="gt-sb-sc-desc">Fokus kamera ke objek terpilih</span>
+                                </div>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>H</kbd></span>
+                                    <span class="gt-sb-sc-desc">Pusatkan kamera ke titik Spawn</span>
+                                </div>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>R</kbd></span>
+                                    <span class="gt-sb-sc-desc">Reset kamera ke awal level</span>
+                                </div>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>G</kbd></span>
+                                    <span class="gt-sb-sc-desc">Nyalakan / Matikan Grid (50px)</span>
+                                </div>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>Scroll Mouse</kbd></span>
+                                    <span class="gt-sb-sc-desc">Geser kanvas horizontal (Pan)</span>
+                                </div>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>Alt</kbd> + <kbd>Drag Klik</kbd></span>
+                                    <span class="gt-sb-sc-desc">Geser bebas kanvas (Free Pan)</span>
+                                </div>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>Klik Kanan</kbd></span>
+                                    <span class="gt-sb-sc-desc">Hapus cepat objek di kanvas</span>
+                                </div>
+                            </div>
+
+                            <!-- Kategori 3: Presisi Posisi & Seleksi -->
+                            <div class="gt-sb-sc-card">
+                                <h4>🎯 Presisi &amp; Seleksi Area</h4>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></span>
+                                    <span class="gt-sb-sc-desc">Geser objek 1 petak (Nudge)</span>
+                                </div>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>Shift</kbd> + <kbd>Panah</kbd></span>
+                                    <span class="gt-sb-sc-desc">Perluas area multi-seleksi</span>
+                                </div>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>Drag Mouse</kbd></span>
+                                    <span class="gt-sb-sc-desc">Tarik kotak untuk seleksi area</span>
+                                </div>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>Esc</kbd></span>
+                                    <span class="gt-sb-sc-desc">Batalkan seleksi / Tutup panel</span>
+                                </div>
+                            </div>
+
+                            <!-- Kategori 4: Simpan & Eksekusi -->
+                            <div class="gt-sb-sc-card">
+                                <h4>💾 Proyek &amp; Eksekusi Game</h4>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>Ctrl</kbd> + <kbd>S</kbd></span>
+                                    <span class="gt-sb-sc-desc">Simpan perubahan level ke Proyek</span>
+                                </div>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>Ctrl</kbd> + <kbd>Enter</kbd></span>
+                                    <span class="gt-sb-sc-desc">Simpan &amp; Mainkan (Play World)</span>
+                                </div>
+                                <div class="gt-sb-sc-row">
+                                    <span class="gt-sb-sc-keys"><kbd>?</kbd> / <kbd>Ctrl</kbd> + <kbd>/</kbd></span>
+                                    <span class="gt-sb-sc-desc">Buka cheatsheet panduan ini</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="gt-sb-shortcuts-foot">
+                        <span>💡 <strong>Tips Pro:</strong> Anda dapat mengklik item di Hierarchy untuk fokus atau menarik kartu objek dari Hotbar bawah langsung ke kanvas.</span>
+                        <button class="gt-sb-sc-btn-ok" id="gt-sb-shortcuts-ok">Mengerti 👍</button>
+                    </div>
+                </div>
             </div>
         `;
 
@@ -1441,6 +1981,21 @@ export class SceneBuilderModal {
         });
     }
 
+    ensureEntityFolderVisible(entityId) {
+        if (!entityId) return;
+        const ent = this.state.entities.find(e => e.id === entityId);
+        if (!ent) return;
+        const cat = getHierarchyCategory(ent.type);
+        if (cat && this.collapsedHierarchyFolders.has(cat.id)) {
+            this.collapsedHierarchyFolders.delete(cat.id);
+            const folderEl = this.hierarchyList?.querySelector(`[data-folder-id="${cat.id}"]`);
+            if (folderEl) {
+                folderEl.querySelector('.gt-sb-folder-wrapper')?.classList.remove('collapsed');
+                folderEl.querySelector('.gt-sb-folder-arrow')?.classList.remove('collapsed');
+            }
+        }
+    }
+
     // ===============================================================
     // HIERARCHY TREE DENGAN FULL DRAG & DROP REORDERING
     // ===============================================================
@@ -1451,27 +2006,57 @@ export class SceneBuilderModal {
 
         if (entities.length === 0) {
             html = `<div class="gt-sb-hierarchy-empty-hint">Hierarchy kosong. Tarik objek dari Backpack atau klik "+ Tambah".</div>`;
-        } else {
-            entities.forEach((ent, idx) => {
+            this.hierarchyList.innerHTML = html;
+            return;
+        }
+
+        // Render folder otomatis berdasarkan kategori
+        HIERARCHY_CATEGORIES.forEach(cat => {
+            const catEntities = entities.filter(ent => getHierarchyCategory(ent.type).id === cat.id);
+            if (catEntities.length === 0) return; // Sembunyikan folder kosong agar panel tetap ramping
+
+            const isCollapsed = this.collapsedHierarchyFolders.has(cat.id);
+
+            html += `
+                <div class="gt-sb-tree-folder" data-folder-id="${cat.id}">
+                    <div class="gt-sb-folder-header" data-folder-toggle="${cat.id}">
+                        <div class="gt-sb-folder-left" style="color: ${cat.color};">
+                            <span class="gt-sb-folder-arrow ${isCollapsed ? 'collapsed' : ''}">▼</span>
+                            <span class="gt-sb-folder-icon">${cat.icon}</span>
+                            <span>${cat.label}</span>
+                        </div>
+                        <span class="gt-sb-folder-badge">${catEntities.length}</span>
+                    </div>
+                    <div class="gt-sb-folder-wrapper ${isCollapsed ? 'collapsed' : ''}">
+                        <div class="gt-sb-folder-content" data-folder-body="${cat.id}">
+            `;
+
+            catEntities.forEach(ent => {
                 const isSelected = this.state.selectedId === ent.id;
                 html += `
                     <div class="gt-sb-tree-item ${isSelected ? 'active' : ''}" 
                          draggable="true" 
                          data-id="${ent.id}" 
-                         data-index="${idx}">
+                         data-type="${ent.type}"
+                         data-cat="${cat.id}">
                         <div class="gt-sb-tree-left">
-                            <span class="gt-sb-tree-handle" title="Tarik untuk mengubah urutan">⋮⋮</span>
+                            <span class="gt-sb-tree-handle" title="Tarik untuk mengubah urutan di dalam folder ${cat.label}">⋮⋮</span>
                             <span>${ent.icon}</span>
                             <span>${ent.label}</span>
                         </div>
                         <div class="gt-sb-tree-right">
-                            <span class="gt-sb-tree-coord">Col ${ent.col}</span>
                             ${ent.type !== 'player' ? `<button class="gt-sb-tree-del" data-del-id="${ent.id}" title="Hapus objek">✕</button>` : ''}
                         </div>
                     </div>
                 `;
             });
-        }
+
+            html += `
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
 
         this.hierarchyList.innerHTML = html;
 
@@ -1480,10 +2065,87 @@ export class SceneBuilderModal {
         const fEnt = entities.find(e => e.type === 'portal');
         const rulerSpawn = this.overlay.querySelector('#ruler-spawn-txt');
         const rulerFinish = this.overlay.querySelector('#ruler-finish-txt');
-        if (rulerSpawn && pEnt) rulerSpawn.textContent = `[Col ${pEnt.col}: ${pEnt.x}px] SPAWN`;
-        if (rulerFinish && fEnt) rulerFinish.textContent = `[Col ${fEnt.col}: ${fEnt.x}px] FINISH`;
+        if (rulerSpawn && pEnt) rulerSpawn.textContent = `[Col ${pEnt.col}: ${Math.round(pEnt.x)}px] SPAWN`;
+        if (rulerFinish && fEnt) rulerFinish.textContent = `[Col ${fEnt.col}: ${Math.round(fEnt.x)}px] FINISH`;
 
-        // 1. Click to select object
+        // 1. Folder Header Click & Dragover Handlers (Ultra-Smooth Animation Tanpa Destroy DOM)
+        this.hierarchyList.querySelectorAll('.gt-sb-folder-header').forEach(header => {
+            const folderCat = header.getAttribute('data-folder-toggle');
+
+            header.addEventListener('click', (e) => {
+                e.stopPropagation();
+                AudioManager.playClick();
+                const folderEl = header.closest('.gt-sb-tree-folder');
+                const wrapperEl = folderEl ? folderEl.querySelector('.gt-sb-folder-wrapper') : null;
+                const arrowEl = header.querySelector('.gt-sb-folder-arrow');
+
+                if (this.collapsedHierarchyFolders.has(folderCat)) {
+                    // Buka folder (Expand)
+                    this.collapsedHierarchyFolders.delete(folderCat);
+                    if (wrapperEl) wrapperEl.classList.remove('collapsed');
+                    if (arrowEl) arrowEl.classList.remove('collapsed');
+                } else {
+                    // Tutup folder (Collapse)
+                    this.collapsedHierarchyFolders.add(folderCat);
+                    if (wrapperEl) wrapperEl.classList.add('collapsed');
+                    if (arrowEl) arrowEl.classList.add('collapsed');
+                }
+            });
+
+            header.addEventListener('dragover', (e) => {
+                // STRICT CATEGORY LOCK: Tolak jika kategori berbeda
+                if (this.draggedHierarchyCat && this.draggedHierarchyCat !== folderCat) {
+                    e.dataTransfer.dropEffect = 'none';
+                    return;
+                }
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                header.classList.add('drag-over');
+            });
+
+            header.addEventListener('dragleave', () => {
+                header.classList.remove('drag-over');
+            });
+
+            header.addEventListener('drop', (e) => {
+                e.preventDefault();
+                header.classList.remove('drag-over');
+                let data;
+                try {
+                    data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                } catch (err) {
+                    return;
+                }
+
+                if (data.source === 'hierarchy') {
+                    if (data.catId !== folderCat) {
+                        if (this.gridInfoEl) {
+                            this.gridInfoEl.textContent = `⚠️ Kategori terkunci: Objek tidak bisa dipindah ke folder lain!`;
+                        }
+                        return;
+                    }
+                    // Geser objek ke urutan pertama di dalam kategori ini
+                    const firstCatEnt = this.state.entities.find(el => getHierarchyCategory(el.type).id === folderCat);
+                    if (firstCatEnt && firstCatEnt.id !== data.id) {
+                        const sourceIdx = this.state.entities.findIndex(el => el.id === data.id);
+                        const targetIdx = this.state.entities.findIndex(el => el.id === firstCatEnt.id);
+                        if (sourceIdx !== -1 && targetIdx !== -1) {
+                            this.pushUndoState('Ubah Urutan Hierarchy');
+                            const [moved] = this.state.entities.splice(sourceIdx, 1);
+                            const newTargetIdx = this.state.entities.findIndex(el => el.id === firstCatEnt.id);
+                            this.state.entities.splice(newTargetIdx, 0, moved);
+                            AudioManager.playClick();
+                            this.renderHierarchy();
+                            this.renderInspector();
+                        }
+                    }
+                } else if (data.source === 'backpack') {
+                    this.addNewEntity(data.type);
+                }
+            });
+        });
+
+        // 2. Click to select object
         this.hierarchyList.querySelectorAll('.gt-sb-tree-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 if (e.target.classList.contains('gt-sb-tree-del')) return;
@@ -1493,30 +2155,39 @@ export class SceneBuilderModal {
                 this.renderInspector();
             });
 
-            // 2. Drag & Drop Reordering Handlers
+            // 3. Drag & Drop Reordering Handlers (STRICT CATEGORY LOCKED)
             item.addEventListener('dragstart', (e) => {
                 const id = item.getAttribute('data-id');
-                const idx = parseInt(item.getAttribute('data-index'), 10);
+                const catId = item.getAttribute('data-cat');
                 this.draggedHierarchyId = id;
+                this.draggedHierarchyCat = catId;
                 item.classList.add('dragging');
 
                 e.dataTransfer.setData('text/plain', JSON.stringify({
                     source: 'hierarchy',
                     id: id,
-                    index: idx
+                    catId: catId
                 }));
-                e.dataTransfer.effectAllowed = 'copyMove';
+                e.dataTransfer.effectAllowed = 'move';
             });
 
             item.addEventListener('dragend', () => {
                 item.classList.remove('dragging');
                 this.draggedHierarchyId = null;
-                this.hierarchyList.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
-                    el.classList.remove('drag-over-top', 'drag-over-bottom');
+                this.draggedHierarchyCat = null;
+                this.hierarchyList.querySelectorAll('.drag-over-top, .drag-over-bottom, .drag-over').forEach(el => {
+                    el.classList.remove('drag-over-top', 'drag-over-bottom', 'drag-over');
                 });
             });
 
             item.addEventListener('dragover', (e) => {
+                const targetCat = item.getAttribute('data-cat');
+                // STRICT CATEGORY LOCK: Tolak jika kategori berbeda!
+                if (this.draggedHierarchyCat && this.draggedHierarchyCat !== targetCat) {
+                    e.dataTransfer.dropEffect = 'none';
+                    return;
+                }
+
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'move';
 
@@ -1547,22 +2218,28 @@ export class SceneBuilderModal {
                     return;
                 }
 
-                const targetIdx = parseInt(item.getAttribute('data-index'), 10);
+                const targetId = item.getAttribute('data-id');
+                const targetCat = item.getAttribute('data-cat');
                 const rect = item.getBoundingClientRect();
                 const dropAtBottom = (e.clientY - rect.top) >= rect.height / 2;
 
                 if (data.source === 'hierarchy') {
-                    // Reorder existing entity
+                    // STRICT CATEGORY LOCK: Monster hanya bisa di folder Monster, tidak bisa ke folder lain!
+                    if (data.catId !== targetCat) {
+                        if (this.gridInfoEl) {
+                            this.gridInfoEl.textContent = `⚠️ Kategori terkunci: Objek tidak bisa dipindah ke folder lain!`;
+                        }
+                        return;
+                    }
+
                     const sourceIdx = this.state.entities.findIndex(el => el.id === data.id);
-                    if (sourceIdx !== -1 && sourceIdx !== targetIdx) {
+                    let targetIdx = this.state.entities.findIndex(el => el.id === targetId);
+
+                    if (sourceIdx !== -1 && targetIdx !== -1 && sourceIdx !== targetIdx) {
                         this.pushUndoState('Ubah Urutan Hierarchy');
                         const [moved] = this.state.entities.splice(sourceIdx, 1);
-                        let insertIdx = targetIdx;
-                        if (sourceIdx < targetIdx && !dropAtBottom) {
-                            insertIdx = targetIdx - 1;
-                        } else if (sourceIdx > targetIdx && dropAtBottom) {
-                            insertIdx = targetIdx + 1;
-                        }
+                        targetIdx = this.state.entities.findIndex(el => el.id === targetId);
+                        let insertIdx = dropAtBottom ? targetIdx + 1 : targetIdx;
                         insertIdx = Math.max(0, Math.min(this.state.entities.length, insertIdx));
                         this.state.entities.splice(insertIdx, 0, moved);
 
@@ -1571,9 +2248,8 @@ export class SceneBuilderModal {
                         this.renderInspector();
                     }
                 } else if (data.source === 'backpack') {
-                    // Create new entity and insert at hierarchy position
-                    const insertIdx = dropAtBottom ? targetIdx + 1 : targetIdx;
-                    this.addNewEntity(data.type, insertIdx);
+                    // Jika dari backpack, spawn objek baru
+                    this.addNewEntity(data.type);
                 }
             });
         });
@@ -1628,31 +2304,52 @@ export class SceneBuilderModal {
      * Mengambil entitas yang menempati area grid [col..col+wTiles-1, row].
      * Mengembalikan objek entity jika ada, atau null jika kotak benar-benar kosong.
      */
-    getOccupyingEntity(col, row, ignoreId = null, wTiles = 1) {
-        const targetStartCol = col;
-        const targetEndCol = col + Math.max(1, wTiles) - 1;
+    getOccupyingEntity(col, row, ignoreId = null, wTiles = 1, checkTerrain = true, extraOccupiedMap = null, hTiles = 1) {
+        const targetCol = parseInt(col, 10);
+        const targetRow = parseInt(row, 10);
+        if (isNaN(targetCol) || isNaN(targetRow)) return null;
+        const safeW = Math.max(1, parseInt(wTiles, 10) || 1);
+        const safeH = Math.max(1, parseInt(hTiles, 10) || 1);
+        const targetEndCol = targetCol + safeW - 1;
+        const targetEndRow = targetRow + safeH - 1;
 
-        // 1. Cek entitas dinamis (player, platform, water, lava, spikes, dll)
+        // 0. Cek extraOccupiedMap jika disediakan (berguna saat batch validation / preventAllOverlaps)
+        if (extraOccupiedMap) {
+            for (let c = targetCol; c <= targetEndCol; c++) {
+                for (let r = targetRow; r <= targetEndRow; r++) {
+                    const occ = extraOccupiedMap.get(`${c},${r}`);
+                    if (occ && (!ignoreId || occ.id !== ignoreId)) {
+                        return occ;
+                    }
+                }
+            }
+        }
+
+        // 1. Cek entitas dinamis (player, platform, water, lava, spikes, chest, monster, npc, bangunan, dll)
         const hitEntity = this.state.entities.find(e => {
             if (ignoreId && e.id === ignoreId) return false;
 
-            const eRow = (e.row !== undefined) ? e.row : 7;
-            if (eRow !== row) return false;
+            const eRow = parseInt((e.row !== undefined) ? e.row : (e.y !== undefined ? Math.floor(e.y / 50) : 7), 10);
+            const eH = Math.max(1, parseInt(e.hTiles, 10) || 1);
+            const eEndRow = eRow + eH - 1;
+            if (Math.max(targetRow, eRow) > Math.min(targetEndRow, eEndRow)) return false;
 
-            const eStartCol = e.col;
-            const eEndCol = e.col + (e.wTiles || 1) - 1;
-            const hasColOverlap = Math.max(targetStartCol, eStartCol) <= Math.min(targetEndCol, eEndCol);
+            const eCol = parseInt((e.col !== undefined) ? e.col : (e.x !== undefined ? Math.floor(e.x / 50) : 0), 10);
+            const eW = Math.max(1, parseInt(e.wTiles, 10) || 1);
+            const eEndCol = eCol + eW - 1;
 
-            return hasColOverlap;
+            return Math.max(targetCol, eCol) <= Math.min(targetEndCol, eEndCol);
         });
 
         if (hitEntity) return hitEntity;
 
         // 2. Cek apakah ada Blok Tanah (Terrain Tile) di petak ini
-        if (ignoreId !== 'terrain') {
-            for (let c = targetStartCol; c <= targetEndCol; c++) {
-                if (this.hasTerrainAt(c, row)) {
-                    return { id: `terrain_${c}_${row}`, label: 'Blok Tanah', type: 'dirt', col: c, row: row };
+        if (checkTerrain && ignoreId !== 'terrain') {
+            for (let c = targetCol; c <= targetEndCol; c++) {
+                for (let r = targetRow; r <= targetEndRow; r++) {
+                    if (this.hasTerrainAt(c, r)) {
+                        return { id: `terrain_${c}_${r}`, label: 'Blok Tanah', type: 'dirt', col: c, row: r };
+                    }
                 }
             }
         }
@@ -1716,9 +2413,11 @@ export class SceneBuilderModal {
             return;
         }
 
-        const scale = this.canvas.width / (this.state.worldWidth || 1800);
-        const bx = bounds.minCol * 50 * scale;
-        const by = bounds.minRow * 50 * scale;
+        const scale = this.currentCanvasScale || (this.canvas.height / (this.state.worldHeight || 1000));
+        const offsetX = (this.currentCanvasOffsetX !== undefined && this.currentCanvasOffsetX !== null) ? this.currentCanvasOffsetX : 0;
+        const offsetY = (this.currentCanvasOffsetY !== undefined && this.currentCanvasOffsetY !== null) ? this.currentCanvasOffsetY : 0;
+        const bx = offsetX + bounds.minCol * 50 * scale;
+        const by = offsetY + bounds.minRow * 50 * scale;
         const bw = bounds.width * 50 * scale;
         const bh = bounds.height * 50 * scale;
 
@@ -1792,6 +2491,7 @@ export class SceneBuilderModal {
         this.updateUndoRedoButtons();
 
         AudioManager.playClick();
+        this.showToast(`↩️ Undo: ${previousSnapshot.action || 'Aksi Sebelumnya'} (Ctrl+Z)`, 'info');
         if (this.gridInfoEl) {
             this.gridInfoEl.textContent = `↩️ UNDO: Berhasil dikembalikan ${previousSnapshot.action ? `("${previousSnapshot.action}")` : ''}`;
         }
@@ -1801,6 +2501,7 @@ export class SceneBuilderModal {
         if (this.redoStack.length === 0) {
             AudioManager.playClick();
             if (this.gridInfoEl) this.gridInfoEl.textContent = 'ℹ️ Tidak ada aksi lagi untuk di-Redo.';
+            this.showToast('ℹ️ Tidak ada aksi lagi untuk di-Redo', 'info');
             return;
         }
 
@@ -1824,6 +2525,7 @@ export class SceneBuilderModal {
         this.updateUndoRedoButtons();
 
         AudioManager.playClick();
+        this.showToast(`↪️ Redo: ${nextSnapshot.action || 'Aksi Berikutnya'} (Ctrl+Y)`, 'info');
         if (this.gridInfoEl) {
             this.gridInfoEl.textContent = `↪️ REDO: Berhasil dimajukan ${nextSnapshot.action ? `("${nextSnapshot.action}")` : ''}`;
         }
@@ -1928,7 +2630,14 @@ export class SceneBuilderModal {
                 dirt: ['rgba(180, 83, 9, ALPHA)', 'rgba(251, 191, 36, ALPHA)'],
                 platforms: ['rgba(56, 189, 248, ALPHA)', 'rgba(125, 211, 252, ALPHA)'],
                 water: ['rgba(2, 132, 199, ALPHA)', 'rgba(56, 189, 248, ALPHA)'],
-                lava: ['rgba(239, 68, 68, ALPHA)', 'rgba(249, 115, 22, ALPHA)']
+                lava: ['rgba(239, 68, 68, ALPHA)', 'rgba(249, 115, 22, ALPHA)'],
+                brick: ['rgba(185, 28, 28, ALPHA)', 'rgba(239, 68, 68, ALPHA)'],
+                sidewalk: ['rgba(100, 116, 139, ALPHA)', 'rgba(148, 163, 184, ALPHA)'],
+                glass: ['rgba(56, 189, 248, ALPHA)', 'rgba(125, 211, 252, ALPHA)'],
+                street_lamp: ['rgba(251, 191, 36, ALPHA)', 'rgba(254, 240, 138, ALPHA)'],
+                ladder: ['rgba(217, 119, 6, ALPHA)', 'rgba(245, 158, 11, ALPHA)'],
+                roof: ['rgba(234, 88, 12, ALPHA)', 'rgba(253, 186, 116, ALPHA)'],
+                fence: ['rgba(71, 85, 105, ALPHA)', 'rgba(148, 163, 184, ALPHA)']
             };
             const [c, s] = colorMap[type] || ['rgba(56, 189, 248, ALPHA)', 'rgba(125, 211, 252, ALPHA)'];
             this.triggerSelectionFlash(
@@ -1949,7 +2658,7 @@ export class SceneBuilderModal {
                     if (this.state.dugTiles) this.state.dugTiles.delete(`${c},${r}`);
                 }
             }
-        } else if (type === 'platforms' || type === 'water' || type === 'lava' || type === 'coins') {
+        } else if (type === 'platforms' || type === 'water' || type === 'lava' || type === 'coins' || ['brick', 'sidewalk', 'glass', 'ladder', 'roof', 'fence', 'street_lamp'].includes(type)) {
             for (let c = bounds.minCol; c <= bounds.maxCol; c++) {
                 for (let r = bounds.minRow; r <= bounds.maxRow; r++) {
                     this.state.terrainTiles.delete(`${c},${r}`);
@@ -1967,7 +2676,7 @@ export class SceneBuilderModal {
                         cat: tmpl ? tmpl.cat : 'solid',
                         icon: tmpl ? tmpl.icon : '🧱',
                         wTiles: 1,
-                        hTiles: 1
+                        hTiles: (type === 'street_lamp') ? 2 : 1
                     });
                 }
             }
@@ -1988,83 +2697,114 @@ export class SceneBuilderModal {
     /**
      * Memeriksa apakah suatu area grid [col..col+wTiles-1, row] sudah ditempati objek lain.
      */
-    isSlotOccupied(col, row, ignoreId = null, wTiles = 1) {
-        return !!this.getOccupyingEntity(col, row, ignoreId, wTiles);
+    isSlotOccupied(col, row, ignoreId = null, wTiles = 1, checkTerrain = true, extraOccupiedMap = null) {
+        return !!this.getOccupyingEntity(col, row, ignoreId, wTiles, checkTerrain, extraOccupiedMap);
     }
 
     /**
      * Mencari petak kosong terdekat (bebas dari objek lain) agar objek tidak pernah bertumpuk.
      */
-    findFreeSlot(preferredCol, preferredRow, wTiles = 1, ignoreId = null) {
-        const safeW = Math.max(1, wTiles);
+    findFreeSlot(preferredCol, preferredRow, wTiles = 1, ignoreId = null, extraOccupiedMap = null) {
+        const safeW = Math.max(1, parseInt(wTiles, 10) || 1);
         const maxC = this.getMaxCol();
         const maxR = this.getMaxRow();
-        let col = Math.max(0, Math.min(maxC + 1 - safeW, preferredCol));
-        let row = Math.max(0, Math.min(maxR, preferredRow));
+        const baseCol = Math.max(0, Math.min(maxC + 1 - safeW, parseInt(preferredCol, 10) || 0));
+        const baseRow = Math.max(0, Math.min(maxR, parseInt(preferredRow, 10) || 7));
 
-        // Jika slot yang diinginkan sudah kosong, pakai langsung
-        if (!this.isSlotOccupied(col, row, ignoreId, safeW)) {
-            return { col, row };
+        const isFree = (c, r) => {
+            if (c < 0 || c + safeW - 1 > maxC || r < 0 || r > maxR) return false;
+            return !this.isSlotOccupied(c, r, ignoreId, safeW, true, extraOccupiedMap);
+        };
+
+        if (isFree(baseCol, baseRow)) {
+            return { col: baseCol, row: baseRow };
         }
 
-        // 1. Cari ke kanan pada baris yang sama
-        for (let c = col + 1; c <= maxC + 1 - safeW; c++) {
-            if (!this.isSlotOccupied(c, row, ignoreId, safeW)) {
-                return { col: c, row };
-            }
-        }
+        // Spiral out: cari slot kosong terdekat ke kanan, kiri, atas, bawah
+        for (let dist = 1; dist <= Math.max(maxC, maxR); dist++) {
+            if (isFree(baseCol + dist, baseRow)) return { col: baseCol + dist, row: baseRow };
+            if (isFree(baseCol - dist, baseRow)) return { col: baseCol - dist, row: baseRow };
 
-        // 2. Cari ke kiri pada baris yang sama
-        for (let c = col - 1; c >= 0; c--) {
-            if (!this.isSlotOccupied(c, row, ignoreId, safeW)) {
-                return { col: c, row };
-            }
-        }
-
-        // 3. Jika satu baris penuh, cari baris terdekat (atas/bawah)
-        for (let offset = 1; offset <= 10; offset++) {
-            for (const r of [row - offset, row + offset]) {
+            for (const rOff of [-dist, dist]) {
+                const r = baseRow + rOff;
                 if (r >= 0 && r <= maxR) {
-                    if (!this.isSlotOccupied(col, r, ignoreId, safeW)) {
-                        return { col, row: r };
-                    }
-                    for (let c = col + 1; c <= maxC + 1 - safeW; c++) {
-                        if (!this.isSlotOccupied(c, r, ignoreId, safeW)) {
-                            return { col: c, row: r };
-                        }
-                    }
-                    for (let c = col - 1; c >= 0; c--) {
-                        if (!this.isSlotOccupied(c, r, ignoreId, safeW)) {
-                            return { col: c, row: r };
-                        }
+                    if (isFree(baseCol, r)) return { col: baseCol, row: r };
+                    for (let cOff = 1; cOff <= dist; cOff++) {
+                        if (isFree(baseCol + cOff, r)) return { col: baseCol + cOff, row: r };
+                        if (isFree(baseCol - cOff, r)) return { col: baseCol - cOff, row: r };
                     }
                 }
             }
         }
 
-        return { col, row };
+        return { col: baseCol, row: baseRow };
     }
 
     /**
      * Memastikan seluruh objek yang ada tidak ada yang bertumpukan pada posisi yang sama persis.
+     * Mengunci setiap petak: 1 Grid = 1 Objek Berdiri Sendiri.
      */
     preventAllOverlaps() {
-        const seen = new Set();
+        if (!Array.isArray(this.state.entities) || this.state.entities.length === 0) return;
+
+        const occupiedMap = new Map();
+        const cleaned = [];
+
+        // 1. Normalisasi kolom, baris, dan lebar seluruh entitas
         this.state.entities.forEach(ent => {
-            const r = (ent.row !== undefined) ? ent.row : 7;
+            ent.col = parseInt(ent.col !== undefined ? ent.col : (ent.x !== undefined ? Math.floor(ent.x / 50) : 0), 10);
+            ent.row = parseInt(ent.row !== undefined ? ent.row : (ent.y !== undefined ? Math.floor(ent.y / 50) : 7), 10);
+            ent.wTiles = Math.max(1, parseInt(ent.wTiles, 10) || 1);
+        });
+
+        // 2. Prioritas: Pemain & Portal tetap di tempat aslinya, lalu platform, baru entitas dinamis lainnya
+        const priorityOrder = { player: 0, portal: 1, platforms: 2, chest: 3, npc: 4, spikes: 5, slime: 6, skeleton: 7, coins: 8, water: 9, lava: 10, dirt: 11 };
+        const sorted = [...this.state.entities].sort((a, b) => {
+            const pA = priorityOrder[a.type] !== undefined ? priorityOrder[a.type] : 99;
+            const pB = priorityOrder[b.type] !== undefined ? priorityOrder[b.type] : 99;
+            return pA - pB;
+        });
+
+        sorted.forEach(ent => {
             const w = ent.wTiles || 1;
-            const key = `${ent.col},${r}`;
-            if (seen.has(key)) {
-                const safe = this.findFreeSlot(ent.col + 1, r, w, ent.id);
+            let hasConflict = false;
+
+            // Cek bentrok dengan entitas lain yang sudah dikunci di occupiedMap
+            for (let c = ent.col; c < ent.col + w; c++) {
+                if (occupiedMap.has(`${c},${ent.row}`)) {
+                    hasConflict = true;
+                    break;
+                }
+            }
+
+            // Cek bentrok dengan balok tanah padat (kecuali dirt / fluid)
+            if (!hasConflict && ent.type !== 'dirt' && ent.cat !== 'fluid' && ent.type !== 'platforms') {
+                for (let c = ent.col; c < ent.col + w; c++) {
+                    if (this.hasTerrainAt(c, ent.row)) {
+                        hasConflict = true;
+                        break;
+                    }
+                }
+            }
+
+            if (hasConflict) {
+                // Cari slot kosong yang BENAR-BENAR belum terisi di occupiedMap
+                const safe = this.findFreeSlot(ent.col + 1, ent.row, w, ent.id, occupiedMap);
                 ent.col = safe.col;
                 ent.row = safe.row;
                 ent.x = safe.col * 50 + 25;
                 ent.y = (safe.row === 7) ? 400 : (safe.row * 50 + 25);
             }
+
+            // Kunci seluruh petak yang digunakan entitas ini
             for (let c = ent.col; c < ent.col + w; c++) {
-                seen.add(`${c},${ent.row}`);
+                occupiedMap.set(`${c},${ent.row}`, ent);
             }
+
+            cleaned.push(ent);
         });
+
+        this.state.entities = cleaned;
     }
 
     addNewEntity(type, insertIndex = -1, customCol = null, customRow = null) {
@@ -2090,23 +2830,20 @@ export class SceneBuilderModal {
 
         const wTiles = tmpl.wTiles || 1;
 
-        // JIKA MENEMPATKAN DI KOTAK SPESIFIK (Stamp tool / Backpack drop / Klik):
-        if (customCol !== null && customRow !== null) {
-            const occupied = this.getOccupyingEntity(customCol, customRow, null, wTiles);
-            if (occupied) {
-                AudioManager.playClick();
-                if (this.gridInfoEl) {
-                    this.gridInfoEl.textContent = `⛔ KOTAK SUDAH TERISI: [Col ${customCol}, Row ${customRow}] sudah ditempati "${occupied.label}". Hapus objek itu terlebih dahulu jika ingin menempatkan objek baru!`;
-                }
-                return;
-            }
-        }
-
         // JIKA MENAMBAHKAN BLOK TANAH (DIRT):
         if (type === 'dirt') {
             const targetCol = customCol !== null ? customCol : 10;
             const targetRow = customRow !== null ? customRow : 8;
+            const occ = this.getOccupyingEntity(targetCol, targetRow, null, wTiles, false);
+            if (occ) {
+                AudioManager.playClick();
+                if (this.gridInfoEl) {
+                    this.gridInfoEl.textContent = `⛔ KOTAK SUDAH TERISI: [Col ${targetCol}, Row ${targetRow}] sudah ditempati "${occ.label}". 1 Petak hanya untuk 1 Objek!`;
+                }
+                return;
+            }
             this.pushUndoState('Tambah Blok Tanah');
+            this.state.entities = this.state.entities.filter(e => !(e.col === targetCol && (e.row !== undefined ? e.row : 7) === targetRow));
             this.state.terrainTiles.add(`${targetCol},${targetRow}`);
             if (this.state.dugTiles) this.state.dugTiles.delete(`${targetCol},${targetRow}`);
             AudioManager.playClick();
@@ -2118,19 +2855,85 @@ export class SceneBuilderModal {
             return;
         }
 
+        // JIKA MENAMBAHKAN CAIRAN (WATER / LAVA):
+        if (type === 'water' || type === 'lava') {
+            const targetCol = customCol !== null ? customCol : 12;
+            const targetRow = customRow !== null ? customRow : 8;
+            const occ = this.getOccupyingEntity(targetCol, targetRow, null, wTiles, false);
+            if (occ && occ.cat !== 'fluid') {
+                AudioManager.playClick();
+                if (this.gridInfoEl) {
+                    this.gridInfoEl.textContent = `⛔ KOTAK SUDAH TERISI: [Col ${targetCol}, Row ${targetRow}] sudah ditempati "${occ.label}". 1 Petak hanya untuk 1 Objek!`;
+                }
+                return;
+            }
+            this.pushUndoState(`Tambah ${tmpl.label}`);
+            if (this.state.terrainTiles) this.state.terrainTiles.delete(`${targetCol},${targetRow}`);
+            this.state.entities = this.state.entities.filter(e => !(e.col === targetCol && (e.row !== undefined ? e.row : 7) === targetRow));
+            
+            const newId = `${type}_${Date.now()}`;
+            const newEnt = {
+                id: newId,
+                type: type,
+                col: targetCol,
+                row: targetRow,
+                x: targetCol * 50 + 25,
+                y: targetRow * 50 + 25,
+                label: `${tmpl.label} #${this.state.entities.filter(e => e.type === type).length + 1}`,
+                cat: tmpl.cat,
+                icon: tmpl.icon,
+                wTiles: 1,
+                hTiles: 1
+            };
+            this.state.entities.push(newEnt);
+            this.state.selectedId = newId;
+            this.ensureEntityFolderVisible(newId);
+            AudioManager.playClick();
+            this.renderHierarchy();
+            this.renderInspector();
+            this.renderPalette();
+            if (this.gridInfoEl) {
+                this.gridInfoEl.textContent = `✨ ${tmpl.label.toUpperCase()} DITAMBAHKAN di [Col ${targetCol}, Row ${targetRow}] (1 Petak 1 Objek Bersih)`;
+            }
+            this.applyLiveEntityChangeToWorld(newEnt, 'add');
+            return;
+        }
+
+        // JIKA MENEMPATKAN OBJEK LAIN (PLATFORM, STRUKTUR BANGUNAN, PETI, DURI, MONSTER, NPC, KOIN):
+        const hTiles = tmpl.hTiles || 1;
+        const isStructural = ['platforms', 'brick', 'sidewalk', 'glass', 'roof', 'ladder', 'fence'].includes(type);
+        let targetCol = customCol !== null ? customCol : Math.min(33, 4 + this.state.entities.filter(e => e.type === type).length * 3);
+        let targetRow = customRow !== null ? customRow : tmpl.defaultRow;
+
+        if (customCol !== null && customRow !== null) {
+            // Jika mengklik tanah solid saat menempatkan entitas berdiri (spikes, chest, monster, npc, coins, player):
+            if (this.hasTerrainAt(customCol, customRow) && !isStructural) {
+                if (customRow > 0 && !this.hasTerrainAt(customCol, customRow - 1)) {
+                    targetRow = customRow - 1; // Otomatis bertengger rapi di atas permukaan tanah
+                }
+            } else if (isStructural && this.hasTerrainAt(customCol, customRow)) {
+                // Balok bangunan menggantikan tanah jika ditaruh langsung di petak tanah
+                if (this.state.terrainTiles) this.state.terrainTiles.delete(`${customCol},${customRow}`);
+            }
+            const occupied = this.getOccupyingEntity(targetCol, targetRow, null, wTiles, true, null, hTiles);
+            if (occupied) {
+                AudioManager.playClick();
+                if (this.gridInfoEl) {
+                    this.gridInfoEl.textContent = `⛔ KOTAK SUDAH TERISI: [Col ${targetCol}, Row ${targetRow}] sudah ditempati "${occupied.label}". Petak harus berdiri sendiri (1 petak = 1 objek)!`;
+                }
+                return;
+            }
+        }
+
         this.pushUndoState(`Tambah ${tmpl.label}`);
 
         const count = this.state.entities.filter(e => e.type === type).length;
         const newId = `${type}_${Date.now()}`;
 
-        // Tentukan posisi awal [col, row]
-        let prefCol = customCol !== null ? customCol : Math.min(33, 4 + count * 3);
-        let prefRow = customRow !== null ? customRow : tmpl.defaultRow;
-
-        // Cari slot kosong
+        // Cari slot kosong jika bukan posisi klik spesifik
         const safeSlot = (customCol !== null && customRow !== null) 
-            ? { col: customCol, row: customRow } 
-            : this.findFreeSlot(prefCol, prefRow, wTiles, null);
+            ? { col: targetCol, row: targetRow } 
+            : this.findFreeSlot(targetCol, targetRow, wTiles, null);
 
         const newEnt = {
             id: newId,
@@ -2153,6 +2956,7 @@ export class SceneBuilderModal {
         }
 
         this.state.selectedId = newId;
+        this.ensureEntityFolderVisible(newId);
         AudioManager.playClick();
         this.renderHierarchy();
         this.renderInspector();
@@ -2161,6 +2965,7 @@ export class SceneBuilderModal {
         if (this.gridInfoEl) {
             this.gridInfoEl.textContent = `✨ OBJEK DITAMBAHKAN: ${newEnt.label} di [Col ${safeSlot.col}, Row ${safeSlot.row}] (Kotak Bersih)`;
         }
+        this.applyLiveEntityChangeToWorld(newEnt, 'add');
     }
 
     nudgeSelectedEntity(dCol, dRow) {
@@ -2207,53 +3012,13 @@ export class SceneBuilderModal {
         }
     }
 
-    initTestPlayer(startX = null, startY = null) {
-        const playerEnt = this.state.entities.find(e => e.type === 'player');
-        const defaultSpawnX = playerEnt ? (playerEnt.x !== undefined ? playerEnt.x : playerEnt.col * 50 + 25) : 125;
-        const defaultSpawnY = (playerEnt && playerEnt.row !== undefined && playerEnt.row !== 7) ? (playerEnt.row + 1) * 50 : 400;
-
-        const posX = (startX !== null && startX !== undefined) ? startX : defaultSpawnX;
-        const posY = (startY !== null && startY !== undefined) ? startY : defaultSpawnY;
-
-        this.testPlayer = {
-            x: posX,
-            y: posY,
-            vx: 0,
-            vy: 0,
-            facing: 1,
-            isGrounded: true,
-            walkTime: 0
-        };
-        this.testKeys = { w: false, a: false, s: false, d: false, space: false };
-    }
-
-    toggleTestPlayMode(forceState = null) {
-        this.isTestPlayMode = (forceState !== null) ? forceState : !this.isTestPlayMode;
+    centerOnSpawn() {
+        this.isCameraFollow = true;
+        const camFollowBtn = this.overlay ? this.overlay.querySelector('#gt-sb-btn-camfollow') : null;
+        if (camFollowBtn) camFollowBtn.classList.add('active');
         AudioManager.playClick();
-        const btn = this.overlay ? this.overlay.querySelector('#gt-sb-btn-testplay') : null;
-        if (btn) {
-            if (this.isTestPlayMode) {
-                btn.classList.add('active');
-                btn.innerHTML = '<span>🎮 Uji Gerak: ON</span>';
-            } else {
-                btn.classList.remove('active');
-                btn.innerHTML = '<span>🎮 Uji Gerak (WASD)</span>';
-            }
-        }
-
-        if (this.isTestPlayMode) {
-            const startX = this.runtimePlayerX !== null && this.runtimePlayerX !== undefined ? this.runtimePlayerX : null;
-            const startY = this.runtimePlayerY !== null && this.runtimePlayerY !== undefined ? this.runtimePlayerY : null;
-            this.initTestPlayer(startX, startY);
-            if (this.gridInfoEl) {
-                this.gridInfoEl.textContent = '🎮 MODE UJI GERAK AKTIF: Gunakan [W, A, S, D] atau Spasi untuk berjalan mulus & lompat | Tekan Tab/Esc untuk selesai';
-            }
-        } else {
-            this.testPlayer = null;
-            this.testKeys = { w: false, a: false, s: false, d: false, space: false };
-            if (this.gridInfoEl) {
-                this.gridInfoEl.textContent = 'GRID: 50px PERSEGI | MODE EDIT AKTIF (Gunakan Tombol Panah ← ↑ → ↓ untuk menggeser objek)';
-            }
+        if (this.gridInfoEl) {
+            this.gridInfoEl.textContent = '🎯 Tampilan berpusat ke Titik Spawn (Pintu Masuk). Gunakan scroll mouse atau Alt+Drag untuk menjelajah.';
         }
     }
 
@@ -2279,10 +3044,12 @@ export class SceneBuilderModal {
         this.renderHierarchy();
         this.renderInspector();
         this.renderPalette();
+        this.showToast(`🗑️ "${ent.label}" dihapus (Del)`, 'info');
 
         if (this.gridInfoEl) {
             this.gridInfoEl.textContent = `🗑️ OBJEK DIHAPUS: Petak [Col ${ent.col}, Row ${ent.row}] sekarang KOSONG dan siap diisi objek baru.`;
         }
+        this.applyLiveEntityChangeToWorld(ent, 'delete');
     }
 
     duplicateEntity(id) {
@@ -2329,6 +3096,7 @@ export class SceneBuilderModal {
         this.renderHierarchy();
         this.renderInspector();
         this.renderPalette();
+        this.showToast(`📋 Diduplikasi: "${clone.label}" (Ctrl+D)`, 'success');
 
         if (this.gridInfoEl) {
             this.gridInfoEl.textContent = `📋 DIDUPLIKASI: ${clone.label} di [Col ${safeSlot.col}, Row ${safeSlot.row}] (Bebas Tumpukan)`;
@@ -2346,19 +3114,50 @@ export class SceneBuilderModal {
             if (this.gridInfoEl) {
                 this.gridInfoEl.textContent = `⛔ OBJEK TUNGGAL: "${ent.label}" tidak dapat disalin karena hanya boleh ada 1 di dalam scene!`;
             }
+            this.showToast(`⛔ Objek tunggal tidak dapat disalin`, 'info');
             return;
         }
 
         this.clipboardEntity = JSON.parse(JSON.stringify(ent));
         AudioManager.playClick();
+        this.showToast(`📋 Disalin: "${ent.label}" (Ctrl+C)`, 'info');
 
         if (this.gridInfoEl) {
             this.gridInfoEl.textContent = `📋 DISALIN: ${ent.label} (Arahkan kursor ke petak KOSONG & tekan Ctrl+V)`;
         }
     }
 
+    cutSelectedEntity() {
+        if (!this.state.selectedId) return;
+        const ent = this.state.entities.find(el => el.id === this.state.selectedId);
+        if (!ent) return;
+
+        const tmpl = ITEM_TEMPLATES[ent.type];
+        if (tmpl?.isUnique) {
+            AudioManager.playClick();
+            if (this.gridInfoEl) {
+                this.gridInfoEl.textContent = `⛔ OBJEK TUNGGAL: "${ent.label}" tidak dapat dipotong!`;
+            }
+            this.showToast(`⛔ Objek tunggal tidak dapat dipotong`, 'info');
+            return;
+        }
+
+        this.clipboardEntity = JSON.parse(JSON.stringify(ent));
+        const entLabel = ent.label;
+        this.deleteEntity(ent.id);
+        AudioManager.playClick();
+        this.showToast(`✂️ Dipotong: "${entLabel}" (Ctrl+X)`, 'info');
+
+        if (this.gridInfoEl) {
+            this.gridInfoEl.textContent = `✂️ DIPOTONG: "${entLabel}" disimpan di clipboard. Tekan Ctrl+V untuk menempel.`;
+        }
+    }
+
     pasteEntity() {
-        if (!this.clipboardEntity) return;
+        if (!this.clipboardEntity) {
+            this.showToast('ℹ️ Clipboard kosong. Tekan Ctrl+C terlebih dahulu!', 'info');
+            return;
+        }
 
         const tmpl = ITEM_TEMPLATES[this.clipboardEntity.type];
         if (tmpl?.isUnique) {
@@ -2368,6 +3167,7 @@ export class SceneBuilderModal {
                 if (this.gridInfoEl) {
                     this.gridInfoEl.textContent = `⛔ OBJEK TUNGGAL: "${tmpl.label}" sudah terpasang di scene dan tidak dapat dipaste lagi!`;
                 }
+                this.showToast(`⛔ Objek tunggal sudah ada di scene`, 'info');
                 return;
             }
         }
@@ -2390,6 +3190,7 @@ export class SceneBuilderModal {
                 if (this.gridInfoEl) {
                     this.gridInfoEl.textContent = `⛔ TIDAK BISA PASTE: Petak [Col ${targetCol}, Row ${targetRow}] sudah diisi oleh "${occupied.label}". Kotak harus kosong terlebih dahulu!`;
                 }
+                this.showToast(`⛔ Petak [Col ${targetCol}, Row ${targetRow}] sudah terisi!`, 'info');
                 return;
             }
         } else {
@@ -2421,10 +3222,108 @@ export class SceneBuilderModal {
         AudioManager.playClick();
         this.renderHierarchy();
         this.renderInspector();
+        this.showToast(`✅ Ditempel: "${clone.label}" (Ctrl+V)`, 'success');
 
         if (this.gridInfoEl) {
             this.gridInfoEl.textContent = `✅ DITEMPEL: ${clone.label} di [Col ${targetCol}, Row ${targetRow}] (Petak Bersih)`;
         }
+    }
+
+    selectAll() {
+        const maxCol = this.getMaxCol();
+        const maxRow = this.getMaxRow();
+        this.boxSelection = { startCol: 0, startRow: 0, endCol: maxCol, endRow: maxRow };
+        this.state.selectedId = null;
+        AudioManager.playClick();
+        this.renderInspector();
+        this.updateQuickToolbar();
+        this.showToast(`📦 Seluruh level dipilih (Ctrl+A)`, 'info');
+        if (this.gridInfoEl) {
+            this.gridInfoEl.textContent = `📦 SEMUA AREA TERPILIH (Ctrl+A): [Col 0..${maxCol}, Row 0..${maxRow}]`;
+        }
+    }
+
+    focusSelectedOrSpawn() {
+        let focusX = 175;
+        let label = 'Spawn Pintu Masuk';
+        if (this.state.selectedId) {
+            const sel = this.state.entities.find(e => e.id === this.state.selectedId);
+            if (sel) {
+                focusX = (sel.x !== undefined) ? sel.x : (sel.col * 50 + 25);
+                label = sel.label || 'Objek Terpilih';
+            }
+        } else {
+            const pEnt = this.state.entities && this.state.entities.find(e => e.type === 'player');
+            if (pEnt) focusX = (pEnt.x !== undefined) ? pEnt.x : (pEnt.col * 50 + 25);
+        }
+
+        const W = this.canvas ? this.canvas.width : 1000;
+        const worldW = this.state.worldWidth || 3600;
+        const scale = this.currentCanvasScale || 1;
+        const minOffsetX = W - (worldW * scale);
+        const maxOffsetX = 0;
+        const desired = (W / 2) - (focusX * scale);
+        this.currentCamOffsetX = Math.max(minOffsetX, Math.min(maxOffsetX, desired));
+        this.isCameraFollow = false;
+        const camFollowBtn = this.overlay ? this.overlay.querySelector('#gt-sb-btn-camfollow') : null;
+        if (camFollowBtn) camFollowBtn.classList.remove('active');
+        AudioManager.playClick();
+        this.showToast(`🎯 Kamera dipusatkan ke: ${label} (F)`, 'info');
+        if (this.gridInfoEl) {
+            this.gridInfoEl.textContent = `🎯 Kamera dipusatkan ke ${label} (Tombol F)`;
+        }
+    }
+
+    resetCameraView() {
+        this.currentCamOffsetX = 0;
+        this.isCameraFollow = false;
+        const camFollowBtn = this.overlay ? this.overlay.querySelector('#gt-sb-btn-camfollow') : null;
+        if (camFollowBtn) camFollowBtn.classList.remove('active');
+        AudioManager.playClick();
+        this.showToast('🔄 Kamera di-reset ke awal level (R)', 'info');
+        if (this.gridInfoEl) {
+            this.gridInfoEl.textContent = '🔄 Kamera di-reset ke awal level (Tombol R)';
+        }
+    }
+
+    toggleGrid() {
+        this.state.showGrid = !this.state.showGrid;
+        const gridBtn = this.overlay ? this.overlay.querySelector('#gt-sb-btn-grid') : null;
+        if (gridBtn) {
+            gridBtn.classList.toggle('active', this.state.showGrid);
+            gridBtn.querySelector('span').textContent = this.state.showGrid ? '⊞ Grid: ON' : '⊞ Grid: OFF';
+        }
+        AudioManager.playClick();
+        this.showToast(`⊞ Grid: ${this.state.showGrid ? 'ON' : 'OFF'} (G)`, 'info');
+        if (this.gridInfoEl) {
+            this.gridInfoEl.textContent = this.state.showGrid ? '⊞ Grid aktif (50px)' : '⊞ Grid disembunyikan';
+        }
+    }
+
+    showToast(msg, type = 'info') {
+        if (!this.overlay) return;
+        let toast = this.overlay.querySelector('.gt-sb-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.className = 'gt-sb-toast';
+            this.overlay.appendChild(toast);
+        }
+        toast.textContent = msg;
+        toast.className = `gt-sb-toast gt-sb-toast-${type} show`;
+        if (this._toastTimeout) clearTimeout(this._toastTimeout);
+        this._toastTimeout = setTimeout(() => {
+            if (toast) toast.classList.remove('show');
+        }, 2200);
+    }
+
+    toggleShortcutHelpModal(show) {
+        if (!this.overlay) return;
+        const modal = this.overlay.querySelector('#gt-sb-shortcuts-modal');
+        if (!modal) return;
+        const shouldShow = (show !== undefined) ? !!show : (modal.style.display === 'none');
+        modal.style.display = shouldShow ? 'flex' : 'none';
+        this._shortcutModalOpen = shouldShow;
+        AudioManager.playClick();
     }
 
     // ===============================================================
@@ -2476,89 +3375,175 @@ export class SceneBuilderModal {
             // Scene Settings
             this.inspectorContent.innerHTML = `
                 <div class="gt-sb-inspector-card">
-                    <div class="gt-sb-card-title">🌐 WORLD SETTINGS</div>
+                    <div class="gt-sb-card-title">🌐 INFORMASI DUNIA</div>
                     <div class="gt-sb-prop-row">
-                        <span class="gt-sb-prop-label">World Bounds</span>
-                        <span class="gt-sb-prop-val">1800 x ${this.state.worldHeight || 700} px</span>
+                        <span class="gt-sb-prop-label">Ukuran Dunia</span>
+                        <span class="gt-sb-prop-val">${this.state.worldWidth || 3000} x ${this.state.worldHeight || 1000} px</span>
                     </div>
                     <div class="gt-sb-prop-row">
-                        <span class="gt-sb-prop-label">Grid Cell Type</span>
-                        <span class="gt-sb-prop-val" style="color: #22c55e;">Square (50x50 px)</span>
+                        <span class="gt-sb-prop-label">Total Kolom</span>
+                        <span class="gt-sb-prop-val">${this.getMaxCol() + 1} Kolom (Grid 50px)</span>
                     </div>
                     <div class="gt-sb-prop-row">
-                        <span class="gt-sb-prop-label">Ground Surface</span>
-                        <span class="gt-sb-prop-val" style="color: #f59e0b;">Row 8 (y: 400 px)</span>
-                    </div>
-                    <div class="gt-sb-prop-row">
-                        <span class="gt-sb-prop-label">Bottom Layer</span>
-                        <span class="gt-sb-prop-val" style="color: #94a3b8;">⬛ BEDROCK (Indestructible)</span>
-                    </div>
-                    <div class="gt-sb-prop-row">
-                        <span class="gt-sb-prop-label">Snap Mode</span>
-                        <span class="gt-sb-prop-val" style="color: #38bdf8;">Cell-Center (+25px)</span>
+                        <span class="gt-sb-prop-label">Total Objek</span>
+                        <span class="gt-sb-prop-val" style="color: #38bdf8;">${this.state.entities.length} Objek</span>
                     </div>
                 </div>
             `;
             return;
         }
 
+        const maxCol = this.getMaxCol();
+        const maxRow = this.getMaxRow();
+        const catInfo = getHierarchyCategory(obj.type);
+        const canClone = !ITEM_TEMPLATES[obj.type]?.isUnique;
+        const canDelete = obj.type !== 'player';
+
+        if (obj.type === 'npc') {
+            if (!Array.isArray(obj.dialogues) || obj.dialogues.length === 0) {
+                obj.dialogues = [
+                    { speaker: 'npc', name: obj.label || 'Kapten Chen', text: 'Halo pengelana! Portal di ujung jalan sedang terkunci.' },
+                    { speaker: 'player', name: 'Pemain', text: 'Bagaimana cara membuka portal itu?' },
+                    { speaker: 'npc', name: obj.label || 'Kapten Chen', text: 'Kumpulkan koin emas di sepanjang jalan agar gerbang terbuka!' }
+                ];
+            }
+            if (!obj.quest) {
+                obj.quest = {
+                    type: 'coins',
+                    targetAmount: 3,
+                    inProgressText: 'Koinmu belum cukup. Cari koin emas lagi di platform sekitar!',
+                    completedText: 'Luar biasa! Semua koin terkumpul. Portal kemenangan sudah terbuka!',
+                    actionOnComplete: 'unlock_portal'
+                };
+            }
+        }
+
         this.inspectorContent.innerHTML = `
             <div class="gt-sb-inspector-card">
                 <div class="gt-sb-card-title">
                     <span>${obj.icon} ${obj.label}</span>
-                    <span style="font-size: 9px; color: #38bdf8;">${obj.type}</span>
+                    <span style="font-size: 9.5px; color: ${catInfo.color}; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px; font-weight: 700;">${catInfo.label}</span>
                 </div>
                 <div class="gt-sb-prop-row">
-                    <span class="gt-sb-prop-label">Label Nama</span>
-                    <input type="text" class="gt-sb-input-name" id="gt-sb-inp-label" value="${obj.label}" style="width: 120px; font-size: 11px; padding: 2px 4px; border: 1px solid #27272e; border-radius: 4px; background: #111114;" />
+                    <span class="gt-sb-prop-label">Nama Objek</span>
+                    <input type="text" class="gt-sb-input-name" id="gt-sb-inp-label" value="${obj.label}" style="width: 135px; font-size: 11px; padding: 2px 6px; border: 1px solid #27272e; border-radius: 4px; background: #111114; color: #f4f4f5;" />
                 </div>
                 <div class="gt-sb-prop-row">
-                    <span class="gt-sb-prop-label">Kategori</span>
-                    <span class="gt-sb-prop-val" style="color: #a855f7;">${obj.cat.toUpperCase()}</span>
+                    <span class="gt-sb-prop-label">Kolom Grid</span>
+                    <input type="number" class="gt-sb-prop-input" id="gt-sb-inp-col" value="${obj.col}" min="0" max="${maxCol}" step="1" title="Pindah Kolom (0..${maxCol})" />
                 </div>
                 <div class="gt-sb-prop-row">
-                    <span class="gt-sb-prop-label">Kolom Grid (0..35)</span>
-                    <input type="number" class="gt-sb-prop-input" id="gt-sb-inp-col" value="${obj.col}" min="0" max="35" step="1" title="Geser Kolom Grid (0..35)" />
+                    <span class="gt-sb-prop-label">Baris Grid</span>
+                    <input type="number" class="gt-sb-prop-input" id="gt-sb-inp-row" value="${obj.row !== undefined ? obj.row : 7}" min="0" max="${maxRow}" step="1" title="Pindah Baris (0..${maxRow})" />
                 </div>
+                ${obj.type === 'platforms' ? `
                 <div class="gt-sb-prop-row">
-                    <span class="gt-sb-prop-label">Baris Grid (0..14)</span>
-                    <input type="number" class="gt-sb-prop-input" id="gt-sb-inp-row" value="${obj.row}" min="0" max="14" step="1" title="Geser Baris Grid (0..14)" />
-                </div>
-                <div class="gt-sb-prop-row">
-                    <span class="gt-sb-prop-label">World Pos (X, Y)</span>
-                    <span class="gt-sb-prop-val">(${obj.x}, ${obj.y})</span>
-                </div>
-                <div class="gt-sb-prop-row">
-                    <span class="gt-sb-prop-label">Dimensi Tile</span>
-                    <span class="gt-sb-prop-val" style="color: #38bdf8;">${obj.wTiles || 1} x ${obj.hTiles || 1} Tile (Unit 1x1)</span>
-                </div>
-                <div class="gt-sb-prop-row">
-                    <span class="gt-sb-prop-label">Panjang Blok (Width)</span>
-                    <input type="number" class="gt-sb-prop-input" id="gt-sb-inp-wtiles" value="${obj.wTiles || 1}" min="1" max="10" step="1" title="Perlebar blok tile (1..10)" />
-                </div>
-                <div style="font-size: 9.5px; color: #4ade80; background: rgba(34, 197, 94, 0.1); padding: 5px 8px; border-radius: 4px; border: 1px dashed rgba(34, 197, 94, 0.3); margin-top: 4px; line-height: 1.35;">
-                    🔗 <b>Auto-Merge:</b> Blok 1x1 (Air, Lava, Pijakan) otomatis menyatu mulus saat diletakkan berdampingan!
-                </div>
+                    <span class="gt-sb-prop-label">Panjang Pijakan</span>
+                    <input type="number" class="gt-sb-prop-input" id="gt-sb-inp-wtiles" value="${obj.wTiles || 1}" min="1" max="10" step="1" title="Jumlah Petak Memanjang (1..10)" />
+                </div>` : ''}
             </div>
 
+            ${(canClone || canDelete) ? `
             <div class="gt-sb-inspector-card">
                 <div class="gt-sb-card-title">⚡ AKSI OBJEK</div>
-                <div class="gt-sb-inspector-actions">
-                    ${!ITEM_TEMPLATES[obj.type]?.isUnique ? `
-                    <button class="gt-sb-btn-action gt-sb-btn-clone" id="gt-sb-act-clone" title="Duplikasi Objek (Ctrl+D)">
+                <div class="gt-sb-inspector-actions" style="display: flex; gap: 8px;">
+                    ${canClone ? `
+                    <button class="gt-sb-btn-action gt-sb-btn-clone" id="gt-sb-act-clone" title="Duplikasi Objek (Ctrl+D)" style="flex: 1; justify-content: center; padding: 7px;">
                         <span>📋 Duplikasi</span>
-                    </button>` : `
-                    <div style="font-size: 11px; color: #38bdf8; padding: 6px 10px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 6px; width: 100%; text-align: center; font-weight: 500;">
-                        🔒 Objek Tunggal (Maks 1 di Scene)
-                    </div>`}
-                    ${obj.type !== 'player' ? `
-                    <button class="gt-sb-btn-action gt-sb-btn-delete" id="gt-sb-act-delete" title="Hapus Objek (Delete / Backspace)">
+                    </button>` : ''}
+                    ${canDelete ? `
+                    <button class="gt-sb-btn-action gt-sb-btn-delete" id="gt-sb-act-delete" title="Hapus Objek (Del)" style="flex: 1; justify-content: center; padding: 7px;">
                         <span>🗑️ Hapus</span>
                     </button>` : ''}
                 </div>
-            </div>
+            </div>` : ''}
 
-            ${(obj.type === 'npc' || obj.type === 'chest' || obj.type === 'portal') ? `
+            ${(obj.type === 'npc') ? `
+            <div class="gt-sb-inspector-card" style="border: 1px solid #a855f7; background: rgba(168, 85, 247, 0.08);">
+                <div class="gt-sb-card-title" style="color: #c084fc; display: flex; align-items: center; justify-content: space-between;">
+                    <span>💬 ALUR PERCAKAPAN DUA ARAH</span>
+                    <span style="font-size: 9px; background: rgba(168, 85, 247, 0.25); color: #e9d5ff; padding: 2px 6px; border-radius: 4px;">Story-Driven</span>
+                </div>
+                <div style="font-size: 10px; color: #cbd5e1; line-height: 1.4; margin-bottom: 10px;">
+                    Atur percakapan bergantian antara NPC dan Pemain secara instan tanpa koding atau node graph.
+                </div>
+
+                <!-- Chat Feed List -->
+                <div class="gt-sb-diag-feed" id="gt-sb-diag-feed" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+                    ${(obj.dialogues || []).map((d, dIdx) => {
+                        const text = d.text || '';
+                        const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+                        const chars = text.length;
+                        const isOver = words >= 25 || chars >= 140;
+                        return `
+                        <div class="gt-sb-diag-row" style="background: ${d.speaker === 'player' ? 'rgba(14, 165, 233, 0.12)' : 'rgba(147, 51, 234, 0.12)'}; border: 1px solid ${d.speaker === 'player' ? 'rgba(56, 189, 248, 0.35)' : 'rgba(192, 132, 252, 0.35)'}; border-radius: 6px; padding: 8px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="font-size: 9.5px; font-weight: 800; color: #94a3b8;">#${dIdx + 1}</span>
+                                    <select class="gt-sb-diag-speaker-select" data-idx="${dIdx}" style="font-size: 10.5px; padding: 2px 6px; background: #111114; border: 1px solid ${d.speaker === 'player' ? '#0284c7' : '#7c3aed'}; color: ${d.speaker === 'player' ? '#38bdf8' : '#c084fc'}; border-radius: 4px; font-weight: 700;">
+                                        <option value="npc" ${d.speaker === 'npc' ? 'selected' : ''}>🧙 NPC (${obj.label || 'Karakter'})</option>
+                                        <option value="player" ${d.speaker === 'player' ? 'selected' : ''}>🚶 Pemain (Player)</option>
+                                    </select>
+                                </div>
+                                <button class="gt-sb-btn-del-diag" data-idx="${dIdx}" title="Hapus baris ini" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 12px; padding: 0 4px;">🗑️</button>
+                            </div>
+                            <textarea class="gt-sb-diag-line-input" data-idx="${dIdx}" maxlength="140" rows="2" placeholder="Tulis kalimat percakapan di sini (maks 25 kata)..." style="width: 100%; box-sizing: border-box; background: #090d16; border: 1px solid ${isOver ? '#ef4444' : '#27272e'}; border-radius: 4px; color: #f8fafc; font-size: 11px; padding: 5px 7px; resize: vertical; font-family: inherit;">${text}</textarea>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 3px; font-size: 9.5px;">
+                                <span style="color: #64748b;">Maksimal 25 kata</span>
+                                <span class="gt-sb-diag-counter" data-idx="${dIdx}" style="color: ${isOver ? '#ef4444' : (words >= 20 ? '#f59e0b' : '#94a3b8')}; font-weight: 700; font-family: monospace;">${words}/25 kata (${chars}/140)</span>
+                            </div>
+                        </div>
+                    `;}).join('')}
+                </div>
+
+                <button class="gt-sb-btn-action" id="gt-sb-act-add-diag-line" style="background: rgba(168, 85, 247, 0.15); border: 1px dashed #a855f7; color: #d8b4fe; width: 100%; padding: 6px 8px; font-size: 10.5px; font-weight: 700; cursor: pointer; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 12px;">
+                    <span>➕ Tambah Baris Percakapan</span>
+                </button>
+
+                <!-- Syarat & Hadiah Misi -->
+                <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
+                    <div style="font-size: 11px; font-weight: 800; color: #f59e0b; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
+                        <span>🎯 SYARAT MISI & HADIAH</span>
+                    </div>
+
+                    <div class="gt-sb-prop-row" style="margin-bottom: 6px;">
+                        <span class="gt-sb-prop-label">Tipe Misi</span>
+                        <select id="gt-sb-sel-quest-type" style="width: 140px; font-size: 11px; padding: 3px 6px; background: #111114; border: 1px solid #27272e; color: #f4f4f5; border-radius: 4px;">
+                            <option value="coins" ${(obj.quest?.type !== 'none') ? 'selected' : ''}>🪙 Kumpulkan Koin Emas</option>
+                            <option value="none" ${(obj.quest?.type === 'none') ? 'selected' : ''}>💬 Hanya Obrolan (Tanpa Syarat)</option>
+                        </select>
+                    </div>
+
+                    <div id="gt-sb-quest-details-group" style="${obj.quest?.type === 'none' ? 'display: none;' : ''}">
+                        <div class="gt-sb-prop-row" style="margin-bottom: 6px;">
+                            <span class="gt-sb-prop-label">Target Koin</span>
+                            <input type="number" id="gt-sb-inp-quest-target" value="${obj.quest?.targetAmount || 3}" min="1" max="50" style="width: 60px; font-size: 11px; padding: 2px 6px; background: #111114; border: 1px solid #27272e; color: #f4f4f5; border-radius: 4px;" />
+                        </div>
+                        <div style="margin-bottom: 6px;">
+                            <span class="gt-sb-prop-label" style="display: block; margin-bottom: 3px;">Dialog Saat Koin Kurang (Pengingat)</span>
+                            <textarea id="gt-sb-inp-quest-waiting" maxlength="140" rows="2" placeholder="Tulis kalimat pengingat (maks 25 kata)..." style="width: 100%; box-sizing: border-box; background: #090d16; border: 1px solid #27272e; border-radius: 4px; color: #f8fafc; font-size: 10.5px; padding: 4px 6px; resize: vertical;">${obj.quest?.inProgressText || ''}</textarea>
+                        </div>
+                        <div style="margin-bottom: 6px;">
+                            <span class="gt-sb-prop-label" style="display: block; margin-bottom: 3px;">Dialog Saat Misi Berhasil</span>
+                            <textarea id="gt-sb-inp-quest-success" maxlength="140" rows="2" placeholder="Tulis kalimat apresiasi (maks 25 kata)..." style="width: 100%; box-sizing: border-box; background: #090d16; border: 1px solid #27272e; border-radius: 4px; color: #f8fafc; font-size: 10.5px; padding: 4px 6px; resize: vertical;">${obj.quest?.completedText || ''}</textarea>
+                        </div>
+                        <div class="gt-sb-prop-row">
+                            <span class="gt-sb-prop-label">Aksi Selesai</span>
+                            <select id="gt-sb-sel-quest-action" style="width: 140px; font-size: 10.5px; padding: 3px 6px; background: #111114; border: 1px solid #27272e; color: #22c55e; font-weight: 700; border-radius: 4px;">
+                                <option value="unlock_portal" ${obj.quest?.actionOnComplete !== 'give_score' ? 'selected' : ''}>🌀 Buka Portal Kemenangan</option>
+                                <option value="give_score" ${obj.quest?.actionOnComplete === 'give_score' ? 'selected' : ''}>🪙 Beri Hadiah 50 Koin</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tombol Opsi Lanjutan: Node Graph -->
+                <div style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px;">
+                    <button class="gt-sb-btn-action" id="gt-sb-act-open-logic-graph" style="background: rgba(255,255,255,0.04); color: #94a3b8; width: 100%; border: 1px solid #27272e; font-size: 9.5px; padding: 4px 6px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                        <span>⚡ Mode Lanjutan: Buka Node Graph Misi</span>
+                    </button>
+                </div>
+            </div>` : ((obj.type === 'chest' || obj.type === 'portal') ? `
             <div class="gt-sb-inspector-card" style="border: 1px solid #7c3aed; background: rgba(124, 58, 237, 0.1);">
                 <div class="gt-sb-card-title" style="color: #c084fc;">⚡ LOGIKA & MISI INTERAKTIF</div>
                 <div style="font-size: 10.5px; color: #cbd5e1; line-height: 1.4; margin-bottom: 8px;">
@@ -2567,7 +3552,7 @@ export class SceneBuilderModal {
                 <button class="gt-sb-btn-action" id="gt-sb-act-open-logic-graph" style="background: linear-gradient(135deg, #7c3aed, #9333ea); color: #fff; width: 100%; border: 1px solid #a855f7; font-weight: 700; padding: 7px 10px; cursor: pointer; border-radius: 6px; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);">
                     <span>⚡ Buka Node Graph Misi</span>
                 </button>
-            </div>` : ''}
+            </div>` : '')}
         `;
 
         // Event listeners pada inspector
@@ -2580,6 +3565,127 @@ export class SceneBuilderModal {
                     this.flowGraphView.switchGraphMode('quests', this.sceneId);
                 }
             });
+        }
+
+        // Event listeners khusus NPC: Percakapan Dua Arah & Misi
+        if (obj.type === 'npc') {
+            // 1. Ganti Pembicara (Speaker)
+            this.inspectorContent.querySelectorAll('.gt-sb-diag-speaker-select').forEach(sel => {
+                sel.addEventListener('change', (e) => {
+                    const idx = parseInt(e.target.getAttribute('data-idx'), 10);
+                    if (obj.dialogues && obj.dialogues[idx]) {
+                        this.pushUndoState('Ubah pembicara dialog');
+                        obj.dialogues[idx].speaker = e.target.value;
+                        obj.dialogues[idx].name = (e.target.value === 'player') ? 'Pemain' : (obj.label || 'NPC');
+                        this.renderInspector();
+                    }
+                });
+            });
+
+            // 2. Ketik Kalimat Dialog (Live Word & Char Counter, Max 25 Kata)
+            this.inspectorContent.querySelectorAll('.gt-sb-diag-line-input').forEach(ta => {
+                ta.addEventListener('input', (e) => {
+                    const idx = parseInt(e.target.getAttribute('data-idx'), 10);
+                    let val = e.target.value;
+                    const wordsArr = val.trim() ? val.trim().split(/\s+/) : [];
+                    if (wordsArr.length > 25) {
+                        val = wordsArr.slice(0, 25).join(' ');
+                        e.target.value = val;
+                    }
+                    if (obj.dialogues && obj.dialogues[idx]) {
+                        obj.dialogues[idx].text = val;
+                    }
+                    const counter = this.inspectorContent.querySelector(`.gt-sb-diag-counter[data-idx="${idx}"]`);
+                    if (counter) {
+                        const curWords = val.trim() ? val.trim().split(/\s+/).length : 0;
+                        const curChars = val.length;
+                        counter.textContent = `${curWords}/25 kata (${curChars}/140)`;
+                        const isOver = curWords >= 25 || curChars >= 140;
+                        counter.style.color = isOver ? '#ef4444' : (curWords >= 20 ? '#f59e0b' : '#94a3b8');
+                        e.target.style.borderColor = isOver ? '#ef4444' : '#27272e';
+                    }
+                });
+            });
+
+            // 3. Hapus Baris Dialog
+            this.inspectorContent.querySelectorAll('.gt-sb-btn-del-diag').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = parseInt(btn.getAttribute('data-idx'), 10);
+                    if (obj.dialogues && obj.dialogues[idx]) {
+                        this.pushUndoState('Hapus baris percakapan');
+                        obj.dialogues.splice(idx, 1);
+                        this.renderInspector();
+                    }
+                });
+            });
+
+            // 4. Tambah Baris Dialog Baru
+            const btnAddDiag = this.inspectorContent.querySelector('#gt-sb-act-add-diag-line');
+            if (btnAddDiag) {
+                btnAddDiag.addEventListener('click', () => {
+                    this.pushUndoState('Tambah baris percakapan');
+                    if (!Array.isArray(obj.dialogues)) obj.dialogues = [];
+                    const lastSpeaker = obj.dialogues[obj.dialogues.length - 1]?.speaker || 'player';
+                    const nextSpeaker = (lastSpeaker === 'npc') ? 'player' : 'npc';
+                    obj.dialogues.push({
+                        speaker: nextSpeaker,
+                        name: (nextSpeaker === 'player' ? 'Pemain' : (obj.label || 'NPC')),
+                        text: ''
+                    });
+                    this.renderInspector();
+                });
+            }
+
+            // 5. Tipe Misi (Koin vs None)
+            const selQuestType = this.inspectorContent.querySelector('#gt-sb-sel-quest-type');
+            const questDetails = this.inspectorContent.querySelector('#gt-sb-quest-details-group');
+            if (selQuestType) {
+                selQuestType.addEventListener('change', (e) => {
+                    this.pushUndoState('Ubah tipe misi');
+                    if (!obj.quest) obj.quest = {};
+                    obj.quest.type = e.target.value;
+                    if (questDetails) {
+                        questDetails.style.display = (e.target.value === 'none') ? 'none' : 'block';
+                    }
+                });
+            }
+
+            // 6. Target Jumlah Koin
+            const inpQuestTarget = this.inspectorContent.querySelector('#gt-sb-inp-quest-target');
+            if (inpQuestTarget) {
+                inpQuestTarget.addEventListener('change', (e) => {
+                    const val = Math.max(1, parseInt(e.target.value, 10) || 1);
+                    if (!obj.quest) obj.quest = {};
+                    obj.quest.targetAmount = val;
+                });
+            }
+
+            // 7. Dialog Pengingat (Belum Selesai)
+            const inpQuestWaiting = this.inspectorContent.querySelector('#gt-sb-inp-quest-waiting');
+            if (inpQuestWaiting) {
+                inpQuestWaiting.addEventListener('input', (e) => {
+                    if (!obj.quest) obj.quest = {};
+                    obj.quest.inProgressText = e.target.value;
+                });
+            }
+
+            // 8. Dialog Sukses
+            const inpQuestSuccess = this.inspectorContent.querySelector('#gt-sb-inp-quest-success');
+            if (inpQuestSuccess) {
+                inpQuestSuccess.addEventListener('input', (e) => {
+                    if (!obj.quest) obj.quest = {};
+                    obj.quest.completedText = e.target.value;
+                });
+            }
+
+            // 9. Aksi Hadiah
+            const selQuestAction = this.inspectorContent.querySelector('#gt-sb-sel-quest-action');
+            if (selQuestAction) {
+                selQuestAction.addEventListener('change', (e) => {
+                    if (!obj.quest) obj.quest = {};
+                    obj.quest.actionOnComplete = e.target.value;
+                });
+            }
         }
 
         const inpWTiles = this.inspectorContent.querySelector('#gt-sb-inp-wtiles');
@@ -2599,7 +3705,7 @@ export class SceneBuilderModal {
             let lastValidCol = obj.col;
             inpCol.addEventListener('change', () => {
                 const val = parseInt(inpCol.value, 10);
-                if (isNaN(val) || val < 0 || val > 35) {
+                if (isNaN(val) || val < 0 || val > this.getMaxCol()) {
                     inpCol.value = lastValidCol;
                     return;
                 }
@@ -2628,7 +3734,7 @@ export class SceneBuilderModal {
             let lastValidRow = obj.row;
             inpRow.addEventListener('change', () => {
                 const val = parseInt(inpRow.value, 10);
-                if (isNaN(val) || val < 0 || val > 14) {
+                if (isNaN(val) || val < 0 || val > this.getMaxRow()) {
                     inpRow.value = lastValidRow;
                     return;
                 }
@@ -2686,6 +3792,17 @@ export class SceneBuilderModal {
         const undoBtn = overlay.querySelector('#gt-sb-btn-undo');
         const redoBtn = overlay.querySelector('#gt-sb-btn-redo');
         const btnAddItem = overlay.querySelector('#gt-sb-btn-add-item');
+        const saveBtn = overlay.querySelector('#gt-sb-btn-save');
+        const shortcutsBtn = overlay.querySelector('#gt-sb-btn-shortcuts');
+        const shortcutsCloseBtn = overlay.querySelector('#gt-sb-shortcuts-close');
+        const shortcutsOkBtn = overlay.querySelector('#gt-sb-shortcuts-ok');
+        const shortcutsBackdrop = overlay.querySelector('#gt-sb-shortcuts-backdrop');
+
+        if (saveBtn) saveBtn.addEventListener('click', () => this.saveSceneData(true));
+        if (shortcutsBtn) shortcutsBtn.addEventListener('click', () => this.toggleShortcutHelpModal(true));
+        if (shortcutsCloseBtn) shortcutsCloseBtn.addEventListener('click', () => this.toggleShortcutHelpModal(false));
+        if (shortcutsOkBtn) shortcutsOkBtn.addEventListener('click', () => this.toggleShortcutHelpModal(false));
+        if (shortcutsBackdrop) shortcutsBackdrop.addEventListener('click', () => this.toggleShortcutHelpModal(false));
 
         // Tab Mode Switcher: Scene View vs Flow Graph
         const tabScene = overlay.querySelector('#gt-sb-tab-scene');
@@ -2702,10 +3819,6 @@ export class SceneBuilderModal {
                 if (sbBody) sbBody.style.display = 'none';
                 if (sbDrawer) sbDrawer.style.display = 'none';
                 if (flowWrapper) flowWrapper.style.display = 'block';
-
-                if (this.isTestPlayMode) {
-                    this.toggleTestPlayMode(false);
-                }
 
                 if (!this.projectId) {
                     if (this.scene && this.scene.projectId) {
@@ -2852,10 +3965,11 @@ export class SceneBuilderModal {
         }
 
         // Toggle Uji Gerak Karakter (WASD)
-        const testPlayBtn = overlay.querySelector('#gt-sb-btn-testplay');
-        if (testPlayBtn) {
-            testPlayBtn.addEventListener('click', () => {
-                this.toggleTestPlayMode();
+        // Tombol Fokus Spawn
+        const camFollowBtn = overlay.querySelector('#gt-sb-btn-camfollow');
+        if (camFollowBtn) {
+            camFollowBtn.addEventListener('click', () => {
+                this.centerOnSpawn();
             });
         }
 
@@ -2866,8 +3980,65 @@ export class SceneBuilderModal {
                 overlay.querySelectorAll('.gt-sb-biome-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.state.biome = btn.getAttribute('data-biome');
+                if (this.state.biome === 'hongkong') {
+                    this.applyLiveBackgroundToWorld('hongkong', null);
+                } else {
+                    this.drawPreview();
+                }
             });
         });
+
+        // Real-Time Background Color Customization Listener
+        const colorTrigger = overlay.querySelector('#gt-sb-color-trigger');
+        const colorPicker = overlay.querySelector('#gt-sb-color-picker');
+        const colorHex = overlay.querySelector('#gt-sb-color-hex');
+        const colorPreview = overlay.querySelector('#gt-sb-color-preview');
+
+        const updateBgColor = (col) => {
+            if (!col) return;
+            this.state.bgColor = col;
+            this.state.bgType = 'color';
+            if (colorPicker) colorPicker.value = col;
+            if (colorHex) colorHex.value = col.toUpperCase();
+            if (colorPreview) colorPreview.style.backgroundColor = col;
+            this.applyLiveBackgroundToWorld('color', col);
+        };
+
+        if (colorTrigger && colorPicker) {
+            colorTrigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                AudioManager.playClick();
+                colorPicker.click();
+            });
+        }
+
+        if (colorPicker) {
+            colorPicker.addEventListener('input', (e) => {
+                updateBgColor(e.target.value);
+            });
+            colorPicker.addEventListener('change', (e) => {
+                updateBgColor(e.target.value);
+            });
+        }
+
+        if (colorHex) {
+            colorHex.addEventListener('input', (e) => {
+                let val = e.target.value.trim();
+                if (!val.startsWith('#')) val = '#' + val;
+                if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                    updateBgColor(val);
+                }
+            });
+            colorHex.addEventListener('change', (e) => {
+                let val = e.target.value.trim();
+                if (!val.startsWith('#')) val = '#' + val;
+                if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                    updateBgColor(val);
+                } else {
+                    colorHex.value = (this.state.bgColor || '#dcff78').toUpperCase();
+                }
+            });
+        }
 
         // Backpack Categories Filter Tab Click
         const catButtons = overlay.querySelectorAll('.gt-sb-cat-btn');
@@ -2916,28 +4087,22 @@ export class SceneBuilderModal {
                 e.stopPropagation();
                 this.boxSelection = null;
                 this.hideQuickToolbar();
-                this.renderInspector();
             });
-        }
 
-        // ===============================================================
-        // CANVAS DRAG & DROP + DIRECT MANIPULATION (60FPS ULTRA-SMOOTH)
-        // ===============================================================
-        if (this.canvas) {
             // Helper konversi posisi mouse ke grid tile & pixel lokal kanvas
             const getTileFromMouse = (e) => {
                 const rect = this.canvas.getBoundingClientRect();
-                const mouseX = Math.max(0, Math.min(this.canvas.width, e.clientX - rect.left));
-                const mouseY = Math.max(0, Math.min(this.canvas.height, e.clientY - rect.top));
+                const scaleX = rect.width > 0 ? (this.canvas.width / rect.width) : 1;
+                const scaleY = rect.height > 0 ? (this.canvas.height / rect.height) : 1;
+                const mouseX = Math.max(0, Math.min(this.canvas.width, (e.clientX - rect.left) * scaleX));
+                const mouseY = Math.max(0, Math.min(this.canvas.height, (e.clientY - rect.top) * scaleY));
                 const W = this.canvas.width;
                 const H = this.canvas.height;
-                const worldW = this.state.worldWidth || 1800;
-                const worldH = this.state.worldHeight || 700;
-                const scaleX = W / worldW;
-                const scaleY = H / worldH;
-                const scale = Math.max(scaleX, scaleY);
-                const offsetX = Math.max(0, (W - worldW * scale) / 2);
-                const offsetY = Math.max(0, (H - worldH * scale) / 2);
+                const worldW = this.state.worldWidth || 3600;
+                const worldH = this.state.worldHeight || 1000;
+                const scale = this.currentCanvasScale || (H / worldH);
+                const offsetX = (this.currentCanvasOffsetX !== undefined && this.currentCanvasOffsetX !== null) ? this.currentCanvasOffsetX : Math.max(0, (W - worldW * scale) / 2);
+                const offsetY = (this.currentCanvasOffsetY !== undefined && this.currentCanvasOffsetY !== null) ? this.currentCanvasOffsetY : 0;
                 const col = Math.floor(((mouseX - offsetX) / scale) / 50);
                 const row = Math.floor(((mouseY - offsetY) / scale) / 50);
                 const maxC = this.getMaxCol();
@@ -2950,7 +4115,7 @@ export class SceneBuilderModal {
                 const { col, row } = getTileFromMouse(e);
                 this.hoverTile = { col, row };
 
-                if (!this.isBoxSelecting && !this.isCanvasDragging && this.gridInfoEl) {
+                if (!this.isBoxSelecting && !this.isCanvasDragging && !this.isPanningCanvas && this.gridInfoEl) {
                     const occ = this.getOccupyingEntity(col, row, null);
                     if (occ) {
                         this.gridInfoEl.textContent = `⛔ KOTAK TERISI: [Col ${col}, Row ${row}] oleh "${occ.label}" (Tidak dapat ditimbun / diisi lagi)`;
@@ -2966,7 +4131,7 @@ export class SceneBuilderModal {
             });
 
             this.canvas.addEventListener('mouseleave', () => {
-                if (!this.isBoxSelecting && !this.isCanvasDragging) {
+                if (!this.isBoxSelecting && !this.isCanvasDragging && !this.isPanningCanvas) {
                     this.hoverTile = null;
                     if (this.gridInfoEl) {
                         this.gridInfoEl.textContent = `GRID: 50px PERSEGI | CELL-CENTER SNAP READY`;
@@ -2976,7 +4141,17 @@ export class SceneBuilderModal {
 
             // 2. Mouse Down (Click to select entity, start drag, or start pixel-smooth box selection)
             this.canvas.addEventListener('mousedown', (e) => {
+                // Support manual canvas panning via middle-click atau Alt+click
+                if (e.button === 1 || (e.button === 0 && e.altKey)) {
+                    e.preventDefault();
+                    this.isPanningCanvas = true;
+                    this.panStartMouseX = e.clientX;
+                    this.panStartCamOffset = (this.currentCamOffsetX !== null && this.currentCamOffsetX !== undefined) ? this.currentCamOffsetX : 0;
+                    this.canvas.style.cursor = 'grabbing';
+                    return;
+                }
                 if (e.button === 2) return; // Right-click handled by contextmenu
+
                 const { col, row, mouseX, mouseY } = getTileFromMouse(e);
 
                 // Jika ada stamp tool yang sedang aktif
@@ -2991,7 +4166,8 @@ export class SceneBuilderModal {
                     const endCol = ent.col + (ent.wTiles || 1) - 1;
                     const colMatch = (col >= startCol && col <= endCol);
                     const entRow = (ent.row !== undefined) ? ent.row : 7;
-                    const rowMatch = (row === entRow) || 
+                    const entH = Math.max(1, parseInt(ent.hTiles, 10) || 1);
+                    const rowMatch = (row >= entRow && row < entRow + entH) || 
                         ((ent.cat === 'creature' || ent.type === 'spikes' || ent.type === 'chest' || ent.type === 'portal') && (row === 7 || row === 8));
                     return colMatch && rowMatch;
                 });
@@ -3006,6 +4182,7 @@ export class SceneBuilderModal {
                     this.dragStartCol = hit.col;
                     this.dragStartRow = (hit.row !== undefined) ? hit.row : 7;
                     this._dragPreMoveSnapshot = this.captureSnapshot(`Pindah ${hit.label}`);
+                    this.ensureEntityFolderVisible(hit.id);
                     this.renderHierarchy();
                     this.renderInspector();
                 } else {
@@ -3030,6 +4207,23 @@ export class SceneBuilderModal {
             this._globalMouseMove = (e) => {
                 if (!this._isOpen) return;
 
+                if (this.isPanningCanvas) {
+                    const dx = e.clientX - this.panStartMouseX;
+                    const W = this.canvas.width;
+                    const worldW = this.state.worldWidth || 3600;
+                    const scale = this.currentCanvasScale || 1;
+                    const minOffsetX = W - (worldW * scale);
+                    const maxOffsetX = 0;
+                    this.currentCamOffsetX = Math.max(minOffsetX, Math.min(maxOffsetX, this.panStartCamOffset + dx));
+                    this.isCameraFollow = false;
+                    const camFollowBtn = this.overlay ? this.overlay.querySelector('#gt-sb-btn-camfollow') : null;
+                    if (camFollowBtn) {
+                        camFollowBtn.classList.remove('active');
+                        camFollowBtn.innerHTML = '<span>📷 POV Follow: OFF</span>';
+                    }
+                    return;
+                }
+
                 if (this.isBoxSelecting && this.boxSelection) {
                     const { col, row, mouseX, mouseY } = getTileFromMouse(e);
                     if (this.dragPixelBox) {
@@ -3051,17 +4245,21 @@ export class SceneBuilderModal {
                     const ent = this.canvasDragEntity;
                     ent.col = col;
                     ent.x = col * 50 + 25;
-                    if (ent.type === 'platforms' || ent.type === 'coins' || ent.cat === 'fluid') {
-                        ent.row = Math.max(0, Math.min(this.getMaxRow(), row));
-                        ent.y = ent.row * 50 + 25;
-                    }
+                    ent.row = Math.max(0, Math.min(this.getMaxRow(), row));
+                    ent.y = (ent.row === 7) ? 400 : (ent.row * 50 + 25);
                     this.renderInspector();
+                    this.applyLiveEntityChangeToWorld(ent, 'update');
                 }
             };
             window.addEventListener('mousemove', this._globalMouseMove);
 
             this._globalMouseUp = () => {
                 if (!this._isOpen) return;
+
+                if (this.isPanningCanvas) {
+                    this.isPanningCanvas = false;
+                    this.canvas.style.cursor = 'crosshair';
+                }
 
                 if (this.isBoxSelecting) {
                     this.isBoxSelecting = false;
@@ -3082,6 +4280,14 @@ export class SceneBuilderModal {
                     const ent = this.canvasDragEntity;
                     const wTiles = ent.wTiles || 1;
 
+                    // Jika target row memiliki terrain dan entitas adalah standing entity:
+                    if (this.hasTerrainAt(ent.col, ent.row) && ent.type !== 'dirt' && ent.cat !== 'fluid' && ent.type !== 'platforms') {
+                        if (ent.row > 0 && !this.hasTerrainAt(ent.col, ent.row - 1)) {
+                            ent.row = ent.row - 1;
+                            ent.y = (ent.row === 7) ? 400 : (ent.row * 50 + 25);
+                        }
+                    }
+
                     // Periksa apakah petak tujuan sudah diisi objek lain:
                     const existing = this.getOccupyingEntity(ent.col, ent.row, ent.id, wTiles);
                     if (existing) {
@@ -3091,8 +4297,9 @@ export class SceneBuilderModal {
                         ent.y = (ent.row === 7) ? 400 : (ent.row * 50 + 25);
                         AudioManager.playClick();
                         if (this.gridInfoEl) {
-                            this.gridInfoEl.textContent = `⛔ GAGAL PINDAH: Kotak [Col ${this.dragStartCol}, Row ${this.dragStartRow}] -> [Col ${ent.col}, Row ${ent.row}] sudah diisi oleh "${existing.label}". Hapus objek itu dulu jika ingin mengisi petak ini!`;
+                            this.gridInfoEl.textContent = `⛔ GAGAL PINDAH: Kotak [Col ${this.dragStartCol}, Row ${this.dragStartRow}] -> [Col ${ent.col}, Row ${ent.row}] sudah diisi oleh "${existing.label}". Objek tidak boleh menimpa / bertumpuk!`;
                         }
+                        this.applyLiveEntityChangeToWorld(ent, 'update');
                     } else {
                         if (ent.col !== this.dragStartCol || ent.row !== this.dragStartRow) {
                             if (this._dragPreMoveSnapshot) {
@@ -3107,16 +4314,36 @@ export class SceneBuilderModal {
                         if (this.gridInfoEl) {
                             this.gridInfoEl.textContent = `✅ Objek ${ent.label} dipindahkan ke [Col ${ent.col}, Row ${ent.row}] (Kotak Bersih)`;
                         }
+                        this.applyLiveEntityChangeToWorld(ent, 'update');
                     }
                     this._dragPreMoveSnapshot = null;
-
                     this.isCanvasDragging = false;
                     this.canvasDragEntity = null;
                     this.renderHierarchy();
-                    this.renderInspector();
                 }
             };
             window.addEventListener('mouseup', this._globalMouseUp);
+
+            // 2.5 Canvas Wheel Scroll (Horizontal Viewport Pan)
+            this.canvas.addEventListener('wheel', (e) => {
+                if (!this._isOpen) return;
+                const delta = (Math.abs(e.deltaX) > Math.abs(e.deltaY)) ? e.deltaX : e.deltaY;
+                const W = this.canvas.width;
+                const worldW = this.state.worldWidth || 3600;
+                const scale = this.currentCanvasScale || 1;
+                if (worldW * scale > W) {
+                    e.preventDefault();
+                    const minOffsetX = W - (worldW * scale);
+                    const maxOffsetX = 0;
+                    if (this.currentCamOffsetX === null || this.currentCamOffsetX === undefined) {
+                        this.currentCamOffsetX = 0;
+                    }
+                    this.currentCamOffsetX = Math.max(minOffsetX, Math.min(maxOffsetX, this.currentCamOffsetX - delta * 0.9));
+                    this.isCameraFollow = false;
+                    const camFollowBtn = this.overlay ? this.overlay.querySelector('#gt-sb-btn-camfollow') : null;
+                    if (camFollowBtn) camFollowBtn.classList.remove('active');
+                }
+            }, { passive: false });
 
             // 3. Right-Click Quick Action (Delete Entity)
             this.canvas.addEventListener('contextmenu', (e) => {
@@ -3127,7 +4354,8 @@ export class SceneBuilderModal {
                     const endCol = ent.col + (ent.wTiles || 1) - 1;
                     const colMatch = (col >= startCol && col <= endCol);
                     const entRow = (ent.row !== undefined) ? ent.row : 7;
-                    const rowMatch = (row === entRow) || 
+                    const entH = Math.max(1, parseInt(ent.hTiles, 10) || 1);
+                    const rowMatch = (row >= entRow && row < entRow + entH) || 
                         ((ent.cat === 'creature' || ent.type === 'spikes' || ent.type === 'chest' || ent.type === 'portal') && (row === 7 || row === 8));
                     return colMatch && rowMatch;
                 });
@@ -3163,15 +4391,18 @@ export class SceneBuilderModal {
                     const ent = this.state.entities.find(el => el.id === data.id);
                     if (ent) {
                         const wTiles = ent.wTiles || 1;
-                        let targetRow = (ent.type === 'platforms' || ent.type === 'coins' || ent.cat === 'fluid')
-                            ? Math.max(0, Math.min(this.getMaxRow(), row))
-                            : 7;
+                        let targetRow = Math.max(0, Math.min(this.getMaxRow(), row));
+                        if (this.hasTerrainAt(col, targetRow) && ent.type !== 'dirt' && ent.cat !== 'fluid' && ent.type !== 'platforms') {
+                            if (targetRow > 0 && !this.hasTerrainAt(col, targetRow - 1)) {
+                                targetRow = targetRow - 1;
+                            }
+                        }
 
                         const existing = this.getOccupyingEntity(col, targetRow, ent.id, wTiles);
                         if (existing) {
                             AudioManager.playClick();
                             if (this.gridInfoEl) {
-                                this.gridInfoEl.textContent = `⛔ TIDAK BISA DIPINDAH: Kotak [Col ${col}, Row ${targetRow}] sudah diisi oleh "${existing.label}". Hapus objek itu terlebih dahulu!`;
+                                this.gridInfoEl.textContent = `⛔ TIDAK BISA DIPINDAH: Kotak [Col ${col}, Row ${targetRow}] sudah diisi oleh "${existing.label}". Objek tidak boleh bertumpuk!`;
                             }
                             return;
                         }
@@ -3212,15 +4443,19 @@ export class SceneBuilderModal {
             if (this._isOpen) this.resizeCanvas();
         });
 
-        // Keyboard Shortcuts (ESC, Delete, Ctrl+C, Ctrl+V, Ctrl+D)
+        // Comprehensive Keyboard Shortcuts for Studio (Ctrl+S, Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+D, Ctrl+Z, F, H, G, R, ?, etc.)
         this._escHandler = (e) => {
             if (!this._isOpen) return;
 
-            // Abaikan shortcut jika sedang mengetik di input text
+            // Abaikan shortcut jika sedang mengetik di input text / textarea
             const isTyping = document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA');
 
-            // ESC: Batalkan multi-seleksi atau tutup modal
+            // ESC: Tutup modal shortcut (jika terbuka) -> Batalkan area seleksi -> Batalkan objek terpilih -> Tutup studio
             if (e.key === 'Escape' || e.key === 'Esc') {
+                if (this._shortcutModalOpen) {
+                    this.toggleShortcutHelpModal(false);
+                    return;
+                }
                 if (this.boxSelection) {
                     this.boxSelection = null;
                     AudioManager.playClick();
@@ -3228,73 +4463,138 @@ export class SceneBuilderModal {
                     if (this.gridInfoEl) this.gridInfoEl.textContent = '❌ Seleksi area dibatalkan.';
                     return;
                 }
+                if (this.state.selectedId) {
+                    this.state.selectedId = null;
+                    AudioManager.playClick();
+                    this.renderHierarchy();
+                    this.renderInspector();
+                    if (this.gridInfoEl) this.gridInfoEl.textContent = '❌ Seleksi objek dibatalkan.';
+                    return;
+                }
                 AudioManager.playClick();
                 this.hide();
                 return;
             }
 
+            // Jika sedang mengetik di input form, jangan proses shortcut editor lainnya
             if (isTyping) return;
 
-            // Tab: Toggle Mode Uji Gerak (WASD)
-            // Tab: Toggle Mode Uji Gerak (WASD)
-            if (e.key === 'Tab') {
+            // 1. Ctrl+S / Cmd+S: Simpan Level ke Proyek (Save)
+            if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
                 e.preventDefault();
-                this.toggleTestPlayMode();
+                this.saveSceneData(true);
                 return;
             }
 
-            // Tombol WASD atau Spasi: Kontrol Karakter Player Bergerak Mulus (Smooth 60FPS)
-            const k = e.key.toLowerCase();
-            if (['a', 'd', 'w', 's', ' '].includes(k) && !e.ctrlKey && !e.metaKey && !e.altKey) {
-                if (!this.testPlayer) {
-                    this.initTestPlayer();
-                    this.isTestPlayMode = true;
-                    const btn = this.overlay ? this.overlay.querySelector('#gt-sb-btn-testplay') : null;
-                    if (btn) {
-                        btn.classList.add('active');
-                        btn.innerHTML = '<span>🎮 Uji Gerak: ON</span>';
-                    }
-                }
-                if (k === 'a') this.testKeys.a = true;
-                if (k === 'd') this.testKeys.d = true;
-                if (k === 'w' || k === ' ') {
-                    e.preventDefault();
-                    this.testKeys.w = true;
-                }
-                if (k === 's') this.testKeys.s = true;
+            // 2. Ctrl+A / Cmd+A: Seleksi Seluruh Kanvas (Select All)
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
+                e.preventDefault();
+                this.selectAll();
                 return;
             }
 
-            if (e.key === 'Escape' && this.isTestPlayMode) {
-                this.toggleTestPlayMode(false);
+            // 3. Ctrl+C / Cmd+C: Copy objek terpilih
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
+                e.preventDefault();
+                this.copySelectedEntity();
                 return;
             }
 
-            // Mode Edit: Geser Objek Terpilih dengan Tombol Panah (← ↑ → ↓)
-            if (!e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
-                if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    this.nudgeSelectedEntity(0, -1);
-                    return;
+            // 4. Ctrl+X / Cmd+X: Cut objek terpilih
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'x' || e.key === 'X')) {
+                e.preventDefault();
+                this.cutSelectedEntity();
+                return;
+            }
+
+            // 5. Ctrl+V / Cmd+V: Paste objek yang disalin
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
+                e.preventDefault();
+                this.pasteEntity();
+                return;
+            }
+
+            // 6. Ctrl+D / Cmd+D: Duplikasi langsung (Standard Unity/Blender)
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
+                e.preventDefault();
+                if (this.state.selectedId) {
+                    this.duplicateEntity(this.state.selectedId);
                 }
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    this.nudgeSelectedEntity(0, 1);
-                    return;
+                return;
+            }
+
+            // 7. Ctrl+Z / Cmd+Z: Undo (atau Redo jika Shift ditekan)
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
+                e.preventDefault();
+                if (e.shiftKey) {
+                    this.redo();
+                } else {
+                    this.undo();
                 }
-                if (e.key === 'ArrowLeft') {
-                    e.preventDefault();
-                    this.nudgeSelectedEntity(-1, 0);
+                return;
+            }
+
+            // 8. Ctrl+Y / Cmd+Y: Redo
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) {
+                e.preventDefault();
+                this.redo();
+                return;
+            }
+
+            // 9. Ctrl+Enter: Mainkan Dunia (Play World)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                this.executeEnterWorld();
+                return;
+            }
+
+            // 10. ? / Ctrl+/ / F1: Panduan Shortcut Keyboard
+            if (((e.ctrlKey || e.metaKey) && e.key === '/') || e.key === '?' || e.key === 'F1') {
+                e.preventDefault();
+                this.toggleShortcutHelpModal();
+                return;
+            }
+
+            // 11. Delete / Backspace: Hapus area seleksi atau objek terpilih
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (this.boxSelection) {
+                    this.deleteSelectionArea();
                     return;
-                }
-                if (e.key === 'ArrowRight') {
-                    e.preventDefault();
-                    this.nudgeSelectedEntity(1, 0);
+                } else if (this.state.selectedId) {
+                    this.deleteEntity(this.state.selectedId);
                     return;
                 }
             }
 
-            // Shift + Arrow Keys: Seleksi Kotak Banyak (Kanan, Kiri, Atas, Bawah)
+            // 12. F: Fokus Kamera ke Objek Terpilih
+            if (!e.ctrlKey && !e.metaKey && !e.altKey && (e.key === 'f' || e.key === 'F')) {
+                e.preventDefault();
+                this.focusSelectedOrSpawn();
+                return;
+            }
+
+            // 13. H: Pusatkan Kamera ke Spawn Pintu Masuk
+            if (!e.ctrlKey && !e.metaKey && !e.altKey && (e.key === 'h' || e.key === 'H')) {
+                e.preventDefault();
+                this.centerOnSpawn();
+                return;
+            }
+
+            // 14. G: Toggle Grid 50px
+            if (!e.ctrlKey && !e.metaKey && !e.altKey && (e.key === 'g' || e.key === 'G')) {
+                e.preventDefault();
+                this.toggleGrid();
+                return;
+            }
+
+            // 15. R: Reset Posisi Kamera ke Awal
+            if (!e.ctrlKey && !e.metaKey && !e.altKey && (e.key === 'r' || e.key === 'R')) {
+                e.preventDefault();
+                this.resetCameraView();
+                return;
+            }
+
+            // 16. Shift + Arrow Keys: Seleksi Kotak Banyak (Kanan, Kiri, Atas, Bawah)
             if (e.shiftKey && ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
                 e.preventDefault();
                 if (!this.boxSelection) {
@@ -3331,62 +4631,34 @@ export class SceneBuilderModal {
                 return;
             }
 
-            // Delete / Backspace: Hapus area seleksi atau objek terpilih
-            if (e.key === 'Delete' || e.key === 'Backspace') {
-                if (this.boxSelection) {
-                    this.deleteSelectionArea();
-                    return;
-                } else if (this.state.selectedId) {
-                    this.deleteEntity(this.state.selectedId);
-                    return;
+            // 17. Tombol Panah (← ↑ → ↓) untuk menggeser objek terpilih (Nudge)
+            if (!e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+                    if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        this.nudgeSelectedEntity(0, -1);
+                        return;
+                    }
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        this.nudgeSelectedEntity(0, 1);
+                        return;
+                    }
+                    if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        this.nudgeSelectedEntity(-1, 0);
+                        return;
+                    }
+                    if (e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        this.nudgeSelectedEntity(1, 0);
+                        return;
+                    }
                 }
-            }
-            // Ctrl+C / Cmd+C: Copy objek terpilih
-            else if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
-                e.preventDefault();
-                this.copySelectedEntity();
-            }
-            // Ctrl+V / Cmd+V: Paste objek yang disalin
-            else if ((e.ctrlKey || e.metaKey) && (e.key === 'v' || e.key === 'V')) {
-                e.preventDefault();
-                this.pasteEntity();
-            }
-            // Ctrl+D / Cmd+D: Duplikasi langsung (Standard Unity/Blender)
-            else if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
-                e.preventDefault();
-                if (this.state.selectedId) {
-                    this.duplicateEntity(this.state.selectedId);
-                }
-            }
-            // Ctrl+Z / Cmd+Z: Undo (atau Redo jika Shift ditekan)
-            else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
-                e.preventDefault();
-                if (e.shiftKey) {
-                    this.redo();
-                } else {
-                    this.undo();
-                }
-            }
-            // Ctrl+Y / Cmd+Y: Redo
-            else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) {
-                e.preventDefault();
-                this.redo();
             }
         };
         window.addEventListener('keydown', this._escHandler);
-
-        // KeyUp Listener untuk merilis tombol gerak pada Mode Uji Gerak
-        this._keyUpHandler = (e) => {
-            if (!this._isOpen) return;
-            if (this.isTestPlayMode) {
-                const k = e.key.toLowerCase();
-                if (k === 'a' || e.key === 'ArrowLeft') this.testKeys.a = false;
-                if (k === 'd' || e.key === 'ArrowRight') this.testKeys.d = false;
-                if (k === 'w' || e.key === 'ArrowUp' || e.key === ' ') this.testKeys.w = false;
-                if (k === 's' || e.key === 'ArrowDown') this.testKeys.s = false;
-            }
-        };
-        window.addEventListener('keyup', this._keyUpHandler);
+        this._keyUpHandler = null;
     }
 
     resizeCanvas() {
@@ -3396,19 +4668,203 @@ export class SceneBuilderModal {
         this.canvas.height = Math.max(300, Math.floor(rect.height));
     }
 
-    executeEnterWorld() {
+    applyLiveBackgroundToWorld(bgType, bgColor) {
+        this.state.bgType = bgType;
+        if (bgColor) this.state.bgColor = bgColor;
+
+        // 1. Gambar ulang kanvas preview seketika
+        this.drawPreview();
+
+        // 2. Terapkan seketika ke GameScene / active scene Phaser di background
+        const scene = this.scene || (window.__templateGame && window.__templateGame.scene && window.__templateGame.scene.getScenes(true).find(s => ['GameScene', 'HongKongScene', 'Scene2', 'CustomWorldScene'].includes(s.scene && s.scene.key)));
+        if (!scene) return;
+
+        const hexColor = bgColor || '#dcff78';
+
+        if (bgType === 'image') {
+            const worldW = (scene.physics && scene.physics.world.bounds.width) || 3000;
+            if (scene.bgImage) {
+                scene.bgImage.setVisible(true);
+            } else if (scene.textures && scene.textures.exists('bg_scene1')) {
+                scene.bgImage = scene.add.image(worldW / 2, 225, 'bg_scene1')
+                    .setDisplaySize(worldW, 580)
+                    .setDepth(-10);
+            }
+            if (scene.bgSolidSky) {
+                scene.bgSolidSky.setVisible(false);
+            }
+            if (scene.cameras && scene.cameras.main) {
+                scene.cameras.main.setBackgroundColor('#07111e');
+            }
+            if (scene.currentMap) {
+                scene.currentMap.background = 'bg_scene1.png';
+            }
+        } else if (bgType === 'hongkong') {
+            if (scene.cameras && scene.cameras.main) {
+                scene.cameras.main.setBackgroundColor('#050813');
+            }
+            if (scene.bgSolidSky) scene.bgSolidSky.setVisible(false);
+        } else {
+            // Solid color (yellow-green or custom)
+            if (scene.cameras && scene.cameras.main) {
+                scene.cameras.main.setBackgroundColor(hexColor);
+            }
+            if (scene.bgSolidSky) {
+                scene.bgSolidSky.setVisible(true);
+                const colNum = Phaser.Display.Color.HexStringToColor(hexColor).color;
+                scene.bgSolidSky.fillColor = colNum;
+            }
+            if (scene.bgImage) {
+                scene.bgImage.setVisible(false);
+            }
+            if (scene.currentMap) {
+                scene.currentMap.warnaLangit = hexColor;
+                scene.currentMap.background = '';
+            }
+        }
+
+        if (typeof scene.updateSkyBackground === 'function') {
+            scene.updateSkyBackground(bgType, hexColor);
+        }
+        if (scene.worldData) {
+            scene.worldData.bgType = bgType;
+            scene.worldData.bgColor = hexColor;
+        }
+
+        if (this.gridInfoEl) {
+            this.gridInfoEl.textContent = `🎨 Latar dunia disinkronkan real-time: ${bgType} (${bgColor || ''})`;
+        }
+    }
+
+    applyLiveEntityChangeToWorld(entity, action = 'update') {
+        const scene = this.scene || (window.__templateGame && window.__templateGame.scene && window.__templateGame.scene.getScenes(true).find(s => ['GameScene', 'HongKongScene', 'Scene2', 'CustomWorldScene'].includes(s.scene && s.scene.key)));
+        if (!scene) return;
+
+        if (entity.type === 'player' && scene.player) {
+            scene.player.setPosition(entity.x, entity.y);
+            if (scene.player.body) {
+                scene.player.body.reset(entity.x, entity.y);
+                scene.player.setVelocity(0, 0);
+            }
+            if (scene.cameraAnchor) {
+                scene.cameraAnchor.x = entity.x;
+                scene.cameraAnchor.y = Math.max(225, entity.y - 160);
+            }
+            if (scene.currentMap && scene.currentMap.spawn) {
+                scene.currentMap.spawn.x = entity.x;
+                scene.currentMap.spawn.y = entity.y;
+            }
+        } else if (entity.type === 'npc') {
+            if (scene.npc) {
+                scene.npc.setPosition(entity.x, entity.y);
+                if (scene.npc.body) {
+                    scene.npc.body.reset(entity.x, entity.y);
+                }
+            }
+            if (scene.currentMap && scene.currentMap.npc) {
+                scene.currentMap.npc.posisiX = entity.x;
+                scene.currentMap.npc.posisiY = entity.y;
+            }
+        } else if (entity.type === 'portal') {
+            if (scene.portalScene2) {
+                scene.portalScene2.setPosition(entity.x, entity.y);
+            }
+            if (scene.portalBack) {
+                scene.portalBack.setPosition(entity.x, entity.y);
+            }
+            if (scene.currentMap && scene.currentMap.portal) {
+                scene.currentMap.portal.posisiX = entity.x;
+                scene.currentMap.portal.posisiY = entity.y;
+            }
+        } else if (entity.type === 'coins') {
+            if (scene.currentMap && Array.isArray(scene.currentMap.koin)) {
+                let coinEntry = scene.currentMap.koin.find(c => c.id === entity.id);
+                if (!coinEntry && action === 'add') {
+                    coinEntry = { x: entity.x, y: entity.y, id: entity.id, nama: entity.label };
+                    scene.currentMap.koin.push(coinEntry);
+                }
+                if (coinEntry) {
+                    coinEntry.x = entity.x;
+                    coinEntry.y = entity.y;
+                }
+                if (action === 'delete') {
+                    scene.currentMap.koin = scene.currentMap.koin.filter(c => c.id !== entity.id);
+                }
+            }
+            if (scene.items && scene.items.getChildren) {
+                const sprite = scene.items.getChildren().find(s => s.coinData && s.coinData.id === entity.id);
+                if (sprite) {
+                    if (action === 'delete') {
+                        scene.items.remove(sprite, true, true);
+                    } else {
+                        sprite.setPosition(entity.x, entity.y);
+                    }
+                }
+            }
+        } else if (entity.type === 'platforms') {
+            if (scene.currentMap && Array.isArray(scene.currentMap.platform)) {
+                const idx = parseInt((entity.id || '').replace('platform_', ''), 10) - 1;
+                if (!isNaN(idx) && scene.currentMap.platform[idx]) {
+                    scene.currentMap.platform[idx].x = entity.x;
+                    scene.currentMap.platform[idx].y = entity.y;
+                }
+            }
+            if (Array.isArray(scene.pierCrates)) {
+                const crate = scene.pierCrates.find(c => c.id === entity.id);
+                if (crate) {
+                    crate.col = entity.col;
+                    crate.row = entity.row;
+                    const h = 24;
+                    crate.visual.setPosition(entity.x, entity.y);
+                    if (crate.highlight) crate.highlight.setPosition(entity.x, entity.y - h / 2 + 2);
+                    crate.phys.setPosition(entity.x, entity.y);
+                    if (crate.phys.body) {
+                        crate.phys.body.reset(entity.x, entity.y);
+                    }
+                }
+            }
+        } else if (entity.type === 'spikes') {
+            if (scene.currentMap && Array.isArray(scene.currentMap.duri)) {
+                const d = scene.currentMap.duri[0];
+                if (d) {
+                    d.x = entity.x;
+                    d.y = entity.y;
+                }
+            }
+            if (scene.hazard) {
+                scene.hazard.setPosition(entity.x, entity.y);
+                if (scene.hazard.body) {
+                    scene.hazard.body.reset(entity.x, entity.y);
+                }
+            }
+            if (scene.hazardText) {
+                scene.hazardText.setPosition(entity.x, entity.y - 22);
+            }
+        } else if (entity.type === 'quest_item' || (entity.type === 'chest' && entity.subType === 'pearl')) {
+            if (scene.questItem) {
+                scene.questItem.setPosition(entity.x, entity.y);
+                if (scene.questItem.body) {
+                    scene.questItem.body.reset(entity.x, entity.y);
+                }
+            }
+        }
+    }
+
+    saveSceneData(notify = true) {
         AudioManager.playClick();
 
         // Cek keberadaan komponen untuk backward compatibility
         const types = new Set(this.state.entities.map(e => e.type));
 
         const worldData = {
-            id: `world-${Date.now()}`,
+            id: this.sceneId || `world-${Date.now()}`,
             name: this.state.name || 'Dunia Kreasiku',
-            biome: this.state.biome,
-            timeOfDay: this.state.timeOfDay,
-            worldWidth: this.state.worldWidth || 1800,
-            worldHeight: this.state.worldHeight || 700,
+            biome: this.state.biome || 'dirt',
+            bgType: this.state.bgType || (this.state.biome === 'hongkong' ? 'hongkong' : 'color'),
+            bgColor: this.state.bgColor || '#dcff78',
+            timeOfDay: this.state.timeOfDay || 'day',
+            worldWidth: this.state.worldWidth || 3600,
+            worldHeight: this.state.worldHeight || 1000,
             hasLava: types.has('lava'),
             hasWater: types.has('water'),
             hasSpikes: types.has('spikes'),
@@ -3429,6 +4885,7 @@ export class SceneBuilderModal {
         if (!targetProjectId) {
             const projects = ProjectManager.getProjects();
             targetProjectId = (projects && projects[0]) ? projects[0].id : ProjectManager.createProject('Project Kreasiku').id;
+            this.projectId = targetProjectId;
         }
 
         let targetSceneId = this.sceneId || worldData.id;
@@ -3438,9 +4895,24 @@ export class SceneBuilderModal {
             ProjectManager.updateSceneInProject(targetProjectId, this.sceneId, worldData);
         } else {
             const created = ProjectManager.addSceneToProject(targetProjectId, worldData);
-            if (created) targetSceneId = created.id;
+            if (created) {
+                targetSceneId = created.id;
+                this.sceneId = targetSceneId;
+            }
         }
 
+        if (notify) {
+            this.showToast('💾 Perubahan level berhasil disimpan! (Ctrl+S)', 'success');
+            if (this.gridInfoEl) {
+                this.gridInfoEl.textContent = `💾 LEVEL TERSIMPAN (Ctrl+S): Proyek berhasil diperbarui!`;
+            }
+        }
+
+        return { worldData, targetProjectId, targetSceneId };
+    }
+
+    executeEnterWorld() {
+        const { worldData, targetProjectId, targetSceneId } = this.saveSceneData(false);
         this.hide();
 
         // Teleportasi Instan ke CustomWorldScene dengan project context
@@ -3481,15 +4953,48 @@ export class SceneBuilderModal {
         this.state.worldHeight = worldH;
         this.state.worldWidth = worldW;
 
-        // Skala terbesar agar dunia mengisi seluruh kanvas tanpa ruang hitam kosong
-        const scaleX = W / worldW;
-        const scaleY = H / worldH;
-        const scale = Math.max(scaleX, scaleY);
+        // Skala vertikal pas agar seluruh 20 baris (Row 0..19) selalu muat dan bisa diklik
+        const scale = H / worldH;
         const cellSize = 50 * scale;
 
-        // Offset untuk centering horizontal jika tinggi kanvas menentukan skala
-        const offsetX = Math.max(0, (W - worldW * scale) / 2);
-        const offsetY = Math.max(0, (H - worldH * scale) / 2);
+        // Offset untuk centering horizontal jika dunia lebih kecil dari kanvas
+        let offsetX = Math.max(0, (W - worldW * scale) / 2);
+        const offsetY = 0;
+
+        // DYNAMIC CAMERA FOLLOW & POV VIEWPORT SCROLL
+        if (worldW * scale > W) {
+            const minOffsetX = W - (worldW * scale); // batas ujung kanan dunia
+            const maxOffsetX = 0;                    // batas ujung kiri dunia
+
+            let targetOffsetX = null;
+
+            if (this.isCameraFollow) {
+                const pEnt = this.state.entities && this.state.entities.find(e => e.type === 'player');
+                const focusX = pEnt ? (pEnt.x !== undefined ? pEnt.x : pEnt.col * 50 + 25) : 175;
+                const desired = (W / 2) - (focusX * scale);
+                targetOffsetX = Math.max(minOffsetX, Math.min(maxOffsetX, desired));
+            }
+
+            if (targetOffsetX !== null) {
+                if (this.currentCamOffsetX === null || this.currentCamOffsetX === undefined) {
+                    this.currentCamOffsetX = targetOffsetX;
+                } else {
+                    // Smooth lerp 60fps untuk perpindahan kamera POV yang halus
+                    this.currentCamOffsetX += (targetOffsetX - this.currentCamOffsetX) * 0.12;
+                }
+                offsetX = this.currentCamOffsetX;
+            } else if (this.currentCamOffsetX !== null && this.currentCamOffsetX !== undefined) {
+                this.currentCamOffsetX = Math.max(minOffsetX, Math.min(maxOffsetX, this.currentCamOffsetX));
+                offsetX = this.currentCamOffsetX;
+            }
+        } else {
+            this.currentCamOffsetX = offsetX;
+        }
+
+        // Simpan nilai aktif untuk sinkronisasi getTileFromMouse & drag
+        this.currentCanvasOffsetX = offsetX;
+        this.currentCanvasOffsetY = offsetY;
+        this.currentCanvasScale = scale;
 
         // Helper fungsi pemetaan koordinat dunia ke kanvas
         const toX = (wx) => offsetX + wx * scale;
@@ -3511,14 +5016,19 @@ export class SceneBuilderModal {
             ctx.fillStyle = '#070e1b';
             ctx.fillRect(0, 0, W, H);
 
+            const bgLeft = toX(0);
+            const bgTop = toY(0);
+            const bgWidth = worldW * scale;
+            const bgHeight = 500 * scale;
+
             // LAYER 1: Langit Badai & Siluet Gunung Victoria Peak
             if (this.bgImages.hk_sky && this.bgImages.hk_sky.complete) {
-                ctx.drawImage(this.bgImages.hk_sky, 0, 0, W, groundY + 120);
+                ctx.drawImage(this.bgImages.hk_sky, bgLeft, bgTop, bgWidth, bgHeight);
             }
 
             // LAYER 2: Gedung Pencakar Langit Hong Kong
             if (this.bgImages.hk_city && this.bgImages.hk_city.complete) {
-                ctx.drawImage(this.bgImages.hk_city, 0, 0, W, groundY + 120);
+                ctx.drawImage(this.bgImages.hk_city, bgLeft, bgTop, bgWidth, bgHeight);
             }
 
             // LAYER 3: Kapal Star Ferry (Mengapung & Berlayar Halus)
@@ -3541,12 +5051,88 @@ export class SceneBuilderModal {
             // LAYER 4: Ombak Laut Bergulung
             if (this.bgImages.hk_waves && this.bgImages.hk_waves.complete) {
                 const waveShiftY = Math.sin(t * 2.2) * (2 * scale);
-                ctx.drawImage(this.bgImages.hk_waves, 0, waveShiftY, W, groundY + 120);
+                ctx.drawImage(this.bgImages.hk_waves, bgLeft, bgTop + waveShiftY, bgWidth, bgHeight);
             }
 
             // LAYER 5: Bebatuan Dermaga / Pier
             if (this.bgImages.hk_pier && this.bgImages.hk_pier.complete) {
-                ctx.drawImage(this.bgImages.hk_pier, 0, 0, W, H);
+                ctx.drawImage(this.bgImages.hk_pier, bgLeft, bgTop, bgWidth, bgHeight);
+            }
+
+            // GROWTOPIA WATER BLOCKS di Bawah Dermaga (Row 8 y=415 .. worldH)
+            const waterStartY = toY(415);
+            const waterHeight = (worldH - 415) * scale;
+            if (waterHeight > 0) {
+                ctx.save();
+                // 1. Warna Dasar Biru Samudra Tropis Growtopia
+                ctx.fillStyle = '#0284c7';
+                ctx.fillRect(bgLeft, waterStartY, bgWidth, waterHeight);
+
+                // 2. Clip area badan air untuk pola garis diagonal 45 derajat
+                ctx.beginPath();
+                ctx.rect(bgLeft, waterStartY, bgWidth, waterHeight);
+                ctx.clip();
+
+                // Garis Gelombang Diagonal 45 Derajat Khas Growtopia
+                const stripePeriod = 16 * scale;
+                const stripeWidth = 8 * scale;
+                const animOffset = ((t * 22) % stripePeriod);
+
+                ctx.fillStyle = '#0369a1';
+                for (let sx = bgLeft - waterHeight - stripePeriod * 2; sx < bgLeft + bgWidth + stripePeriod * 2; sx += stripePeriod) {
+                    const drawX = sx + animOffset;
+                    ctx.beginPath();
+                    ctx.moveTo(drawX, waterStartY + waterHeight);
+                    ctx.lineTo(drawX + stripeWidth, waterStartY + waterHeight);
+                    ctx.lineTo(drawX + waterHeight + stripeWidth, waterStartY);
+                    ctx.lineTo(drawX + waterHeight, waterStartY);
+                    ctx.closePath();
+                    ctx.fill();
+
+                    // Garis Aksen Kilau Cyan Terang di Tepi Pita Gelombang
+                    ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+                    ctx.lineWidth = Math.max(1, 1.2 * scale);
+                    ctx.beginPath();
+                    ctx.moveTo(drawX + stripeWidth, waterStartY + waterHeight);
+                    ctx.lineTo(drawX + waterHeight + stripeWidth, waterStartY);
+                    ctx.stroke();
+                }
+
+                // 3. Gelombang Permukaan Berombak (Wave Crest)
+                const waveStep = 16 * scale;
+                const waveScroll = (t * 20) % waveStep;
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = Math.max(1.5, 2.2 * scale);
+                ctx.beginPath();
+                for (let wx = bgLeft - waveStep * 2; wx <= bgLeft + bgWidth + waveStep * 2; wx += waveStep) {
+                    const curX = wx - waveScroll;
+                    if (wx === bgLeft - waveStep * 2) {
+                        ctx.moveTo(curX, waterStartY);
+                    }
+                    ctx.quadraticCurveTo(curX + waveStep / 2, waterStartY + 6 * scale, curX + waveStep, waterStartY);
+                }
+                ctx.stroke();
+
+                // Titik Buih Putih pada Puncak Ombak
+                ctx.fillStyle = '#f0f9ff';
+                const peakSize = Math.max(1.5, 2.5 * scale);
+                for (let wx = bgLeft - waveStep * 2; wx <= bgLeft + bgWidth + waveStep * 2; wx += waveStep) {
+                    const curX = wx - waveScroll;
+                    ctx.fillRect(curX - peakSize / 2, waterStartY - peakSize / 2, peakSize, peakSize);
+                }
+
+                // 4. Gelembung Udara Melayang Naik
+                ctx.fillStyle = 'rgba(186, 230, 253, 0.65)';
+                for (let b = 0; b < 22; b++) {
+                    const bx = bgLeft + ((b * 97 + t * 15) % bgWidth);
+                    const by = waterStartY + ((b * 53 - t * 45) % waterHeight + waterHeight) % waterHeight;
+                    const bRadius = ((b % 3) + 1.2) * scale;
+                    ctx.beginPath();
+                    ctx.arc(bx, by, bRadius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.restore();
             }
 
             // Efek Cuaca: Butir Rintik Hujan Menukik
@@ -3568,32 +5154,17 @@ export class SceneBuilderModal {
                 ctx.fillRect(0, 0, W, H);
             }
             ctx.restore();
-        } else {
-            // SKY GRADIENT BERSIH (MEMBENTANG PENUH DARI ROW 0 KE ROW 8)
+        } else if (this.state.bgType === 'image') {
+            // SKY GRADIENT & GAMBAR PEGUNUNGAN SALJU (bg_scene1)
             let skyGradient = ctx.createLinearGradient(0, 0, 0, groundY);
-            if (this.state.biome === 'snow') {
-                skyGradient.addColorStop(0, '#0369a1');
-                skyGradient.addColorStop(0.65, '#38bdf8');
-                skyGradient.addColorStop(1, '#bae6fd');
-            } else if (this.state.biome === 'desert') {
-                skyGradient.addColorStop(0, '#78350f');
-                skyGradient.addColorStop(0.45, '#d97706');
-                skyGradient.addColorStop(1, '#fde68a');
-            } else if (this.state.biome === 'cave') {
-                skyGradient.addColorStop(0, '#090d16');
-                skyGradient.addColorStop(0.7, '#111827');
-                skyGradient.addColorStop(1, '#1e1b4b');
-            } else {
-                // dirt / forest
-                skyGradient.addColorStop(0, '#0369a1');
-                skyGradient.addColorStop(0.55, '#38bdf8');
-                skyGradient.addColorStop(1, '#7dd3fc');
-            }
+            skyGradient.addColorStop(0, '#0369a1');
+            skyGradient.addColorStop(0.65, '#38bdf8');
+            skyGradient.addColorStop(1, '#bae6fd');
             ctx.fillStyle = skyGradient;
             ctx.fillRect(0, 0, W, groundY);
 
             // Lapisan Gunung Salju untuk Biome Snow (bg_scene1)
-            if (this.state.biome === 'snow' && this.bgImages.snow_mountain && this.bgImages.snow_mountain.complete) {
+            if (this.bgImages.snow_mountain && this.bgImages.snow_mountain.complete) {
                 ctx.save();
                 ctx.globalAlpha = 0.85;
                 ctx.drawImage(this.bgImages.snow_mountain, 0, 0, W, groundY + 40);
@@ -3607,6 +5178,41 @@ export class SceneBuilderModal {
                     const sy = (i * 29 + t * 50) % H;
                     ctx.beginPath();
                     ctx.arc(sx, sy, 1.8 * scale + (i % 2), 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            }
+        } else {
+            // LATAR BELAKANG WARNA SOLID REAL-TIME IDENTIK DENGAN GAME (Default #dcff78)
+            const activeSkyColor = this.state.bgColor || '#dcff78';
+            ctx.fillStyle = activeSkyColor;
+            ctx.fillRect(0, 0, W, groundY);
+
+            // Jika warna langit adalah tema kuning kehijauan game asli (#dcff78), tampilkan kunang-kunang hitam mini persis seperti GameScene
+            if (activeSkyColor.toLowerCase() === '#dcff78') {
+                ctx.save();
+                for (let i = 0; i < 26; i++) {
+                    const fx = (i * 115 + Math.sin(t * 1.2 + i * 2) * 25) % W;
+                    const fy = 30 + (i * 28 + Math.cos(t * 0.9 + i) * 15) % Math.max(80, groundY - 45);
+
+                    // Aura Cahaya Melayang
+                    const auraColor = (i % 3 === 0) ? 'rgba(254, 240, 138, 0.55)' : ((i % 3 === 1) ? 'rgba(103, 232, 249, 0.55)' : 'rgba(244, 114, 182, 0.55)');
+                    ctx.fillStyle = auraColor;
+                    ctx.beginPath();
+                    ctx.arc(fx, fy, 7 * scale, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Tubuh Kunang-kunang Hitam Mini
+                    ctx.fillStyle = '#0f172a';
+                    ctx.beginPath();
+                    ctx.arc(fx, fy, 2.8 * scale, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Mata putih mungil
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(fx - 0.7 * scale, fy - 0.5 * scale, 0.9 * scale, 0, Math.PI * 2);
+                    ctx.arc(fx + 0.7 * scale, fy - 0.5 * scale, 0.9 * scale, 0, Math.PI * 2);
                     ctx.fill();
                 }
                 ctx.restore();
@@ -3695,6 +5301,35 @@ export class SceneBuilderModal {
                     const waveY = (!hasAbove) ? (ry + Math.sin(t * 3 + col * 0.8) * 3) : ry;
                     ctx.fillStyle = '#0284c7';
                     ctx.fillRect(rx, waveY, rw, rh + (ry - waveY));
+
+                    // Pola Garis Diagonal 45° Khas Growtopia Water Block
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(rx, waveY, rw, rh + (ry - waveY));
+                    ctx.clip();
+                    ctx.fillStyle = '#0369a1';
+                    const stripePeriod = 16 * scale;
+                    const stripeWidth = 8 * scale;
+                    const animOffset = ((t * 22) % stripePeriod);
+                    for (let sx = rx - rh - stripePeriod * 2; sx < rx + rw + stripePeriod * 2; sx += stripePeriod) {
+                        const drawX = sx + animOffset;
+                        ctx.beginPath();
+                        ctx.moveTo(drawX, ry + rh);
+                        ctx.lineTo(drawX + stripeWidth, ry + rh);
+                        ctx.lineTo(drawX + rh + stripeWidth, ry);
+                        ctx.lineTo(drawX + rh, ry);
+                        ctx.closePath();
+                        ctx.fill();
+
+                        ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+                        ctx.lineWidth = Math.max(1, 1.2 * scale);
+                        ctx.beginPath();
+                        ctx.moveTo(drawX + stripeWidth, ry + rh);
+                        ctx.lineTo(drawX + rh + stripeWidth, ry);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+
                     if (!hasAbove) {
                         ctx.fillStyle = '#7dd3fc';
                         ctx.fillRect(rx, waveY, rw, 3);
@@ -3764,6 +5399,35 @@ export class SceneBuilderModal {
                     const waveY = (!hasAbove) ? (ry + Math.sin(t * 3 + col * 0.8) * 3) : ry;
                     ctx.fillStyle = '#0284c7';
                     ctx.fillRect(rx, waveY, rw, rh + (ry - waveY));
+
+                    // Pola Garis Diagonal 45° Khas Growtopia Water Block
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(rx, waveY, rw, rh + (ry - waveY));
+                    ctx.clip();
+                    ctx.fillStyle = '#0369a1';
+                    const stripePeriod = 16 * scale;
+                    const stripeWidth = 8 * scale;
+                    const animOffset = ((t * 22) % stripePeriod);
+                    for (let sx = rx - rh - stripePeriod * 2; sx < rx + rw + stripePeriod * 2; sx += stripePeriod) {
+                        const drawX = sx + animOffset;
+                        ctx.beginPath();
+                        ctx.moveTo(drawX, ry + rh);
+                        ctx.lineTo(drawX + stripeWidth, ry + rh);
+                        ctx.lineTo(drawX + rh + stripeWidth, ry);
+                        ctx.lineTo(drawX + rh, ry);
+                        ctx.closePath();
+                        ctx.fill();
+
+                        ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+                        ctx.lineWidth = Math.max(1, 1.2 * scale);
+                        ctx.beginPath();
+                        ctx.moveTo(drawX + stripeWidth, ry + rh);
+                        ctx.lineTo(drawX + rh + stripeWidth, ry);
+                        ctx.stroke();
+                    }
+                    ctx.restore();
+
                     if (!hasAbove) {
                         ctx.fillStyle = '#7dd3fc';
                         ctx.fillRect(rx, waveY, rw, 3);
@@ -3805,40 +5469,11 @@ export class SceneBuilderModal {
                     continue;
                 }
 
-                // B. ROW BEDROCK PALING DASAR (Row bedrockRow)
-                if (r === bedrockRow) {
-                    ctx.fillStyle = '#05070a';
-                    ctx.fillRect(rx, ry, rw, rh);
-
-                    ctx.fillStyle = '#0f172a';
-                    ctx.fillRect(rx + 3 * scale, ry + 3 * scale, rw - 6 * scale, rh - 6 * scale);
-
-                    ctx.fillStyle = '#1e293b';
-                    ctx.fillRect(rx + 8 * scale, ry + 8 * scale, 14 * scale, 14 * scale);
-                    ctx.fillRect(rx + rw - 22 * scale, ry + rh - 22 * scale, 14 * scale, 14 * scale);
-
-                    ctx.strokeStyle = 'rgba(2, 6, 23, 0.9)';
-                    ctx.lineWidth = 1.5;
-                    ctx.beginPath();
-                    ctx.moveTo(rx, ry);
-                    ctx.lineTo(rx + rw, ry + rh);
-                    ctx.moveTo(rx + rw, ry);
-                    ctx.lineTo(rx, ry + rh);
-                    ctx.stroke();
-
-                    ctx.strokeStyle = '#334155';
-                    ctx.lineWidth = 1;
-                    ctx.strokeRect(rx, ry, rw, rh);
-                    continue;
-                }
-
                 // C. ROW 8: PERMUKAAN TANAH (SURFACE TURF) ATAU BLOK TANAH
                 const hasGroundAtR = this.hasTerrainAt(col, r);
                 const hasGroundAtSurface = this.hasTerrainAt(col, groundRow);
 
                 // Khusus Biome Hong Kong: laut dan bebatuan dermaga membentang alami hingga ke dasar
-                // (hk_layer_4_waves & hk_layer_5_pier). Hindari menggambar balok strata tanah/batu tambang
-                // pekat dengan kristal safir/emas yang menutupi tekstur dermaga.
                 if (this.state.biome === 'hongkong') {
                     if (r === groundRow && hasGroundAtR) {
                         ctx.fillStyle = 'rgba(15, 23, 42, 0.45)';
@@ -3877,56 +5512,15 @@ export class SceneBuilderModal {
                     continue;
                 }
 
-                // D. ROW 9..12: LAPISAN TANAH BAWAH (SUBSURFACE DIRT - 4 BARIS)
-                if (r <= 12) {
-                    ctx.fillStyle = dirtColor;
-                    ctx.fillRect(rx, ry, rw, rh);
-                    if ((col + r) % 3 === 0) {
-                        ctx.fillStyle = 'rgba(0,0,0,0.2)';
-                        ctx.fillRect(rx + 12 * scale, ry + 14 * scale, 6 * scale, 4 * scale);
-                    }
-                    continue;
-                }
-
-                // E. ROW 13..16: LAPISAN BATU GUA DALAM (CAVERN SLATE STONE - 4 BARIS)
-                if (r <= 16) {
-                    ctx.fillStyle = stoneColor;
-                    ctx.fillRect(rx, ry, rw, rh);
-
-                    // Urat Mineral Kristal Terpendam
-                    if ((col * 7 + r * 13) % 9 === 0) {
-                        ctx.fillStyle = '#38bdf8'; // Kristal Safir
-                        ctx.beginPath();
-                        ctx.arc(rx + rw / 2, ry + rh / 2, 4 * scale, 0, Math.PI * 2);
-                        ctx.fill();
-                    } else if ((col * 3 + r * 11) % 8 === 0) {
-                        ctx.fillStyle = '#f59e0b'; // Emas
-                        ctx.fillRect(rx + rw / 2 - 3 * scale, ry + rh / 2 - 3 * scale, 6 * scale, 6 * scale);
-                    }
-                    continue;
-                }
-
-                // F. ROW 17..18: DEEP MANTLE OBSIDIAN & MAGMA CAVERN (2 BARIS)
-                ctx.fillStyle = '#0f172a';
+                // D. FULL DIRT BAWAH TANAH (Row 9 s/d Dasar Dunia):
+                // Seragam warna tanah cokelat bersih alami tanpa lapisan strata warna-warni
+                ctx.fillStyle = dirtColor;
                 ctx.fillRect(rx, ry, rw, rh);
-                if ((col * 5 + r * 7) % 7 === 0) {
-                    ctx.fillStyle = '#ef4444'; // Kristal Ruby Merah
-                    ctx.beginPath();
-                    ctx.arc(rx + rw / 2, ry + rh / 2, 4 * scale, 0, Math.PI * 2);
-                    ctx.fill();
-                } else if ((col * 4 + r * 9) % 6 === 0) {
-                    ctx.fillStyle = '#8b5cf6'; // Kristal Amethyst Ungu
-                    ctx.fillRect(rx + rw / 2 - 2.5 * scale, ry + rh / 2 - 2.5 * scale, 5 * scale, 5 * scale);
+                if ((col + r) % 3 === 0) {
+                    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+                    ctx.fillRect(rx + 12 * scale, ry + 14 * scale, 6 * scale, 4 * scale);
                 }
             }
-        }
-
-        // Label Penanda Bedrock di Kiri Bawah (Hanya untuk biome bertanah/tambang)
-        if (this.state.biome !== 'hongkong') {
-            ctx.fillStyle = '#94a3b8';
-            ctx.font = `bold ${Math.max(8, 10 * scale)}px 'JetBrains Mono'`;
-            ctx.textAlign = 'left';
-            ctx.fillText('⬛ BEDROCK (DASAR BUMI TAK TERTEMBUS)', toX(20), bedrockY + cellSize * 0.65);
         }
 
         // ===============================================================
@@ -4021,7 +5615,7 @@ export class SceneBuilderModal {
             // C. RINTANGAN DURI (SPIKES) / OMBAK PECAH
             else if (ent.type === 'spikes') {
                 const px = toX(ent.col * 50);
-                const py = groundY;
+                const py = (ent.row !== undefined) ? toY((ent.row + 1) * 50) : groundY;
                 const sw = cellSize;
                 const sh = Math.max(10, 30 * scale);
 
@@ -4095,7 +5689,8 @@ export class SceneBuilderModal {
                     const cx = toX(ent.col * 50 + 25);
                     const cw = Math.max(12, 30 * scale);
                     const ch = Math.max(10, 24 * scale);
-                    const cy = groundY - ch;
+                    const baseY = (ent.row !== undefined) ? toY((ent.row + 1) * 50) : groundY;
+                    const cy = baseY - ch;
 
                     ctx.fillStyle = '#b45309';
                     ctx.fillRect(cx - cw / 2, cy, cw, ch);
@@ -4117,7 +5712,8 @@ export class SceneBuilderModal {
                 const npcX = toX(ent.col * 50 + 25);
                 const nw = Math.max(10, 24 * scale);
                 const nh = Math.max(14, 38 * scale);
-                const npcY = groundY - nh;
+                const baseY = (ent.row !== undefined) ? toY((ent.row + 1) * 50) : groundY;
+                const npcY = baseY - nh;
 
                 ctx.fillStyle = '#a855f7';
                 ctx.fillRect(npcX - nw / 2, npcY, nw, nh);
@@ -4147,7 +5743,8 @@ export class SceneBuilderModal {
                 const jumpOffset = Math.abs(Math.sin(t * 3 + idx)) * (18 * scale);
                 const smX = slimeBaseX + patrolOffset;
                 const smR = Math.max(7, 14 * scale);
-                const smY = groundY - smR - jumpOffset;
+                const baseY = (ent.row !== undefined) ? toY((ent.row + 1) * 50) : groundY;
+                const smY = baseY - smR - jumpOffset;
 
                 ctx.fillStyle = '#22c55e';
                 ctx.beginPath();
@@ -4169,7 +5766,8 @@ export class SceneBuilderModal {
                 const skX = skelBaseX + patrolOffset;
                 const skW = Math.max(9, 22 * scale);
                 const skH = Math.max(14, 38 * scale);
-                const skY = groundY - skH;
+                const baseY = (ent.row !== undefined) ? toY((ent.row + 1) * 50) : groundY;
+                const skY = baseY - skH;
 
                 ctx.fillStyle = '#e2e8f0';
                 ctx.fillRect(skX - skW / 2, skY, skW, skH);
@@ -4185,7 +5783,7 @@ export class SceneBuilderModal {
             // H. LETAK SPAWN (PINTU PUTIH KEDATANGAN / PLAYER SPAWN)
             else if (ent.type === 'player') {
                 const spawnX = toX(ent.x !== undefined ? ent.x : (ent.col * 50 + 25));
-                const groundBaseY = (ent.row === 7) ? groundY : toY((ent.row + 1) * 50);
+                const groundBaseY = (ent.row !== undefined) ? toY((ent.row + 1) * 50) : groundY;
 
                 // 1. PINTU PUTIH KEDATANGAN (WHITE DOOR / GERBANG SPAWN)
                 const dw = Math.max(20, 36 * scale);
@@ -4283,7 +5881,7 @@ export class SceneBuilderModal {
                     ctx.fillText(ent.label || '← Scene 1', portalX, portalY - portalR - 6);
                 } else {
                     const portalR = Math.max(14, 24 * scale);
-                    const portalY = groundY - cellSize / 2;
+                    const portalY = (ent.row !== undefined) ? toY(ent.row * 50 + 25) : (groundY - cellSize / 2);
 
                     ctx.save();
                     ctx.translate(portalX, portalY);
@@ -4314,6 +5912,336 @@ export class SceneBuilderModal {
                     ctx.fillText('GOAL', portalX, portalY - portalR - 4);
                 }
             }
+
+            // J. BATU BATA (BRICK)
+            else if (ent.type === 'brick') {
+                const bx = toX(ent.col * 50);
+                const by = toY(ent.row * 50);
+                const bw = cellSize;
+                const bh = cellSize;
+
+                // Mortar Semen Dasar
+                ctx.fillStyle = '#475569';
+                ctx.fillRect(bx, by, bw, bh);
+
+                // 3 baris bata per petak 50px (running bond)
+                const rows = 3;
+                const mortar = Math.max(1, 1.5 * scale);
+                const rowH = (bh - (rows + 1) * mortar) / rows;
+
+                for (let r = 0; r < rows; r++) {
+                    const ry = by + mortar + r * (rowH + mortar);
+                    const isOffset = (r % 2 === 1);
+                    const brickW = (bw - 3 * mortar) / 2;
+
+                    if (!isOffset) {
+                        for (let b = 0; b < 2; b++) {
+                            const rx = bx + mortar + b * (brickW + mortar);
+                            ctx.fillStyle = '#b91c1c';
+                            ctx.fillRect(rx, ry, brickW, rowH);
+                            ctx.fillStyle = '#ef4444';
+                            ctx.fillRect(rx, ry, brickW, Math.max(1, 1.2 * scale));
+                            ctx.fillStyle = '#7f1d1d';
+                            ctx.fillRect(rx, ry + rowH - Math.max(1, 1.2 * scale), brickW, Math.max(1, 1.2 * scale));
+                        }
+                    } else {
+                        const halfW = (brickW - mortar) / 2;
+                        // Bata kiri (setengah)
+                        ctx.fillStyle = '#b91c1c';
+                        ctx.fillRect(bx + mortar, ry, halfW, rowH);
+                        ctx.fillStyle = '#ef4444';
+                        ctx.fillRect(bx + mortar, ry, halfW, Math.max(1, 1.2 * scale));
+                        ctx.fillStyle = '#7f1d1d';
+                        ctx.fillRect(bx + mortar, ry + rowH - Math.max(1, 1.2 * scale), halfW, Math.max(1, 1.2 * scale));
+
+                        // Bata tengah (penuh)
+                        const midX = bx + mortar + halfW + mortar;
+                        ctx.fillStyle = '#b91c1c';
+                        ctx.fillRect(midX, ry, brickW, rowH);
+                        ctx.fillStyle = '#ef4444';
+                        ctx.fillRect(midX, ry, brickW, Math.max(1, 1.2 * scale));
+                        ctx.fillStyle = '#7f1d1d';
+                        ctx.fillRect(midX, ry + rowH - Math.max(1, 1.2 * scale), brickW, Math.max(1, 1.2 * scale));
+
+                        // Bata kanan (setengah)
+                        const rightX = midX + brickW + mortar;
+                        ctx.fillStyle = '#b91c1c';
+                        ctx.fillRect(rightX, ry, halfW, rowH);
+                        ctx.fillStyle = '#ef4444';
+                        ctx.fillRect(rightX, ry, halfW, Math.max(1, 1.2 * scale));
+                        ctx.fillStyle = '#7f1d1d';
+                        ctx.fillRect(rightX, ry + rowH - Math.max(1, 1.2 * scale), halfW, Math.max(1, 1.2 * scale));
+                    }
+                }
+
+                ctx.strokeStyle = '#334155';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(bx, by, bw, bh);
+            }
+
+            // K. TROTOAR / SIDEWALK (SIDEWALK)
+            else if (ent.type === 'sidewalk') {
+                const sx = toX(ent.col * 50);
+                const sy = toY(ent.row * 50);
+                const sw = cellSize;
+                const sh = cellSize;
+
+                // Badan Paving Abu-abu Beton
+                ctx.fillStyle = '#64748b';
+                ctx.fillRect(sx, sy, sw, sh);
+
+                // Curb Permukaan Atas (Beton Terang)
+                ctx.fillStyle = '#94a3b8';
+                ctx.fillRect(sx, sy, sw, Math.max(2, 4 * scale));
+
+                // Curb Dasar Bawah (Garis gelap jalan aspal)
+                ctx.fillStyle = '#334155';
+                ctx.fillRect(sx, sy + sh - Math.max(2, 3 * scale), sw, Math.max(2, 3 * scale));
+
+                // Garis Paving Vertikal Tengah
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(sx + sw / 2, sy + 4 * scale);
+                ctx.lineTo(sx + sw / 2, sy + sh - 3 * scale);
+                ctx.stroke();
+
+                // Garis Sambungan Horisontal Halus di Tengah
+                ctx.strokeStyle = 'rgba(15, 23, 42, 0.25)';
+                ctx.beginPath();
+                ctx.moveTo(sx, sy + sh / 2);
+                ctx.lineTo(sx + sw, sy + sh / 2);
+                ctx.stroke();
+
+                // Border Luar
+                ctx.strokeStyle = '#475569';
+                ctx.lineWidth = 1.2;
+                ctx.strokeRect(sx, sy, sw, sh);
+            }
+
+            // L. BLOK KACA MODERN (GLASS)
+            else if (ent.type === 'glass') {
+                const gx = toX(ent.col * 50);
+                const gy = toY(ent.row * 50);
+                const gw = cellSize;
+                const gh = cellSize;
+
+                // Kaca Transparan Biru-Langit Cyan
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.28)';
+                ctx.fillRect(gx, gy, gw, gh);
+
+                // Frame Kusen Luar
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.85)';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(gx, gy, gw, gh);
+
+                // Garis Kilauan Diagonal (Specular Glint)
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(gx, gy, gw, gh);
+                ctx.clip();
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+                ctx.lineWidth = Math.max(1, 2 * scale);
+                ctx.beginPath();
+                ctx.moveTo(gx + 8 * scale, gy);
+                ctx.lineTo(gx, gy + 8 * scale);
+                ctx.stroke();
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+                ctx.lineWidth = Math.max(1, 1.5 * scale);
+                ctx.beginPath();
+                ctx.moveTo(gx + 20 * scale, gy);
+                ctx.lineTo(gx, gy + 20 * scale);
+                ctx.stroke();
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+                ctx.lineWidth = Math.max(1, 1.5 * scale);
+                ctx.beginPath();
+                ctx.moveTo(gx + gw, gy + gh - 14 * scale);
+                ctx.lineTo(gx + gw - 14 * scale, gy + gh);
+                ctx.stroke();
+
+                ctx.restore();
+            }
+
+            // M. LAMPU JALAN KLASIK (STREET_LAMP)
+            else if (ent.type === 'street_lamp') {
+                const lx = toX(ent.col * 50);
+                const ly = toY(ent.row * 50);
+                const lw = cellSize;
+                const lh = cellSize * (ent.hTiles || 2);
+                const centerX = lx + lw / 2;
+                const baseY = ly + lh;
+
+                // 1. Aura Radial Cahaya Kuning Hangat (Pulsing Ambient Glow)
+                const lanternCenterY = ly + 20 * scale;
+                const glowR = Math.max(16, (30 + Math.sin(t * 3.5 + idx) * 3) * scale);
+                const glowGrad = ctx.createRadialGradient(centerX, lanternCenterY, 4 * scale, centerX, lanternCenterY, glowR);
+                glowGrad.addColorStop(0, 'rgba(254, 240, 138, 0.85)');
+                glowGrad.addColorStop(0.35, 'rgba(251, 191, 36, 0.35)');
+                glowGrad.addColorStop(1, 'rgba(251, 191, 36, 0)');
+                ctx.fillStyle = glowGrad;
+                ctx.beginPath();
+                ctx.arc(centerX, lanternCenterY, glowR, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 2. Kaki Penopang Besi Cor di Bawah
+                const baseW = Math.max(10, 18 * scale);
+                const baseH = Math.max(4, 7 * scale);
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.moveTo(centerX - baseW / 2, baseY);
+                ctx.lineTo(centerX - baseW * 0.3, baseY - baseH);
+                ctx.lineTo(centerX + baseW * 0.3, baseY - baseH);
+                ctx.lineTo(centerX + baseW / 2, baseY);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = '#334155';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // 3. Tiang Besi Vertikal
+                const poleW = Math.max(3, 5 * scale);
+                const poleTopY = ly + 26 * scale;
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(centerX - poleW / 2, poleTopY, poleW, baseY - baseH - poleTopY);
+                ctx.fillStyle = '#475569';
+                ctx.fillRect(centerX - poleW / 2, poleTopY, Math.max(1, 1.2 * scale), baseY - baseH - poleTopY);
+
+                // 4. Lentera Kap Kaca Atas
+                const lanW = Math.max(10, 18 * scale);
+                const lanH = Math.max(10, 18 * scale);
+                const lanY = ly + 11 * scale;
+
+                // Kaca Lentera Kuning Terang
+                ctx.fillStyle = '#fef08a';
+                ctx.fillRect(centerX - lanW * 0.35, lanY + 4 * scale, lanW * 0.7, lanH * 0.6);
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(centerX - lanW * 0.35, lanY + 4 * scale, lanW * 0.7, lanH * 0.6);
+
+                // Atap Lentera Trapesium Besi Hitam
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.moveTo(centerX, lanY);
+                ctx.lineTo(centerX - lanW / 2, lanY + 4 * scale);
+                ctx.lineTo(centerX + lanW / 2, lanY + 4 * scale);
+                ctx.closePath();
+                ctx.fill();
+
+                // Penyangga bawah lentera
+                ctx.beginPath();
+                ctx.moveTo(centerX - lanW * 0.35, lanY + 4 * scale + lanH * 0.6);
+                ctx.lineTo(centerX, poleTopY);
+                ctx.lineTo(centerX + lanW * 0.35, lanY + 4 * scale + lanH * 0.6);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // N. TANGGA PANJAT (LADDER)
+            else if (ent.type === 'ladder') {
+                const ldx = toX(ent.col * 50);
+                const ldy = toY(ent.row * 50);
+                const ldw = cellSize;
+                const ldh = cellSize;
+                const railW = Math.max(2, 4 * scale);
+                const leftX = ldx + 8 * scale;
+                const rightX = ldx + ldw - 8 * scale - railW;
+
+                // Rel Kayu Samping Kiri & Kanan
+                ctx.fillStyle = '#b45309';
+                ctx.fillRect(leftX, ldy, railW, ldh);
+                ctx.fillRect(rightX, ldy, railW, ldh);
+                ctx.fillStyle = '#d97706';
+                ctx.fillRect(leftX, ldy, Math.max(1, 1.2 * scale), ldh);
+                ctx.fillRect(rightX, ldy, Math.max(1, 1.2 * scale), ldh);
+
+                // 4 Anak Tangga Horizontal (Rungs)
+                const rungs = 4;
+                const rungH = Math.max(2, 3 * scale);
+                const rungSpacing = ldh / (rungs + 1);
+                for (let r = 1; r <= rungs; r++) {
+                    const rungY = ldy + r * rungSpacing;
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.fillRect(leftX + railW, rungY, rightX - leftX - railW, rungH);
+                    ctx.fillStyle = '#78350f';
+                    ctx.fillRect(leftX + railW, rungY + rungH - Math.max(1, 1 * scale), rightX - leftX - railW, Math.max(1, 1 * scale));
+                }
+            }
+
+            // O. ATAP BANGUNAN (ROOF)
+            else if (ent.type === 'roof') {
+                const rx = toX(ent.col * 50);
+                const ry = toY(ent.row * 50);
+                const rw = cellSize;
+                const rh = cellSize;
+
+                // Atap Genteng Merah Terakota Miring
+                ctx.fillStyle = '#ea580c';
+                ctx.beginPath();
+                ctx.moveTo(rx, ry + rh);
+                ctx.lineTo(rx + rw * 0.5, ry + 4 * scale);
+                ctx.lineTo(rx + rw, ry + rh);
+                ctx.closePath();
+                ctx.fill();
+
+                // Highlight genteng atas
+                ctx.strokeStyle = '#fdba74';
+                ctx.lineWidth = Math.max(1, 2.5 * scale);
+                ctx.beginPath();
+                ctx.moveTo(rx, ry + rh);
+                ctx.lineTo(rx + rw * 0.5, ry + 4 * scale);
+                ctx.lineTo(rx + rw, ry + rh);
+                ctx.stroke();
+
+                // Garis susun genteng horizontal
+                ctx.strokeStyle = 'rgba(154, 52, 18, 0.7)';
+                ctx.lineWidth = 1.5;
+                for (let i = 1; i <= 3; i++) {
+                    const frac = i / 4;
+                    const gy = ry + 4 * scale + (rh - 4 * scale) * frac;
+                    const gx1 = rx + rw * 0.5 * (1 - frac);
+                    const gx2 = rx + rw * 0.5 + rw * 0.5 * frac;
+                    ctx.beginPath();
+                    ctx.moveTo(gx1, gy);
+                    ctx.lineTo(gx2, gy);
+                    ctx.stroke();
+                }
+            }
+
+            // P. PAGAR PEMBATAS (FENCE)
+            else if (ent.type === 'fence') {
+                const fx = toX(ent.col * 50);
+                const fy = toY(ent.row * 50);
+                const fw = cellSize;
+                const fh = cellSize;
+                const postH = Math.max(10, 32 * scale);
+                const topY = fy + fh - postH;
+
+                // Palang Horizontal Ganda
+                ctx.fillStyle = '#475569';
+                ctx.fillRect(fx, topY + postH * 0.3, fw, Math.max(2, 3.5 * scale));
+                ctx.fillRect(fx, topY + postH * 0.7, fw, Math.max(2, 3.5 * scale));
+
+                // 4 Tiang Teralis Vertikal
+                const posts = 4;
+                const postW = Math.max(2, 3.5 * scale);
+                const postSpacing = fw / (posts + 1);
+                for (let p = 1; p <= posts; p++) {
+                    const px = fx + p * postSpacing - postW / 2;
+                    ctx.fillStyle = '#64748b';
+                    ctx.fillRect(px, topY, postW, postH);
+                    // Ujung Runcing Panah di Atas
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.beginPath();
+                    ctx.moveTo(px, topY);
+                    ctx.lineTo(px + postW / 2, topY - Math.max(2, 4 * scale));
+                    ctx.lineTo(px + postW, topY);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
         });
 
         // ===============================================================
@@ -4326,6 +6254,7 @@ export class SceneBuilderModal {
             // Garis Vertikal (Setiap 50px dari Col 0 sampai Col totalCols)
             for (let col = 0; col <= totalCols; col++) {
                 const rx = toX(col * 50);
+                if (rx < -50 || rx > W + 50) continue;
                 const isMajor = (col % 5) === 0;
 
                 ctx.strokeStyle = isMajor ? 'rgba(56, 189, 248, 0.3)' : 'rgba(255, 255, 255, 0.08)';
@@ -4564,206 +6493,6 @@ export class SceneBuilderModal {
             });
         }
 
-        // ===============================================================
-        // 8. LIVE CAMERA VIEWPORT FRUSTUM (Dynamic Sync dengan Kamera Game)
-        // ===============================================================
-        if (this.scene && this.scene.cameras && this.scene.cameras.main) {
-            const cam = this.scene.cameras.main;
-            const camZoom = cam.zoom || 1;
-            const camW = cam.width / camZoom;
-            const camH = cam.height / camZoom;
-            const camX = cam.scrollX;
-            const camY = cam.scrollY;
-
-            const bx = toX(camX);
-            const by = toY(camY);
-            const bw = camW * scale;
-            const bh = camH * scale;
-
-            ctx.save();
-            // Garis putus-putus cyan penanda area layar yang sedang dilihat pemain di game
-            ctx.strokeStyle = '#38bdf8';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([6 * scale, 4 * scale]);
-            ctx.strokeRect(bx, by, bw, bh);
-
-            // Shading transparan agar area kamera tampak fokus
-            ctx.fillStyle = 'rgba(56, 189, 248, 0.05)';
-            ctx.fillRect(bx, by, bw, bh);
-
-            // Badge penanda di sudut kiri atas kotak kamera
-            ctx.setLineDash([]);
-            const zoomPct = Math.round(camZoom * 100);
-            const wTiles = Math.round(camW / 50);
-            const hTiles = Math.round(camH / 50);
-            const badgeText = `📷 AREA KAMERA GAME (${zoomPct}% • ${wTiles}x${hTiles} petak)`;
-
-            ctx.font = `bold ${Math.max(7.5, 8.5 * scale)}px 'JetBrains Mono'`;
-            const textWidth = ctx.measureText(badgeText).width;
-            const bWidth = textWidth + 14;
-            const bHeight = Math.max(16, 17 * scale);
-            ctx.fillStyle = 'rgba(2, 132, 199, 0.92)';
-            ctx.fillRect(bx, by, bWidth, bHeight);
-
-            ctx.fillStyle = '#ffffff';
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(badgeText, bx + 6, by + bHeight / 2);
-            ctx.restore();
-        }
-
-        // ===============================================================
-        // 9. LIVE TEST-PLAY CHARACTER SIMULATION (ULTRA-SMOOTH 60FPS WASD)
-        // ===============================================================
-        if (this.testPlayer) {
-            const tp = this.testPlayer;
-            const maxSpeed = 5.2;
-            const accel = 0.9;
-            const friction = 0.78;
-
-            if (this.testKeys.a) {
-                tp.vx = Math.max(-maxSpeed, tp.vx - accel);
-                tp.facing = -1;
-            } else if (this.testKeys.d) {
-                tp.vx = Math.min(maxSpeed, tp.vx + accel);
-                tp.facing = 1;
-            } else {
-                tp.vx *= friction;
-                if (Math.abs(tp.vx) < 0.05) tp.vx = 0;
-            }
-
-            if ((this.testKeys.w || this.testKeys.space) && tp.isGrounded) {
-                tp.vy = -12.2;
-                tp.isGrounded = false;
-                AudioManager.playJump();
-            }
-
-            // Gravitasi halus
-            tp.vy += 0.58;
-            if (tp.vy > 14) tp.vy = 14;
-
-            tp.x += tp.vx;
-            tp.y += tp.vy;
-
-            // Batas layar horizontal
-            const worldW = this.state.worldWidth || 1800;
-            tp.x = Math.max(15, Math.min(worldW - 15, tp.x));
-
-            const pCol = Math.max(0, Math.min(Math.floor((worldW - 1) / 50), Math.floor(tp.x / 50)));
-
-            // Kumpulkan semua batas lantai potensial di bawah pemain
-            const floorCandidates = [];
-
-            // 1. Bedrock (Row 13 = y: 650) selalu padat tak tertembus
-            floorCandidates.push(13 * 50);
-
-            // 2. Lapisan tanah alamiah (Row 8..12) yang belum digali
-            for (let r = 8; r < 13; r++) {
-                const isDug = this.state.dugTiles && this.state.dugTiles.has(`${pCol},${r}`);
-                const hasT = (r === 8) ? this.hasTerrainAt(pCol, 8) : true;
-                if (!isDug && hasT) {
-                    floorCandidates.push(r * 50);
-                    break;
-                }
-            }
-
-            // 3. Pijakan buatan (platforms, dirt, chest)
-            this.state.entities.forEach(ent => {
-                if (['platforms', 'dirt', 'chest'].includes(ent.type)) {
-                    const eCol = ent.col;
-                    const eRow = (ent.row !== undefined) ? ent.row : 7;
-                    if (pCol === eCol) {
-                        floorCandidates.push(eRow * 50);
-                    }
-                }
-            });
-
-            floorCandidates.sort((a, b) => a - b);
-            let targetFloor = 13 * 50; // default Bedrock jika tanah berlubang
-            for (const fl of floorCandidates) {
-                if (tp.y <= fl + 14 && (tp.y + tp.vy >= fl - 2 || tp.y >= fl - 2)) {
-                    targetFloor = fl;
-                    break;
-                }
-            }
-
-            if (tp.y >= targetFloor) {
-                tp.y = targetFloor;
-                tp.vy = 0;
-                tp.isGrounded = true;
-            } else {
-                tp.isGrounded = false;
-            }
-
-            // Animasi langkah kaki dinamis (bobbing & tilt)
-            if (tp.isGrounded && Math.abs(tp.vx) > 0.3) {
-                tp.walkTime = (tp.walkTime || 0) + 0.28;
-            } else {
-                tp.walkTime = 0;
-            }
-            const walkBob = tp.isGrounded ? Math.abs(Math.sin(tp.walkTime)) * (2.8 * scale) : 0;
-            const walkTilt = tp.isGrounded ? Math.sin(tp.walkTime) * 0.08 : (tp.vy < 0 ? -0.09 * tp.facing : 0.07 * tp.facing);
-
-            // Sinkronisasi kamera game agar kotak cyan mengikuti pergerakan karakter uji
-            if (this.scene && this.scene.cameras && this.scene.cameras.main) {
-                const camWVal = this.scene.cameras.main.width / (this.scene.cameras.main.zoom || 1);
-                this.scene.cameras.main.scrollX = Math.max(0, Math.min(worldW - camWVal, tp.x - camWVal / 2));
-            }
-
-            // Gambar Karakter Player Uji Coba di Kanvas
-            const px = toX(tp.x);
-            const py = toY(tp.y) - walkBob;
-            const pw = Math.max(12, 22 * scale);
-            const ph = Math.max(16, 32 * scale);
-
-            ctx.save();
-            ctx.translate(px, py);
-            ctx.rotate(walkTilt);
-
-            // Bayangan Kaki
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.38)';
-            ctx.beginPath();
-            ctx.ellipse(0, walkBob, pw * 0.65, 3.5 * scale, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Pendar Aura Halus
-            ctx.shadowColor = '#38bdf8';
-            ctx.shadowBlur = 8 * scale;
-
-            // Tubuh Karakter
-            ctx.fillStyle = '#0f172a';
-            ctx.fillRect(-pw / 2, -ph, pw, ph);
-            ctx.strokeStyle = '#38bdf8';
-            ctx.lineWidth = 1.8;
-            ctx.strokeRect(-pw / 2, -ph, pw, ph);
-            ctx.shadowBlur = 0;
-
-            // Mata Putih & Pupil
-            const eyeOff = tp.facing * (3 * scale);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(eyeOff - 3 * scale, -ph + 6 * scale, 4 * scale, 4 * scale);
-            ctx.fillRect(eyeOff + 2 * scale, -ph + 6 * scale, 4 * scale, 4 * scale);
-            ctx.fillStyle = '#000000';
-            const lookY = !tp.isGrounded ? (tp.vy < 0 ? -1 * scale : 1 * scale) : 0;
-            ctx.fillRect(eyeOff - (tp.facing > 0 ? 1 : 3) * scale, -ph + 7 * scale + lookY, 2 * scale, 2 * scale);
-            ctx.fillRect(eyeOff + (tp.facing > 0 ? 4 : 2) * scale, -ph + 7 * scale + lookY, 2 * scale, 2 * scale);
-
-            // Label Floating "🏃 PEMAIN (WASD)"
-            ctx.fillStyle = 'rgba(2, 132, 199, 0.95)';
-            const tagW = Math.max(68, 84 * scale);
-            const tagH = Math.max(14, 15 * scale);
-            ctx.fillRect(-tagW / 2, -ph - tagH - 4 * scale, tagW, tagH);
-            ctx.strokeStyle = '#38bdf8';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(-tagW / 2, -ph - tagH - 4 * scale, tagW, tagH);
-
-            ctx.fillStyle = '#ffffff';
-            ctx.font = `bold ${Math.max(6.5, 7.5 * scale)}px 'JetBrains Mono'`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('🏃 PEMAIN (WASD)', 0, -ph - tagH / 2 - 4 * scale);
-            ctx.restore();
-        }
     }
 
     loadWorldData(data, projectId = null, sceneId = null) {
@@ -4774,8 +6503,10 @@ export class SceneBuilderModal {
 
         if (data.name) this.state.name = data.name;
         this.state.biome = data.biome || 'dirt';
+        this.state.bgType = data.bgType || (data.biome === 'hongkong' ? 'hongkong' : (data.background && data.background.includes('bg_scene1') ? 'image' : 'color'));
+        this.state.bgColor = data.bgColor || data.warnaLangit || '#dcff78';
         this.state.timeOfDay = data.timeOfDay || 'day';
-        this.state.worldWidth = (!data.worldWidth || data.worldWidth <= 1800) ? 3600 : data.worldWidth;
+        this.state.worldWidth = (!data.worldWidth || data.worldWidth <= 1800) ? 3000 : data.worldWidth;
         this.state.worldHeight = (!data.worldHeight || data.worldHeight <= 700) ? 1000 : data.worldHeight;
 
         if (data.dugTiles && Array.isArray(data.dugTiles)) {
@@ -4826,25 +6557,34 @@ export class SceneBuilderModal {
                     wTiles: 1,
                     hTiles: 1
                 });
-            } else if (portalEnt.col <= 35 && this.state.worldWidth >= 3000) {
-                portalEnt.col = targetPortalCol;
-                portalEnt.x = targetPortalCol * 50 + 25;
             }
         } else {
             const targetPortalCol = Math.max(10, Math.floor(this.state.worldWidth / 50) - 2);
+            const totalCols = Math.ceil(this.state.worldWidth / 50);
             this.state.entities = [
                 { id: 'player_1', type: 'player', col: 2, row: 7, x: 125, y: 400, label: 'Letak Spawn (Pintu Putih)', cat: 'spawn', icon: '🚪', wTiles: 1, hTiles: 1 },
-                { id: 'portal_1', type: 'portal', col: targetPortalCol, row: 7, x: targetPortalCol * 50 + 25, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 }
+                { id: 'portal_1', type: 'portal', col: targetPortalCol, row: 7, x: targetPortalCol * 50 + 25, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 },
+                ...ProjectManager.generateIrregularBottomLava(totalCols, 18, 19)
             ];
         }
 
-        // Pastikan seluruh rentang kolom dunia di Row 8 terisi balok tanah solid (kecuali yang sengaja digali)
+        // Normalisasi koordinat dan pisahkan entitas bertumpuk (1 Petak = 1 Objek)
+        if (Array.isArray(this.state.entities)) {
+            this.state.entities.forEach(e => {
+                if (e.col === undefined && e.x !== undefined) e.col = Math.floor(e.x / 50);
+                if (e.row === undefined) e.row = (e.y !== undefined) ? Math.floor(e.y / 50) : 7;
+            });
+            this.preventAllOverlaps();
+        }
+
+        // Pastikan seluruh rentang kolom dunia di Row 8 terisi balok tanah solid (kecuali yang sengaja digali / cairan)
         const totalCols = Math.ceil(this.state.worldWidth / 50);
         if (data.terrainTiles && Array.isArray(data.terrainTiles) && data.terrainTiles.length > 0) {
             this.state.terrainTiles = new Set(data.terrainTiles);
             for (let c = 0; c < totalCols; c++) {
                 const k = `${c},8`;
-                if (!this.state.dugTiles.has(k) && !this.state.terrainTiles.has(k) && (!data.dugTiles || !data.dugTiles.includes(k))) {
+                const hasFluid = this.state.entities.some(e => e.cat === 'fluid' && e.col === c && (e.row !== undefined ? e.row : 8) === 8);
+                if (!hasFluid && !this.state.dugTiles.has(k) && !this.state.terrainTiles.has(k) && (!data.dugTiles || !data.dugTiles.includes(k))) {
                     this.state.terrainTiles.add(k);
                 }
             }
@@ -4852,7 +6592,8 @@ export class SceneBuilderModal {
             const tSet = new Set();
             for (let c = 0; c < totalCols; c++) {
                 const k = `${c},8`;
-                if (!this.state.dugTiles.has(k)) tSet.add(k);
+                const hasFluid = this.state.entities.some(e => e.cat === 'fluid' && e.col === c && (e.row !== undefined ? e.row : 8) === 8);
+                if (!hasFluid && !this.state.dugTiles.has(k)) tSet.add(k);
             }
             this.state.terrainTiles = tSet;
         }
@@ -4866,6 +6607,15 @@ export class SceneBuilderModal {
                     btn.classList.remove('active');
                 }
             });
+
+            // Sinkronisasi color picker & swatch di UI Studio
+            const colorPicker = this.overlay.querySelector('#gt-sb-color-picker');
+            const colorHex = this.overlay.querySelector('#gt-sb-color-hex');
+            const colorPreview = this.overlay.querySelector('#gt-sb-color-preview');
+            const activeCol = this.state.bgColor || '#dcff78';
+            if (colorPicker) colorPicker.value = activeCol;
+            if (colorHex) colorHex.value = activeCol.toUpperCase();
+            if (colorPreview) colorPreview.style.backgroundColor = activeCol;
         }
 
         // Render ulang bila DOM sudah terbentuk
@@ -4888,35 +6638,153 @@ export class SceneBuilderModal {
 
         // 1. JIKA SEDANG DI SCENE 1 (Tutorial - Lembah Salju)
         if (sceneKey === 'GameScene') {
-            const playerX = scene.player ? scene.player.x : 125;
-            const playerCol = Math.max(1, Math.min(26, Math.floor(playerX / 50)));
+            const map = scene.currentMap || {};
+            const worldW = map.lebarDunia || (scene.physics && scene.physics.world.bounds.width) || 3000;
+            const worldH = map.tinggiDunia || 1000;
 
+            const spawnCfg = map.spawn || {};
+            const playerX = (spawnCfg.x !== undefined) ? spawnCfg.x : 175;
+            const playerY = (spawnCfg.y !== undefined) ? spawnCfg.y : 350;
+            const playerCol = Math.max(0, Math.floor(playerX / 50));
+            const playerRow = Math.max(0, Math.min(18, Math.floor(playerY / 50)));
+
+            // Tentukan background aktif dari GameScene secara dinamis
+            let bgType = 'color';
+            let bgColor = map.warnaLangit || '#dcff78';
+            if (map.background && (map.background === 'bg_scene1' || map.background === 'bg_scene1.png') && scene.bgImage && scene.bgImage.visible) {
+                bgType = 'image';
+            } else if (scene.bgImage && scene.bgImage.visible) {
+                bgType = 'image';
+            }
+
+            const entities = [
+                { id: 'player_1', type: 'player', col: playerCol, row: playerRow, x: playerX, y: playerY, label: 'Hero Utama', cat: 'creature', icon: '👤', wTiles: 1, hTiles: 1 }
+            ];
+
+            // NPC dari Map / Scene
+            const npcCfg = map.npc || {};
+            const npcX = (scene.npc && scene.npc.x) || npcCfg.posisiX || 225;
+            const npcY = (scene.npc && scene.npc.y) || npcCfg.posisiY || 378;
+            entities.push({
+                id: 'npc_guide',
+                type: 'npc',
+                col: Math.floor(npcX / 50),
+                row: 7,
+                x: npcX,
+                y: npcY,
+                label: npcCfg.nama || 'Pemandu Engine',
+                cat: 'creature',
+                icon: '🧙',
+                wTiles: 1,
+                hTiles: 1
+            });
+
+            // Portal Ke Tutorial Part II (posisi asli dari GameScene)
+            const portalCfg = map.portal || {};
+            const portalX = (scene.portalScene2 && scene.portalScene2.x) || portalCfg.posisiX || 1175;
+            const portalY = (scene.portalScene2 && scene.portalScene2.y) || portalCfg.posisiY || 376;
+            entities.push({
+                id: 'portal_next',
+                type: 'portal',
+                col: Math.floor(portalX / 50),
+                row: 7,
+                x: portalX,
+                y: portalY,
+                label: 'Ke Tutorial Part II →',
+                cat: 'solid',
+                icon: '🌀',
+                wTiles: 1,
+                hTiles: 1
+            });
+
+            // Platform dinamis langsung dari data map
+            const platforms = Array.isArray(map.platform) ? map.platform : [];
+            platforms.forEach((p, idx) => {
+                const count = Math.max(1, Math.round((p.lebar || 150) / 50));
+                const col = Math.floor((p.x - (count * 50) / 2 + 25) / 50);
+                const row = Math.floor(p.y / 50);
+                entities.push({
+                    id: `platform_${idx + 1}`,
+                    type: 'platforms',
+                    col: col,
+                    row: row,
+                    x: p.x,
+                    y: p.y,
+                    label: `Pijakan #${idx + 1}`,
+                    cat: 'solid',
+                    icon: '🧱',
+                    wTiles: count,
+                    hTiles: 1
+                });
+            });
+
+            // Koin dinamis langsung dari data map
+            const koins = Array.isArray(map.koin) ? map.koin : [];
+            koins.forEach((k, idx) => {
+                const col = Math.floor(k.x / 50);
+                const row = Math.floor(k.y / 50);
+                entities.push({
+                    id: k.id || `coin_${idx + 1}`,
+                    type: 'coins',
+                    col: col,
+                    row: row,
+                    x: k.x,
+                    y: k.y,
+                    label: k.nama || `Koin Emas #${idx + 1}`,
+                    cat: 'solid',
+                    icon: '🪙',
+                    wTiles: 1,
+                    hTiles: 1
+                });
+            });
+
+            // Duri dinamis langsung dari data map
+            const duris = Array.isArray(map.duri) ? map.duri : [];
+            duris.forEach((d, idx) => {
+                const count = Math.max(1, Math.round((d.lebar || 100) / 50));
+                const col = Math.floor((d.x - (count * 50) / 2 + 25) / 50);
+                entities.push({
+                    id: `spikes_${idx + 1}`,
+                    type: 'spikes',
+                    col: col,
+                    row: 7,
+                    x: d.x,
+                    y: d.y || 388,
+                    label: `Duri Hazard #${idx + 1}`,
+                    cat: 'solid',
+                    icon: '⚠️',
+                    wTiles: count,
+                    hTiles: 1
+                });
+            });
+
+            // Terrain dinamis sesuai worldWidth
+            const totalCols = Math.ceil(worldW / 50);
             const terrain = new Set();
-            for (let c = 0; c < 28; c++) {
+            for (let c = 0; c <= totalCols + 2; c++) {
                 terrain.add(`${c},8`);
             }
 
             const data = {
-                name: 'Level 1 • Lembah Salju',
+                name: map.nama || 'Tutorial Part I',
                 biome: 'snow',
+                bgType: bgType,
+                bgColor: bgColor,
                 timeOfDay: 'day',
-                worldWidth: 1400,
-                worldHeight: 850,
-                entities: [
-                    { id: 'player_1', type: 'player', col: playerCol, row: 7, x: playerCol * 50 + 25, y: 400, label: 'Player Spawn', cat: 'creature', icon: '👤', wTiles: 1, hTiles: 1 },
-                    { id: 'npc_1', type: 'npc', col: 4, row: 7, x: 225, y: 400, label: 'Penjaga Gerbang (NPC)', cat: 'creature', icon: '🧙', wTiles: 1, hTiles: 1 },
-                    { id: 'spikes_1', type: 'spikes', col: 11, row: 7, x: 575, y: 400, label: 'Rintangan Duri Salju #1', cat: 'solid', icon: '⚠️', wTiles: 1, hTiles: 1 },
-                    { id: 'spikes_2', type: 'spikes', col: 12, row: 7, x: 625, y: 400, label: 'Rintangan Duri Salju #2', cat: 'solid', icon: '⚠️', wTiles: 1, hTiles: 1 },
-                    { id: 'platform_1', type: 'platforms', col: 8, row: 6, x: 425, y: 300, label: 'Pijakan Salju #1', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
-                    { id: 'platform_2', type: 'platforms', col: 9, row: 6, x: 475, y: 300, label: 'Pijakan Salju #2', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
-                    { id: 'platform_3', type: 'platforms', col: 10, row: 6, x: 525, y: 300, label: 'Pijakan Salju #3', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
-                    { id: 'platform_4', type: 'platforms', col: 14, row: 4, x: 725, y: 200, label: 'Pijakan Tinggi #1', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
-                    { id: 'platform_5', type: 'platforms', col: 15, row: 4, x: 775, y: 200, label: 'Pijakan Tinggi #2', cat: 'solid', icon: '🧱', wTiles: 1, hTiles: 1 },
-                    { id: 'coins_1', type: 'coins', col: 11, row: 4, x: 575, y: 200, label: 'Koin Emas Murni', cat: 'solid', icon: '🪙', wTiles: 1, hTiles: 1 },
-                    { id: 'portal_1', type: 'portal', col: 23, row: 7, x: 1175, y: 400, label: 'Portal ke Scene 2', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 }
-                ],
+                worldWidth: worldW,
+                worldHeight: worldH,
+                entities: entities,
                 terrainTiles: Array.from(terrain)
             };
+
+            // Update ruler labels agar presisi dengan posisi portal sebenarnya
+            if (this.overlay) {
+                const rulerSpawn = this.overlay.querySelector('#ruler-spawn-txt');
+                const rulerFinish = this.overlay.querySelector('#ruler-finish-txt');
+                if (rulerSpawn) rulerSpawn.textContent = `[Col ${playerCol}: ${Math.round(playerX)}px] SPAWN`;
+                if (rulerFinish) rulerFinish.textContent = `[Col ${Math.floor(portalX / 50)}: ${Math.round(portalX)}px] PORTAL PART II`;
+            }
+
             this.loadWorldData(data);
             return;
         }
@@ -5019,7 +6887,7 @@ export class SceneBuilderModal {
             }
 
             const data = {
-                name: 'Level 2 • Teluk Hong Kong',
+                name: 'Tutorial Part II',
                 biome: 'hongkong',
                 timeOfDay: 'night',
                 worldWidth: 2000,
@@ -5058,8 +6926,10 @@ export class SceneBuilderModal {
     show(targetScene = null) {
         this.runtimePlayerX = null;
         this.runtimePlayerY = null;
-        const sceneToSync = targetScene || this.scene;
-        this.syncWithActiveScene(sceneToSync);
+        if (!this.options.isNewWorld) {
+            const sceneToSync = targetScene || this.scene;
+            this.syncWithActiveScene(sceneToSync);
+        }
 
         this._isOpen = true;
         this.overlay.classList.remove('hidden');
@@ -5068,8 +6938,10 @@ export class SceneBuilderModal {
             this.switchEditorMode('scene');
         }
 
-        // Buka langsung dalam mode Uji Gerak aktif agar WASD langsung bisa dimainkan dengan smooth
-        this.toggleTestPlayMode(true);
+        // Buka dengan kamera otomatis berpusat ke Titik Spawn awal
+        this.isCameraFollow = true;
+        const camFollowBtn = this.overlay ? this.overlay.querySelector('#gt-sb-btn-camfollow') : null;
+        if (camFollowBtn) camFollowBtn.classList.add('active');
 
         setTimeout(() => {
             this.resizeCanvas();
@@ -5089,14 +6961,6 @@ export class SceneBuilderModal {
     hide() {
         if (!this.overlay) return;
         this._isOpen = false;
-        this.isTestPlayMode = false;
-        this.testPlayer = null;
-        this.testKeys = { w: false, a: false, s: false, d: false, space: false };
-        const testBtn = this.overlay.querySelector('#gt-sb-btn-testplay');
-        if (testBtn) {
-            testBtn.classList.remove('active');
-            testBtn.innerHTML = '<span>🎮 Uji Gerak (WASD)</span>';
-        }
         this.boxSelection = null;
         this.isBoxSelecting = false;
         this.dragPixelBox = null;

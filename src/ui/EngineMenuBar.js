@@ -829,7 +829,7 @@ export class EngineMenuBar {
             miNewWorld.addEventListener('click', () => {
                 fileDd.classList.remove('show');
                 if (CommandConsole.instance) {
-                    CommandConsole.instance.openSceneBuilder();
+                    CommandConsole.instance.openSceneBuilder('scene', null, true);
                 }
             });
         }

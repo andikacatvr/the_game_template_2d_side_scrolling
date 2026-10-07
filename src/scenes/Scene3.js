@@ -15,6 +15,7 @@ import { QuestModal } from '../ui/QuestModal.js';
 import { NPCDialogEditorModal } from '../ui/NPCDialogEditorModal.js';
 import { GridSystem } from '../utils/GridSystem.js';
 import { UndoRedoManager } from '../utils/UndoRedoManager.js';
+import { EngineUITourModal } from '../ui/EngineUITourModal.js';
 
 // ===============================================================
 // SCENE 3: TEMPLATE KOSONG (HANYA LANTAI / TILES)
@@ -92,7 +93,12 @@ export class Scene3 extends Phaser.Scene {
             w: Phaser.Input.Keyboard.KeyCodes.W,
             space: Phaser.Input.Keyboard.KeyCodes.SPACE,
             e: Phaser.Input.Keyboard.KeyCodes.E,
+            f: Phaser.Input.Keyboard.KeyCodes.F,
             esc: Phaser.Input.Keyboard.KeyCodes.ESC
+        });
+
+        this.input.keyboard.on('keydown-F', () => {
+            if (this.engineUITour) this.engineUITour.start(0);
         });
 
         this.input.keyboard.on('keydown-E', () => this.handleInteract());
@@ -133,6 +139,17 @@ export class Scene3 extends Phaser.Scene {
         // 4. [Misi]:     Tempel kode /create quest di sini
         // 5. [Duri]:     Tempel kode /create obstacle di sini
         // ===============================================================
+
+        // Interactive Engine UI Tour Modal
+        this.engineUITour = new EngineUITourModal(this);
+        this.isTourActive = false;
+
+        // Otomatis munculkan Pemandu Engine saat scene dibuka
+        this.time.delayedCall(400, () => {
+            if (this.engineUITour && !this.engineUITour.isOpen) {
+                this.engineUITour.start(0);
+            }
+        });
 
         // Notifikasi Selamat Datang
         this.time.delayedCall(400, () => {
@@ -769,26 +786,6 @@ export class Scene3 extends Phaser.Scene {
     }
 
     showFloatingToast(text, color = 0x38bdf8) {
-        const toast = this.add.text(
-            this.player ? this.player.x : 400,
-            this.player ? this.player.y - 45 : 200,
-            text,
-            {
-                fontSize: '12px',
-                fontStyle: 'bold',
-                fill: '#ffffff',
-                backgroundColor: `#${color.toString(16).padStart(6, '0')}`,
-                padding: { x: 8, y: 4 },
-                fontFamily: FONT_BODY
-            }
-        ).setOrigin(0.5).setDepth(40);
-
-        this.tweens.add({
-            targets: toast,
-            y: toast.y - 30,
-            alpha: 0,
-            duration: 2000,
-            onComplete: () => toast.destroy()
-        });
+        return;
     }
 }

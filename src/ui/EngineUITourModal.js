@@ -21,15 +21,16 @@ export class EngineUITourModal {
         this.boundKeyHandler = null;
         this.resizeHandler = null;
 
-        // Urutan alur tur yang dijelaskan langsung oleh Pemandu Engine:
-        // 1. Chat Bar -> 2. File -> 3. Add Object -> 4. Edit -> 5. Inspect -> 6. Preview
+        // Urutan alur tur yang dijelaskan langsung oleh Pemandu Engine (Disinkronkan dengan fitur & toolbar terbaru):
+        // 1. Command Console -> 2. Menu File & Hub -> 3. Tombol Edit (Toolbar) -> 4. Palu & Build Modular (Undo/Redo) ->
+        // 5. Wrench & Visual Logic Node -> 6. Live Inspector -> 7. Grid System 50px -> 8. Studio Preview & Flow Graph
         this.steps = [
             {
                 id: 'step_console',
                 selector: '#gt-floating-btn',
                 fallbackSelector: '#gt-floating-btn',
                 title: '💬 Tombol Command Console',
-                badge: 'Langkah 1 dari 6',
+                badge: 'Langkah 1 dari 8',
                 npcSpeech: 'Halo calon kreator game! Perhatikan panah yang menunjuk ke tombol <b>>_ Command</b> di pojok kanan bawah ini. Di sini kamu bisa mengetik perintah developer dan cheat seperti <code>/speed 350</code>, <code>/jump 550</code>, atau <code>/god</code> untuk kebal duri.',
                 arrowDir: 'down',
                 beforeStep: () => {
@@ -43,48 +44,132 @@ export class EngineUITourModal {
                 id: 'step_file',
                 selector: '#gt-mb-btn-file',
                 fallbackSelector: '.gt-mb-dropdown:first-child',
-                title: '📁 Menu File',
-                badge: 'Langkah 2 dari 6',
-                npcSpeech: 'Sekarang lihat tanda panah yang terbang ke atas kiri! Ini adalah <b>Menu File</b>. Dari sini kamu bisa membuka Project Hub, menyimpan progres (*AutoSave*), dan <b>Mengekspor Game ke file .ZIP</b> siap main untuk dibagikan ke teman-temanmu!',
+                title: '📁 Menu File & Project Hub',
+                badge: 'Langkah 2 dari 8',
+                npcSpeech: 'Sekarang lihat tanda panah yang terbang ke atas kiri! Ini adalah <b>Menu File</b>. Di sini kamu bisa membuat <b>Scene Baru (Studio)</b>, membuka <b>Project Hub</b>, menyimpan progres (*AutoSave*), dan <b>Mengekspor Game ke file .ZIP</b> siap main tanpa perlu instalasi server!',
                 arrowDir: 'up',
                 beforeStep: () => {
                     if (this.scene && this.scene.engineMenuBar) {
                         this.scene.engineMenuBar.expand();
+                        if (this.scene.engineMenuBar.editFloatingPanel) {
+                            this.scene.engineMenuBar.editFloatingPanel.classList.remove('show');
+                        }
+                        const editBtn = document.getElementById('gt-mb-btn-edit');
+                        if (editBtn) editBtn.classList.remove('active');
                     }
                 }
             },
             {
-                id: 'step_add',
-                selector: '#gt-mb-btn-add',
-                fallbackSelector: '.gt-mb-dropdown:nth-child(2)',
-                title: '🧱 Menu Add Object',
-                badge: 'Langkah 3 dari 6',
-                npcSpeech: 'Panah berpindah ke tombol <b>Add Object</b>. Klik tombol ini saat kamu ingin menaruh Platform lantai baru, Karakter NPC teman, Koin emas, Duri rintangan, atau Portal antar-level langsung ke dalam kanvas game!',
-                arrowDir: 'up'
-            },
-            {
                 id: 'step_edit',
                 selector: '#gt-mb-btn-edit',
-                title: '🔧 Mode Edit (Growtopia Wrench)',
-                badge: 'Langkah 4 dari 6',
-                npcSpeech: 'Berikutnya adalah tombol <b>Mode Edit (Wrench)</b>. Saat tombol kunci inggris ini aktif, kamu cukup <b>mengklik NPC mana saja</b> di layar untuk langsung mengedit nama dan kalimat dialog bicaranya secara live tanpa koding!',
-                arrowDir: 'up'
+                title: '🛠️ Tombol Edit (Toolbar Pembuat)',
+                badge: 'Langkah 3 dari 8',
+                npcSpeech: 'Tombol <b>Edit</b> ini berfungsi untuk membuka atau menutup <b>Toolbar Pembuat</b> vertikal di sebelah kiri layar (di bawah bar HP). Mari kita lihat koleksi alat pembuat di toolbar tersebut!',
+                arrowDir: 'up',
+                beforeStep: () => {
+                    if (this.scene && this.scene.engineMenuBar) {
+                        this.scene.engineMenuBar.expand();
+                        if (this.scene.engineMenuBar.editFloatingPanel) {
+                            this.scene.engineMenuBar.editFloatingPanel.classList.add('show');
+                        }
+                        const editBtn = document.getElementById('gt-mb-btn-edit');
+                        if (editBtn) editBtn.classList.add('active');
+                        this.scene.engineMenuBar.updateFloatingPanelPosition();
+                    }
+                }
+            },
+            {
+                id: 'step_build',
+                selector: '#gt-card-tool-build',
+                fallbackSelector: '#gt-card-tool-punch',
+                title: '🔨 Palu, 🧱 Build & Undo/Redo',
+                badge: 'Langkah 4 dari 8',
+                npcSpeech: 'Di toolbar vertikal ini, gunakan <b>🔨 Palu [X]</b> untuk menggali & menghancurkan balok tanah, serta <b>🧱 Build [B]</b> untuk memilih & memasang Platform, Karakter NPC, Koin, Duri, atau Portal! Ada tombol <b>↩️ Undo [Ctrl+Z]</b> & <b>↪️ Redo [Ctrl+Y]</b> jika ingin membatalkan aksi.',
+                arrowDir: 'up',
+                beforeStep: () => {
+                    if (this.scene && this.scene.engineMenuBar) {
+                        this.scene.engineMenuBar.expand();
+                        if (this.scene.engineMenuBar.editFloatingPanel) {
+                            this.scene.engineMenuBar.editFloatingPanel.classList.add('show');
+                        }
+                        const editBtn = document.getElementById('gt-mb-btn-edit');
+                        if (editBtn) editBtn.classList.add('active');
+                        this.scene.engineMenuBar.updateFloatingPanelPosition();
+                    }
+                }
+            },
+            {
+                id: 'step_wrench',
+                selector: '#gt-card-tool-wrench',
+                title: '🔧 Wrench & Visual Logic Node',
+                badge: 'Langkah 5 dari 8',
+                npcSpeech: 'Pilih alat <b>🔧 Wrench (Kunci Inggris) [C]</b> lalu klik NPC atau objek mana saja di kanvas! Kamu bisa mengedit teks dialog percakapan hingga merangkai <b>Visual Logic Node Engine</b> (node & kabel ala RapidMiner/Blueprint) untuk logika quest tanpa koding!',
+                arrowDir: 'up',
+                beforeStep: () => {
+                    if (this.scene && this.scene.engineMenuBar) {
+                        this.scene.engineMenuBar.expand();
+                        if (this.scene.engineMenuBar.editFloatingPanel) {
+                            this.scene.engineMenuBar.editFloatingPanel.classList.add('show');
+                        }
+                        const editBtn = document.getElementById('gt-mb-btn-edit');
+                        if (editBtn) editBtn.classList.add('active');
+                        this.scene.engineMenuBar.updateFloatingPanelPosition();
+                    }
+                }
             },
             {
                 id: 'step_inspect',
                 selector: '#gt-mb-btn-inspect',
-                title: '🎛️ Live Inspector',
-                badge: 'Langkah 5 dari 6',
-                npcSpeech: 'Di <b>Live Inspector</b>, kamu bisa menguji dan merasakan fisika heromu secara langsung! Gunakan slider interaktif untuk mengatur kecepatan jalan (Speed), daya lompat (Jump Force), hingga gravitasi dunia.',
-                arrowDir: 'up'
+                title: '🎛️ Live Inspector Slider',
+                badge: 'Langkah 6 dari 8',
+                npcSpeech: 'Di <b>Live Inspector</b>, kamu bisa menguji dan merasakan fisika heromu secara langsung! Gunakan slider interaktif untuk mengatur kecepatan jalan (Speed), daya lompat (Jump Force), hingga gravitasi dunia secara real-time saat bermain.',
+                arrowDir: 'up',
+                beforeStep: () => {
+                    if (this.scene && this.scene.engineMenuBar) {
+                        this.scene.engineMenuBar.expand();
+                        if (this.scene.engineMenuBar.editFloatingPanel) {
+                            this.scene.engineMenuBar.editFloatingPanel.classList.remove('show');
+                        }
+                        const editBtn = document.getElementById('gt-mb-btn-edit');
+                        if (editBtn) editBtn.classList.remove('active');
+                    }
+                }
+            },
+            {
+                id: 'step_grid',
+                selector: '#gt-mb-btn-grid',
+                title: '📐 Grid System 50px [G]',
+                badge: 'Langkah 7 dari 8',
+                npcSpeech: 'Tekan tombol <b>Grid</b> atau tombol <b>[G]</b> pada keyboard untuk memunculkan garis petak panduan 50px (seperti Unity/Godot) agar posisi balok platform dan penempatan objek tertata presisi dan rapi!',
+                arrowDir: 'up',
+                beforeStep: () => {
+                    if (this.scene && this.scene.engineMenuBar) {
+                        this.scene.engineMenuBar.expand();
+                        if (this.scene.engineMenuBar.editFloatingPanel) {
+                            this.scene.engineMenuBar.editFloatingPanel.classList.remove('show');
+                        }
+                        const editBtn = document.getElementById('gt-mb-btn-edit');
+                        if (editBtn) editBtn.classList.remove('active');
+                    }
+                }
             },
             {
                 id: 'step_create',
                 selector: '#gt-mb-btn-create',
-                title: '✨ Quick Preview Builder',
-                badge: 'Langkah 6 dari 6',
-                npcSpeech: 'Terakhir, tombol <b>Preview</b> ini adalah jalan pintas cepat untuk membuka World & Scene Builder visual (membangun biome, monster, platform, dll). Nah, sekarang kamu sudah paham seluruh fungsi tombolnya!',
-                arrowDir: 'up'
+                title: '🎬 Studio Preview & Visual Flow Graph',
+                badge: 'Langkah 8 dari 8',
+                npcSpeech: 'Terakhir, tombol <b>Preview</b> ini adalah gerbang ke <b>Studio World Builder 3600x1000px</b> (dengan strata bawah tanah) serta <b>⚡ Visual Flow Graph (Node & Kabel)</b> untuk menyambungkan rute petualangan multi-scene! Selamat berkreasi!',
+                arrowDir: 'up',
+                beforeStep: () => {
+                    if (this.scene && this.scene.engineMenuBar) {
+                        this.scene.engineMenuBar.expand();
+                        if (this.scene.engineMenuBar.editFloatingPanel) {
+                            this.scene.engineMenuBar.editFloatingPanel.classList.remove('show');
+                        }
+                        const editBtn = document.getElementById('gt-mb-btn-edit');
+                        if (editBtn) editBtn.classList.remove('active');
+                    }
+                }
             }
         ];
 
@@ -375,7 +460,7 @@ export class EngineUITourModal {
                             <div class="gt-tour-npc-name">Pemandu Engine</div>
                             <div class="gt-tour-npc-title" id="gt-tour-feature-title">Fitur Engine</div>
                         </div>
-                        <span class="gt-tour-step-badge" id="gt-tour-step-badge">1 / 7</span>
+                        <span class="gt-tour-step-badge" id="gt-tour-step-badge">Langkah 1 dari 8</span>
                         <button class="gt-tour-skip-btn" id="gt-tour-skip-btn" title="Keluar Tur (ESC)">✕</button>
                     </div>
 
@@ -564,6 +649,14 @@ export class EngineUITourModal {
             this.arrowDown.style.display = 'none';
 
             let guideY = spotY + spotH + 12;
+
+            // Jika target berada di dalam floating toolbar vertikal di kiri, letakkan bubble di bawah seluruh toolbar agar semua tombol alat tetap terlihat jelas
+            if (targetEl && targetEl.closest && targetEl.closest('.gt-mb-edit-floating-panel')) {
+                const panel = targetEl.closest('.gt-mb-edit-floating-panel');
+                const pRect = panel.getBoundingClientRect();
+                guideY = Math.max(guideY, pRect.bottom + 14);
+            }
+
             guideY = Math.min(guideY, window.innerHeight - 230);
 
             this.guideContainer.style.left = `${Math.round(guideX)}px`;
@@ -591,9 +684,6 @@ export class EngineUITourModal {
 
     finish() {
         AudioManager.playSuccess();
-        if (this.scene && typeof this.scene.showFloatingToast === 'function') {
-            this.scene.showFloatingToast('🎉 Pemandu Engine selesai menjelaskan! Selamat berkreasi.', 0x22c55e);
-        }
         this.close();
     }
 
@@ -608,9 +698,14 @@ export class EngineUITourModal {
 
         this.teardownKeyboard();
 
-        // Kembalikan menu bar ke keadaan tertutup jika tadi dibuka saat tur
+        // Kembalikan menu bar & floating panel ke keadaan default jika tadi dibuka saat tur
         if (this.scene && this.scene.engineMenuBar) {
             this.scene.engineMenuBar.collapse();
+            if (this.scene.engineMenuBar.editFloatingPanel) {
+                this.scene.engineMenuBar.editFloatingPanel.classList.remove('show');
+            }
+            const editBtn = document.getElementById('gt-mb-btn-edit');
+            if (editBtn) editBtn.classList.remove('active');
         }
 
         // Kembalikan kebebasan gerak pemain

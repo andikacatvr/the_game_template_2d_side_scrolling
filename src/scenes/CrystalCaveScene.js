@@ -848,27 +848,7 @@ export class CrystalCaveScene extends Phaser.Scene {
     }
 
     showFloatingToast(text, color = 0xc084fc) {
-        const toast = this.add.text(
-            this.player ? this.player.x : 400,
-            this.player ? this.player.y - 45 : 200,
-            text,
-            {
-                fontSize: '12px',
-                fontStyle: 'bold',
-                fill: '#ffffff',
-                backgroundColor: `#${color.toString(16).padStart(6, '0')}`,
-                padding: { x: 8, y: 4 },
-                fontFamily: FONT_BODY
-            }
-        ).setOrigin(0.5).setDepth(40);
-
-        this.tweens.add({
-            targets: toast,
-            y: toast.y - 30,
-            alpha: 0,
-            duration: 2000,
-            onComplete: () => toast.destroy()
-        });
+        return;
     }
 
     autoSave(isCheckpoint = false) {

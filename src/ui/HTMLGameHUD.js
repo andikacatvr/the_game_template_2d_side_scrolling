@@ -575,7 +575,7 @@ export class HTMLGameHUD {
                     <div class="gt-hud-strip-top">
                         <div class="gt-hud-strip-title" id="gt-strip-title-btn" title="🗺️ Buka World Map (Peta Seluruh Scene) & Quick Travel">
                             <span id="gt-strip-icon">❄️</span>
-                            <span id="gt-strip-name">Lv. 1 • Lembah Salju</span>
+                            <span id="gt-strip-name">Tutorial Part I</span>
                         </div>
                         <div class="gt-hud-strip-gps" id="gt-strip-gps">
                             <span class="gt-strip-gps-dot"></span>
@@ -1006,10 +1006,10 @@ export class HTMLGameHUD {
         if (sceneKey === 'GameScene') {
             return {
                 icon: '❄️',
-                shortName: 'Lv. 1',
-                fullName: 'Lv. 1 • Lembah Salju',
+                shortName: 'Part I',
+                fullName: 'Tutorial Part I',
                 type: 'Tutorial Campaign',
-                desc: 'Lembah bersalju tempat mempelajari dasar pergerakan, koin emas, dan portal petualangan.',
+                desc: 'Tempat mempelajari dasar pergerakan, koin emas, dan portal petualangan.',
                 objective: 'Kumpulkan Koin Emas dan lewati rintangan duri menuju portal petualangan!'
             };
         }
@@ -1017,9 +1017,9 @@ export class HTMLGameHUD {
         if (sceneKey === 'HongKongScene' || sceneKey === 'Scene2') {
             return {
                 icon: '🏙️',
-                shortName: 'Lv. 2',
-                fullName: 'Lv. 2 • Teluk Hong Kong',
-                type: 'Story Campaign',
+                shortName: 'Part II',
+                fullName: 'Tutorial Part II',
+                type: 'Tutorial Campaign',
                 desc: 'Pelabuhan malam Teluk Victoria dengan efek hujan rintik, kapal tongkang terapung, dan kapal feri ikonik.',
                 objective: 'Lintasi kapal tongkang terapung dan naiki Kapal Feri Bintang untuk menang!'
             };

@@ -57,6 +57,81 @@ export class ProjectManager {
     /**
      * Membuat Project baru (wadah untuk banyak scene)
      * @param {string} name 
+    /**
+     * Menghasilkan kumpulan petak lava tidak beraturan (prosedural / irregular)
+     * pada dua baris paling bawah dunia (Row 18 dan Row 19).
+     * Posisi berubah-ubah dan acak setiap kali dunia/scene baru dibuat.
+     * @param {number} totalCols Total petak horizontal (default 72 untuk 3600px)
+     * @param {number} startRow Baris atas lava (default 18)
+     * @param {number} endRow Baris bawah lava (default 19)
+     * @returns {Array<Object>} Daftar entitas lava
+     */
+    static generateIrregularBottomLava(totalCols = 72, startRow = 18, endRow = 19) {
+        const lavaEntities = [];
+        let inPool = Math.random() > 0.3;
+        let poolStep = 0;
+        let poolLength = Math.floor(Math.random() * 5) + 3;
+
+        for (let c = 0; c < totalCols; c++) {
+            poolStep++;
+            if (poolStep >= poolLength) {
+                inPool = !inPool || (Math.random() > 0.3);
+                poolStep = 0;
+                poolLength = inPool ? (Math.floor(Math.random() * 6) + 3) : (Math.floor(Math.random() * 3) + 1);
+            }
+
+            // Tentukan kedalaman lava di kolom ini:
+            // 0 = celah tanah alami (stepping ground)
+            // 1 = lava di Row 19 saja (dangkal)
+            // 2 = lava di Row 18 & Row 19 (kubangan lahar dalam)
+            let depth = 0;
+            if (inPool) {
+                depth = (Math.random() > 0.32) ? 2 : 1;
+            } else {
+                if (Math.random() > 0.65) {
+                    depth = 1;
+                }
+            }
+
+            if (depth >= 1) {
+                lavaEntities.push({
+                    id: `lava_${c}_${endRow}`,
+                    type: 'lava',
+                    col: c,
+                    row: endRow,
+                    x: c * 50 + 25,
+                    y: endRow * 50 + 25,
+                    label: 'Lava Vulkanik',
+                    cat: 'fluid',
+                    icon: '🌋',
+                    wTiles: 1,
+                    hTiles: 1
+                });
+            }
+
+            if (depth >= 2) {
+                lavaEntities.push({
+                    id: `lava_${c}_${startRow}`,
+                    type: 'lava',
+                    col: c,
+                    row: startRow,
+                    x: c * 50 + 25,
+                    y: startRow * 50 + 25,
+                    label: 'Lava Vulkanik',
+                    cat: 'fluid',
+                    icon: '🌋',
+                    wTiles: 1,
+                    hTiles: 1
+                });
+            }
+        }
+
+        return lavaEntities;
+    }
+
+    /**
+     * Membuat project baru dengan scene awal bersih & lava acak di 2 baris bawah
+     * @param {string} name 
      * @param {string} desc 
      * @returns {Object} project baru
      */
@@ -64,14 +139,16 @@ export class ProjectManager {
         const projects = this.getProjects();
         const id = 'proj_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
 
-        // Buat default scene pertama di dalam project baru
+        // Buat default scene pertama di dalam project baru (Full Dirt dengan lava acak di Row 18 & 19)
         const initialScene = {
             id: 'scene_' + Date.now() + '_1',
             name: 'Level 1 • Awal Petualangan',
             biome: 'dirt',
+            bgType: 'color',
+            bgColor: '#dcff78',
             worldWidth: 3600,
             worldHeight: 1000,
-            hasLava: false,
+            hasLava: true,
             hasWater: false,
             hasSpikes: false,
             hasPlatforms: false,
@@ -85,7 +162,8 @@ export class ProjectManager {
             dugTiles: [],
             entities: [
                 { id: 'player_1', type: 'player', col: 2, row: 7, x: 125, y: 400, label: 'Letak Spawn (Pintu Putih)', cat: 'spawn', icon: '🚪', wTiles: 1, hTiles: 1 },
-                { id: 'portal_1', type: 'portal', col: 70, row: 7, x: 3525, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 }
+                { id: 'portal_1', type: 'portal', col: 70, row: 7, x: 3525, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 },
+                ...this.generateIrregularBottomLava(72, 18, 19)
             ]
         };
 
@@ -138,9 +216,11 @@ export class ProjectManager {
             id: sceneId,
             name: sceneData.name || `Level ${sceneCount + 1} • Area Petualangan`,
             biome: sceneData.biome || 'dirt',
+            bgType: sceneData.bgType || (sceneData.biome === 'hongkong' ? 'hongkong' : 'color'),
+            bgColor: sceneData.bgColor || (sceneData.biome === 'hongkong' ? '#050813' : '#dcff78'),
             worldWidth: sceneData.worldWidth || 3600,
             worldHeight: sceneData.worldHeight || 1000,
-            hasLava: false,
+            hasLava: true,
             hasWater: false,
             hasSpikes: false,
             hasPlatforms: false,
@@ -156,7 +236,8 @@ export class ProjectManager {
                 ? sceneData.entities
                 : [
                     { id: 'player_1', type: 'player', col: 2, row: 7, x: 125, y: 400, label: 'Letak Spawn (Pintu Putih)', cat: 'spawn', icon: '🚪', wTiles: 1, hTiles: 1 },
-                    { id: 'portal_1', type: 'portal', col: 70, row: 7, x: 3525, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 }
+                    { id: 'portal_1', type: 'portal', col: 70, row: 7, x: 3525, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 },
+                    ...this.generateIrregularBottomLava(72, 18, 19)
                 ]
         };
 
@@ -317,21 +398,31 @@ export class ProjectManager {
      * @param {string} projectId 
      * @param {string} currentSceneId 
      * @returns {Object|null}
+    /**
+     * Menemukan scene berikutnya secara visual dari Flow Graph
+     * @param {string} projectId 
+     * @param {string} currentSceneId 
+     * @returns {Object|null}
      */
     static getNextScene(projectId, currentSceneId) {
         const proj = this.getProject(projectId);
         if (!proj || !Array.isArray(proj.scenes) || proj.scenes.length <= 1) return null;
 
-        // 1. Cek visual connections dari Flow Graph terlebih dahulu jika ada
-        if (Array.isArray(proj.connections) && proj.connections.length > 0) {
-            const conn = proj.connections.find(c => c.fromSceneId === currentSceneId);
+        // 1. Jika konfigurasi Flow Graph aktif (array connections ada):
+        // Logika rute 100% dipatuhi sesuai garis kabel Flow Graph!
+        if (proj.hasConfiguredFlowGraph || Array.isArray(proj.connections)) {
+            const connections = Array.isArray(proj.connections) ? proj.connections : [];
+            const conn = connections.find(c => c.fromSceneId === currentSceneId);
             if (conn && conn.toSceneId) {
                 const target = proj.scenes.find(s => s.id === conn.toSceneId);
                 if (target) return target;
             }
+            // JIKA GARIS KABELNYA PUTUS / TIDAK TERHUBUNG KE SCENE LAIN:
+            // Scene ini berhenti di sini dan TIDAK AKAN melompat ke scene berikutnya!
+            return null;
         }
 
-        // 2. Fallback sekuensial jika belum ada koneksi node kustom
+        // 2. Fallback sekuensial HANYA untuk project lawas yang belum pernah membuka Flow Graph
         const idx = proj.scenes.findIndex(s => s.id === currentSceneId);
         if (idx !== -1 && idx + 1 < proj.scenes.length) {
             return proj.scenes[idx + 1];
@@ -349,6 +440,7 @@ export class ProjectManager {
 
         if (Array.isArray(connections)) {
             proj.connections = connections;
+            proj.hasConfiguredFlowGraph = true;
         }
         if (positions && typeof positions === 'object') {
             proj.flowGraphPositions = positions;
@@ -363,9 +455,10 @@ export class ProjectManager {
      */
     static getFlowGraph(projectId) {
         const proj = this.getProject(projectId);
-        if (!proj) return { connections: [], positions: {} };
+        if (!proj) return { connections: null, positions: {}, hasConfiguredFlowGraph: false };
         return {
-            connections: Array.isArray(proj.connections) ? proj.connections : [],
+            connections: Array.isArray(proj.connections) ? proj.connections : null,
+            hasConfiguredFlowGraph: !!proj.hasConfiguredFlowGraph,
             positions: (proj.flowGraphPositions && typeof proj.flowGraphPositions === 'object') ? proj.flowGraphPositions : {}
         };
     }
@@ -547,6 +640,8 @@ export class ProjectManager {
                         id: 'scene_lvl1_dirt',
                         name: 'Level 1 • Awal Petualangan',
                         biome: 'dirt',
+                        bgType: 'color',
+                        bgColor: '#dcff78',
                         worldWidth: 3600,
                         worldHeight: 1000,
                         terrainTiles: Array.from({ length: 72 }, (_, i) => `${i},8`),

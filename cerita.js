@@ -54,10 +54,10 @@ export const CONFIG_SKELETON = {
 export const DAFTAR_MAP = [
     {
         id: 'map_salju',
-        nama: 'Level 1: Lembah Bersalju',
-        background: 'bg_scene1.png', // Gambar di folder public atau public/aset_murid/
-        warnaLangit: '#0b1329',
-        lebarDunia: 1400,
+        nama: 'Tutorial Part I',
+        background: '', // Kosong = otomatis pakai warna tema langit vivid yellow-green identik Main Menu
+        warnaLangit: '#dcff78',
+        lebarDunia: 3000,
         tinggiDunia: 1000, // 20 Baris (Row 0-7: Langit, Row 8: Salju, Row 9-13: Tanah, Row 14-18: Bebatuan Gua & Kristal, Row 19: Bedrock)
         spawn: { x: 175, y: 350 }, // Berdiri pas di tengah Kolom 3 (x: 150..200)
 
@@ -65,12 +65,18 @@ export const DAFTAR_MAP = [
         platform: [
             { x: 475, y: 312, lebar: 150, tinggi: 24 }, // Kolom 8, 9, 10 (x: 400..550), Pijakan tepat di garis y = 300
             { x: 750, y: 212, lebar: 200, tinggi: 24 }, // Kolom 13, 14, 15, 16 (x: 650..850), Pijakan tepat di garis y = 200
-            { x: 975, y: 262, lebar: 150, tinggi: 24 }  // Kolom 18, 19, 20 (x: 900..1050), Pijakan tepat di garis y = 250
+            { x: 975, y: 262, lebar: 150, tinggi: 24 }, // Kolom 18, 19, 20 (x: 900..1050), Pijakan tepat di garis y = 250
+            { x: 1475, y: 312, lebar: 150, tinggi: 24 },
+            { x: 1850, y: 232, lebar: 200, tinggi: 24 },
+            { x: 2250, y: 282, lebar: 150, tinggi: 24 },
+            { x: 2650, y: 212, lebar: 200, tinggi: 24 }
         ],
 
-        // Koin / Harta Karun { x, y, id, nama, icon } - Tepat di titik tengah sel Kolom 14, Row 2 (x: 700..750, y: 100..150)
+        // Koin / Harta Karun { x, y, id, nama, icon }
         koin: [
-            { x: 725, y: 125, id: 'koin_emas', nama: 'Koin Emas Murni', icon: '' }
+            { x: 725, y: 125, id: 'koin_emas', nama: 'Koin Emas Murni', icon: '' },
+            { x: 1850, y: 160, id: 'koin_safir', nama: 'Koin Safir Biru', icon: '' },
+            { x: 2650, y: 140, id: 'koin_ruby', nama: 'Permata Delima', icon: '' }
         ],
 
         // Rintangan Duri / Hazard { x, y, lebar } - Memenuhi persis 2 petak grid Kolom 11 & 12 (x: 550..650)

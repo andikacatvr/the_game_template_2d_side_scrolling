@@ -53,7 +53,7 @@ export class WorldMapModal {
             return {
                 mode: 'story',
                 sceneId: 'GameScene',
-                sceneName: 'Level 1 • Lembah Salju (Tutorial)',
+                sceneName: 'Tutorial Part I',
                 biome: 'snow'
             };
         }
@@ -61,7 +61,7 @@ export class WorldMapModal {
             return {
                 mode: 'story',
                 sceneId: 'HongKongScene',
-                sceneName: 'Level 2 • Teluk Hong Kong',
+                sceneName: 'Tutorial Part II',
                 biome: 'dirt'
             };
         }
@@ -144,18 +144,18 @@ export class WorldMapModal {
             scenes = [
                 {
                     id: 'GameScene',
-                    name: 'Level 1 • Lembah Salju (Tutorial)',
+                    name: 'Tutorial Part I',
                     biome: 'snow',
-                    worldWidth: 1400,
+                    worldWidth: 3000,
                     worldHeight: 1000,
                     hasSlime: true,
                     hasCoins: true,
                     hasPortal: true,
-                    desc: 'Lembah dingin bersalju tempat mempelajari kontrol jalan, lompat, koin emas, dan dasar petualangan.'
+                    desc: 'Tempat mempelajari kontrol jalan, lompat, koin emas, dan dasar petualangan.'
                 },
                 {
                     id: 'HongKongScene',
-                    name: 'Level 2 • Teluk Hong Kong',
+                    name: 'Tutorial Part II',
                     biome: 'dirt',
                     worldWidth: 2200,
                     worldHeight: 850,
@@ -216,10 +216,23 @@ export class WorldMapModal {
             this.selectedSceneId = cur ? cur.id : scenes[0].id;
         }
 
+        let connections = null;
+        let hasConfiguredFlowGraph = false;
+
+        if (this.activeViewProjectId !== 'story_campaign') {
+            const project = ProjectManager.getProject(this.activeViewProjectId);
+            if (project) {
+                hasConfiguredFlowGraph = !!project.hasConfiguredFlowGraph;
+                connections = Array.isArray(project.connections) ? project.connections : null;
+            }
+        }
+
         return {
             projectId: this.activeViewProjectId,
             projectName,
-            scenes
+            scenes,
+            connections,
+            hasConfiguredFlowGraph
         };
     }
 
@@ -327,25 +340,98 @@ export class WorldMapModal {
     }
 
     buildDOM() {
-        const { projectName, scenes } = this.getScenesData();
+        const { projectName, scenes, connections, hasConfiguredFlowGraph } = this.getScenesData();
         const availableProjects = this.getAvailableProjects();
 
         const nodePositions = this.calculateNodeLayout(scenes.length);
 
+        // Map scene.id ke posisi koordinat di kanvas
+        const scenePosMap = new Map();
+        scenes.forEach((s, idx) => {
+            scenePosMap.set(s.id, nodePositions[idx] || { x: 150 + idx * 170, y: 240 });
+        });
+
+        // Tentukan koneksi rute yang aktif sesuai Flow Graph
+        let activeConnections = [];
+        if (this.activeViewProjectId === 'story_campaign') {
+            for (let i = 0; i < scenes.length - 1; i++) {
+                activeConnections.push({ fromSceneId: scenes[i].id, toSceneId: scenes[i + 1].id });
+            }
+        } else if (hasConfiguredFlowGraph || connections !== null) {
+            activeConnections = Array.isArray(connections) ? connections : [];
+        } else {
+            // Fallback sekuensial hanya jika belum pernah membuka Flow Graph
+            for (let i = 0; i < scenes.length - 1; i++) {
+                activeConnections.push({ fromSceneId: scenes[i].id, toSceneId: scenes[i + 1].id });
+            }
+        }
+
+        // Set koneksi aktif untuk validasi cepat
+        const connectedPairs = new Set();
+        activeConnections.forEach(c => {
+            if (c.fromSceneId && c.toSceneId) {
+                connectedPairs.add(`${c.fromSceneId}->${c.toSceneId}`);
+            }
+        });
+
         // Buat jalan setapak (paved cobblestone roads ala Toram Online)
         let roadsSVG = '';
-        for (let i = 0; i < scenes.length - 1; i++) {
-            const p1 = nodePositions[i];
-            const p2 = nodePositions[i + 1];
+
+        // 1. Gambar jalan yang BENAR-BENAR TERSAMBUNG di Flow Graph
+        activeConnections.forEach(conn => {
+            const p1 = scenePosMap.get(conn.fromSceneId);
+            const p2 = scenePosMap.get(conn.toSceneId);
             if (p1 && p2) {
                 roadsSVG += `
-                    <!-- Shadow jalan batu -->
+                    <!-- Shadow jalan batu tersambung -->
                     <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#6e583c" stroke-width="14" stroke-linecap="round"/>
                     <!-- Cobblestone pavers -->
                     <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#d3be96" stroke-width="10" stroke-linecap="round"/>
                     <!-- Garis pembagi batu tengah -->
                     <line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="#937a57" stroke-width="2" stroke-dasharray="6,5"/>
                 `;
+            }
+        });
+
+        // 2. Gambar visual jalan putus (severed broken road) jika level berurutan tidak tersambung di Flow Graph
+        for (let i = 0; i < scenes.length - 1; i++) {
+            const s1 = scenes[i];
+            const s2 = scenes[i + 1];
+            const isConnected = connectedPairs.has(`${s1.id}->${s2.id}`) || connectedPairs.has(`${s2.id}->${s1.id}`);
+
+            if (!isConnected) {
+                const p1 = scenePosMap.get(s1.id);
+                const p2 = scenePosMap.get(s2.id);
+                if (p1 && p2) {
+                    // Jalan hanya menjulur 28% dari masing-masing node lalu terputus
+                    const p1Cut = {
+                        x: p1.x + (p2.x - p1.x) * 0.28,
+                        y: p1.y + (p2.y - p1.y) * 0.28
+                    };
+                    const p2Cut = {
+                        x: p2.x + (p1.x - p2.x) * 0.28,
+                        y: p2.y + (p1.y - p2.y) * 0.28
+                    };
+                    const midX = (p1.x + p2.x) / 2;
+                    const midY = (p1.y + p2.y) / 2;
+
+                    roadsSVG += `
+                        <!-- Ujung jalan putus dari Node 1 -->
+                        <line x1="${p1.x}" y1="${p1.y}" x2="${p1Cut.x}" y2="${p1Cut.y}" stroke="#4a3720" stroke-width="14" stroke-linecap="square"/>
+                        <line x1="${p1.x}" y1="${p1.y}" x2="${p1Cut.x}" y2="${p1Cut.y}" stroke="#8c7356" stroke-width="10" stroke-linecap="square"/>
+                        <line x1="${p1Cut.x - 2}" y1="${p1Cut.y - 6}" x2="${p1Cut.x + 2}" y2="${p1Cut.y + 6}" stroke="#ef4444" stroke-width="2.5"/>
+
+                        <!-- Celah Terputus (Garis retakan merah putus-putus & penanda putus) -->
+                        <line x1="${p1Cut.x}" y1="${p1Cut.y}" x2="${p2Cut.x}" y2="${p2Cut.y}" stroke="#ef4444" stroke-width="1.8" stroke-dasharray="4,4" opacity="0.55"/>
+                        <circle cx="${midX}" cy="${midY}" r="11" fill="#1b130a" stroke="#ef4444" stroke-width="1.5"/>
+                        <text x="${midX}" y="${midY + 4}" text-anchor="middle" font-size="10" font-weight="bold" fill="#ef4444" font-family="'JetBrains Mono', monospace">✕</text>
+
+                        <!-- Ujung jalan putus dari Node 2 -->
+                        <line x1="${p2Cut.x}" y1="${p2Cut.y}" x2="${p2.x}" y2="${p2.y}" stroke="#4a3720" stroke-width="14" stroke-linecap="square"/>
+                        <line x1="${p2Cut.x}" y1="${p2Cut.y}" x2="${p2.x}" y2="${p2.y}" stroke="#8c7356" stroke-width="10" stroke-linecap="square"/>
+                        <line x1="${p2Cut.x - 2}" y1="${p2Cut.y - 6}" x2="${p2Cut.x + 2}" y2="${p2Cut.y + 6}" stroke="#ef4444" stroke-width="2.5"/>
+                    `;
+                }
             }
         }
 
@@ -943,6 +1029,23 @@ export class WorldMapModal {
             entityBadges.push('✨ Area Santai Tanpa Rintangan');
         }
 
+        let portalRouteText = 'Rute Akhir 🏆';
+        let portalRouteColor = '#34d399';
+
+        if (this.activeViewProjectId !== 'story_campaign') {
+            const nextSceneObj = ProjectManager.getNextScene(this.activeViewProjectId, selected.id);
+            if (nextSceneObj) {
+                portalRouteText = `➔ #${nextSceneObj.index || ''} ${nextSceneObj.name}`;
+                portalRouteColor = '#38bdf8';
+            } else {
+                portalRouteText = 'Rute Putus / Tamat ✕';
+                portalRouteColor = '#f87171';
+            }
+        } else if (selected.hasPortal) {
+            portalRouteText = 'Tersedia ➔';
+            portalRouteColor = '#38bdf8';
+        }
+
         inspector.innerHTML = `
             <div class="gt-inspector-header">
                 <span class="gt-inspector-tag ${isCurrent ? 'gt-tag-current' : 'gt-tag-available'}">
@@ -966,8 +1069,8 @@ export class WorldMapModal {
                     <span class="gt-stat-value">${selected.worldHeight || 850} px</span>
                 </div>
                 <div class="gt-stat-box">
-                    <span class="gt-stat-label">Alur Portal</span>
-                    <span class="gt-stat-value">${selected.hasPortal ? 'Tersedia ➔' : 'Garis Akhir'}</span>
+                    <span class="gt-stat-label">Alur Rute</span>
+                    <span class="gt-stat-value" style="color: ${portalRouteColor}; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${portalRouteText}">${portalRouteText}</span>
                 </div>
                 <div class="gt-stat-box">
                     <span class="gt-stat-label">Status</span>

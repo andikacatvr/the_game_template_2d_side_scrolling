@@ -16,6 +16,7 @@ import { QuestModal } from '../ui/QuestModal.js';
 import { NPCDialogEditorModal } from '../ui/NPCDialogEditorModal.js';
 import { EngineMenuBar } from '../ui/EngineMenuBar.js';
 import { EngineUITourModal } from '../ui/EngineUITourModal.js';
+import { GameOverModal } from '../ui/GameOverModal.js';
 import { GridSystem } from '../utils/GridSystem.js';
 import { UndoRedoManager } from '../utils/UndoRedoManager.js';
 
@@ -25,6 +26,7 @@ import { UndoRedoManager } from '../utils/UndoRedoManager.js';
 export class GameScene extends Phaser.Scene {
     constructor() {
         super({ key: 'GameScene' });
+        this._fireflies = [];
     }
 
     init(data = {}) {
@@ -74,7 +76,7 @@ export class GameScene extends Phaser.Scene {
         // Tampilkan chat console saat gameplay dimulai
         CommandConsole.show();
 
-        this.cameras.main.setBackgroundColor('#0b1329');
+        this.cameras.main.setBackgroundColor('#dcff78');
 
         this.touchState = { left: false, right: false, jump: false };
         this.isInvOpen = false;
@@ -83,6 +85,9 @@ export class GameScene extends Phaser.Scene {
 
         // Buat Dunia Polosan
         this.createWorld();
+
+        // Buat Partikel Kunang-Kunang Hitam Animasi Identik Main Menu
+        this._createFireflies();
 
         // Buat Efek Kabut Atmosferik
         this.createFogEffect();
@@ -97,7 +102,7 @@ export class GameScene extends Phaser.Scene {
         this.createGoblinStyleTouchControls();
 
         // Buat Modal Game Over & Victory Modal
-        this.createGameOverModalUI();
+        this.gameOverModal = new GameOverModal(this);
         this.createVictoryModalUI();
 
         // Buat Dialog Box RPG
@@ -190,6 +195,13 @@ export class GameScene extends Phaser.Scene {
         if (this.startData && this.startData.isNewGame) {
             this.autoSave(false);
         }
+
+        // Otomatis munculkan Pemandu Engine saat scene dibuka
+        this.time.delayedCall(400, () => {
+            if (this.engineUITour && !this.engineUITour.isOpen) {
+                this.startEngineUITour();
+            }
+        });
     }
 
     initTutorialGuide() {
@@ -314,18 +326,18 @@ export class GameScene extends Phaser.Scene {
 
         if (map.warnaLangit) {
             this.cameras.main.setBackgroundColor(map.warnaLangit);
+        } else {
+            this.cameras.main.setBackgroundColor('#dcff78');
         }
 
         // Background Gambar Langit Permukaan
         let bgKey = null;
-        if (this.textures.exists(map.id + '_bg')) {
-            bgKey = map.id + '_bg';
-        } else if (map.background && this.textures.exists(map.background)) {
-            bgKey = map.background;
-        } else if (map.background === 'bg_scene1.png' || map.background === 'bg_scene1') {
-            bgKey = 'bg_scene1';
-        } else if (map.background && this.textures.exists('bg_scene1')) {
-            bgKey = 'bg_scene1';
+        if (map.background && map.background !== 'bg_scene1.png' && map.background !== 'bg_scene1') {
+            if (this.textures.exists(map.id + '_bg')) {
+                bgKey = map.id + '_bg';
+            } else if (this.textures.exists(map.background)) {
+                bgKey = map.background;
+            }
         }
 
         if (bgKey && this.textures.exists(bgKey)) {
@@ -335,6 +347,13 @@ export class GameScene extends Phaser.Scene {
             
             this.bgOverlay = this.add.rectangle(worldW / 2, 225, worldW, 580, 0x07111e, 0.2)
                 .setDepth(-9);
+        } else {
+            // Background Langit Solid Vivid Yellow-Green (#dcff78) identik Main Menu
+            const skyColor = (map.warnaLangit && map.warnaLangit !== '#0b1329') 
+                ? Phaser.Display.Color.HexStringToColor(map.warnaLangit).color 
+                : 0xdcff78;
+            this.bgSolidSky = this.add.rectangle(worldW / 2, 200, Math.max(worldW + 1000, 2400), 450, skyColor)
+                .setDepth(-10);
         }
 
         // Latar Belakang Bawah Tanah / Cavern Backdrop (y: 400 s/d worldH)
@@ -470,7 +489,7 @@ export class GameScene extends Phaser.Scene {
         this.portalScene2 = this.add.container(portalX, portalY).setDepth(12);
         const pRing = this.add.circle(0, 0, 24, 0x38bdf8, 0.25).setStrokeStyle(2, 0x38bdf8);
         const pIcon = this.add.text(0, 0, 'O', { fontSize: '18px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_BODY }).setOrigin(0.5);
-        const pLabel = this.add.text(0, -34, 'Ke Scene 2 →', { fontSize: '11px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_BODY }).setOrigin(0.5);
+        const pLabel = this.add.text(0, -34, 'Ke Tutorial Part II →', { fontSize: '11px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_BODY }).setOrigin(0.5);
         this.portalScene2.add([pRing, pIcon, pLabel]);
         this.tweens.add({
             targets: pRing,
@@ -554,7 +573,8 @@ export class GameScene extends Phaser.Scene {
 
         // Koordinat rahasia keberadaan mineral Kristal Safir terpendam di dalam gua
         const secretGemCoords = new Set([
-            '3,12', '6,11', '9,15', '13,12', '16,16', '18,10', '21,14', '24,17'
+            '3,12', '6,11', '9,15', '13,12', '16,16', '18,10', '21,14', '24,17',
+            '28,13', '32,15', '36,11', '40,16', '45,12', '50,14', '55,16'
         ]);
 
         for (let col = startCol; col <= endCol; col++) {
@@ -568,46 +588,56 @@ export class GameScene extends Phaser.Scene {
             blockTop.gridType = 'snow';
             this.gridWorldBlocks.set(`${col},8`, blockTop);
 
-            // Row 9 s/d maxRow - 1 (Underground Strata)
-            for (let r = 9; r < maxRow - 1; r++) {
+            // Row 9 s/d maxRow - 3 (Row 9 s/d 17: Full Dirt Seragam)
+            for (let r = 9; r < maxRow - 2; r++) {
                 const y = r * 50 + 25;
                 const key = `${col},${r}`;
-
-                // Cek apakah petak ini mengandung mineral kristal berharga
-                if (secretGemCoords.has(key) && col >= 0 && col <= Math.floor(worldW / 50)) {
-                    const gemBlock = this.platforms.create(x, y, 'tile_block_50_ore_gem').refreshBody();
-                    gemBlock.setDepth(9);
-                    gemBlock.gridCol = col;
-                    gemBlock.gridRow = r;
-                    gemBlock.gridType = 'gem';
-                    this.gridWorldBlocks.set(key, gemBlock);
-                } else if (r <= 13) {
-                    // Lapisan Tanah Bawah Permukaan (Subsurface Dirt)
-                    const dirtBlock = this.platforms.create(x, y, 'tile_block_50_dirt').refreshBody();
-                    dirtBlock.setDepth(9);
-                    dirtBlock.gridCol = col;
-                    dirtBlock.gridRow = r;
-                    dirtBlock.gridType = 'dirt';
-                    this.gridWorldBlocks.set(key, dirtBlock);
-                } else {
-                    // Lapisan Bebatuan Gua Dalam (Deep Cavern Slate Stone)
-                    const stoneBlock = this.platforms.create(x, y, 'tile_block_50_stone').refreshBody();
-                    stoneBlock.setDepth(9);
-                    stoneBlock.gridCol = col;
-                    stoneBlock.gridRow = r;
-                    stoneBlock.gridType = 'stone';
-                    this.gridWorldBlocks.set(key, stoneBlock);
-                }
+                const dirtBlock = this.platforms.create(x, y, 'tile_block_50_dirt').refreshBody();
+                dirtBlock.setDepth(9);
+                dirtBlock.gridCol = col;
+                dirtBlock.gridRow = r;
+                dirtBlock.gridType = 'dirt';
+                this.gridWorldBlocks.set(key, dirtBlock);
             }
 
-            // Row Terakhir (Row maxRow - 1, misal Row 19: y: 950 - 1000) -> Bedrock Tak Tertembus
-            const bedrockY = (maxRow - 1) * 50 + 25;
-            const bedrock = this.platforms.create(x, bedrockY, 'tile_block_50_bedrock').refreshBody();
-            bedrock.setDepth(10);
-            bedrock.gridCol = col;
-            bedrock.gridRow = maxRow - 1;
-            bedrock.gridType = 'bedrock';
-            this.gridWorldBlocks.set(`${col},${maxRow - 1}`, bedrock);
+            // Row 18 & 19: Dua Baris Paling Bawah (Lava Tidak Beraturan)
+            const isLava19 = (col % 6 !== 0); // ~83% lava di baris 19
+            const isLava18 = isLava19 && ((col % 5 !== 1) && (col % 5 !== 4)); // kubangan variatif di baris 18
+
+            // Row 18
+            const r18 = maxRow - 2;
+            const y18 = r18 * 50 + 25;
+            const key18 = `${col},${r18}`;
+            if (isLava18) {
+                const lava18 = this.add.rectangle(x, y18, 50, 50, 0xef4444, 0.95).setDepth(9);
+                this.physics.add.existing(lava18, true);
+                this.hazards.add(lava18);
+                this.add.rectangle(x, y18 - 23, 50, 3, 0xf97316, 0.95).setDepth(10);
+            } else {
+                const dirt18 = this.platforms.create(x, y18, 'tile_block_50_dirt').refreshBody();
+                dirt18.setDepth(9);
+                dirt18.gridCol = col;
+                dirt18.gridRow = r18;
+                dirt18.gridType = 'dirt';
+                this.gridWorldBlocks.set(key18, dirt18);
+            }
+
+            // Row 19 (Baris Paling Bawah)
+            const r19 = maxRow - 1;
+            const y19 = r19 * 50 + 25;
+            const key19 = `${col},${r19}`;
+            if (isLava19) {
+                const lava19 = this.add.rectangle(x, y19, 50, 50, 0xef4444, 0.95).setDepth(9);
+                this.physics.add.existing(lava19, true);
+                this.hazards.add(lava19);
+            } else {
+                const dirt19 = this.platforms.create(x, y19, 'tile_block_50_dirt').refreshBody();
+                dirt19.setDepth(9);
+                dirt19.gridCol = col;
+                dirt19.gridRow = r19;
+                dirt19.gridType = 'dirt';
+                this.gridWorldBlocks.set(key19, dirt19);
+            }
         }
     }
 
@@ -988,24 +1018,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     showFloatingBlockToast(x, y, text, color = 0xffffff) {
-        const hexColor = typeof color === 'string' ? color : ('#' + color.toString(16).padStart(6, '0'));
-        const txt = this.add.text(x, y, text, {
-            fontSize: '11px',
-            fontStyle: 'bold',
-            fill: hexColor,
-            stroke: '#000000',
-            strokeThickness: 3,
-            fontFamily: FONT_BODY
-        }).setOrigin(0.5).setDepth(9999);
-
-        this.tweens.add({
-            targets: txt,
-            y: y - 24,
-            alpha: 0,
-            duration: 750,
-            ease: 'Cubic.easeOut',
-            onComplete: () => txt.destroy()
-        });
+        return;
     }
 
     resetWorldBlocks() {
@@ -1039,6 +1052,11 @@ export class GameScene extends Phaser.Scene {
     }
 
     createFogEffect() {
+        // Jangan timpa langit cerah vivid yellow-green dengan kabut kelabu tebal (identik Main Menu)
+        const map = this.currentMap || {};
+        if (map.warnaLangit === '#dcff78' || this.mapId === 'map_salju') {
+            return;
+        }
         if (!this.textures.exists('fx_fog_dense')) return;
 
         // 1. Kabut Jauh / Background Fog (depth: -8)
@@ -1102,6 +1120,81 @@ export class GameScene extends Phaser.Scene {
         });
     }
 
+    // ─────────────────────────────────────────────────────────
+    // KUNANG-KUNANG HITAM ANIMASI IDENTIK MAIN MENU
+    // ─────────────────────────────────────────────────────────
+    _createFireflies(count = 32) {
+        if (!this.textures.exists('npc_firefly')) return;
+        this._fireflies = [];
+        const worldW = (this.currentMap && this.currentMap.lebarDunia) || 1400;
+        // Palet warna aura cahaya di belakang karakter kunang-kunang hitam (sesuai TitleScene)
+        const glowColors = [0xfef08a, 0x67e8f9, 0xf472b6, 0xa78bfa, 0x38bdf8, 0xffffff];
+
+        for (let i = 0; i < count; i++) {
+            const x = Phaser.Math.Between(40, worldW - 40);
+            const y = Phaser.Math.Between(35, 365);
+            const auraColor = glowColors[Math.floor(Math.random() * glowColors.length)];
+            const targetSize = Phaser.Math.Between(18, 26);
+
+            // Variasi kedalaman: sebagian melayang di belakang platform/pemain, sebagian di depan
+            const depth = (i % 2 === 0) ? 2 : 12;
+            const firefly = this.add.container(x, y).setDepth(depth);
+
+            // 1. Aura Cahaya Bercahaya (Glow Halo)
+            const glowHalo = this.add.graphics();
+            glowHalo.fillStyle(auraColor, 0.45);
+            glowHalo.fillCircle(0, 0, targetSize * 0.85);
+            glowHalo.fillStyle(0xffffff, 0.60);
+            glowHalo.fillCircle(0, 0, targetSize * 0.45);
+
+            // 2. Karakter Kunang-Kunang Hitam Mini (Sprite 'npc_firefly')
+            const sprite = this.add.image(0, 0, 'npc_firefly');
+            sprite.setDisplaySize(targetSize, targetSize);
+
+            firefly.add([glowHalo, sprite]);
+
+            // Animasi Denyut Cahaya (Pulse Glow)
+            const pulseDuration = Phaser.Math.Between(800, 1600);
+            this.tweens.add({
+                targets: glowHalo,
+                alpha: { from: 0.25, to: 0.90 },
+                scaleX: { from: 0.85, to: 1.30 },
+                scaleY: { from: 0.85, to: 1.30 },
+                duration: pulseDuration,
+                yoyo: true,
+                repeat: -1,
+                delay: Phaser.Math.Between(0, 1500),
+                ease: 'Sine.easeInOut'
+            });
+
+            // Animasi Goyangan Miring Lucu (Wobble)
+            this.tweens.add({
+                targets: sprite,
+                angle: { from: -8, to: 8 },
+                duration: Phaser.Math.Between(1800, 3000),
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+
+            // Animasi Melayang Mengapung (Floating Drift)
+            const moveX = Phaser.Math.Between(-45, 45);
+            const moveY = Phaser.Math.Between(-35, 35);
+            this.tweens.add({
+                targets: firefly,
+                x: `+=${moveX}`,
+                y: `+=${moveY}`,
+                duration: Phaser.Math.Between(3500, 7500),
+                yoyo: true,
+                repeat: -1,
+                delay: Phaser.Math.Between(0, 2000),
+                ease: 'Sine.easeInOut'
+            });
+
+            this._fireflies.push(firefly);
+        }
+    }
+
     createPlayer() {
         const defaultSpawn = (this.currentMap && this.currentMap.spawn) || { x: 160, y: 360 };
         const spawnX = this.savedSpawnPos ? this.savedSpawnPos.x : defaultSpawn.x;
@@ -1160,7 +1253,7 @@ export class GameScene extends Phaser.Scene {
                         icon: kData.icon || ''
                     });
                     this.updateInventoryBadge();
-                    this.showFloatingToast(`+1 ${kData.nama} (Masuk Tas!)`, 0xfacc15);
+                    this.showFloatingToast(`+1 ${kData.nama}`, 0xfacc15);
                     AudioManager.playCoin();
 
                     this.quest.selesai = true;
@@ -1256,57 +1349,6 @@ export class GameScene extends Phaser.Scene {
         });
     }
 
-    createGameOverModalUI() {
-        const cx = this.scale ? this.scale.width / 2 : 400;
-        const cy = this.scale ? this.scale.height / 2 : 225;
-        this.gameOverModal = this.add.container(cx, cy).setDepth(60).setVisible(false).setScrollFactor(0);
-        const overlay = this.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.85).setInteractive();
-        const box = this.add.rectangle(0, 0, 480, 260, 0x180509, 0.98).setStrokeStyle(2.5, 0xef4444);
-
-        const skull = this.add.text(0, -68, '[ GAME OVER ]', { fontSize: '14px', fontStyle: 'bold', fill: '#ef4444', fontFamily: FONT_TITLE }).setOrigin(0.5);
-        const title = this.add.text(0, -32, 'GAME OVER', {
-            fontSize: '32px', fontStyle: 'bold', fill: '#ef4444', fontFamily: FONT_TITLE
-        }).setOrigin(0.5);
-
-        const subtitle = this.add.text(0, 8, 'Karakter Anda telah kehabisan HP!', {
-            fontSize: '13px', fill: '#fca5a5', fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-
-        // Tombol 1: Muat Checkpoint Terakhir
-        const reloadBtn = this.add.rectangle(0, 56, 240, 36, 0x2563eb, 0.95)
-            .setStrokeStyle(1.5, 0x60a5fa)
-            .setInteractive({ useHandCursor: true });
-        const reloadText = this.add.text(0, 56, 'Load Last Checkpoint', {
-            fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-
-        reloadBtn.on('pointerover', () => reloadBtn.setFillStyle(0x1d4ed8, 1));
-        reloadBtn.on('pointerout', () => reloadBtn.setFillStyle(0x2563eb, 0.95));
-        reloadBtn.on('pointerdown', () => {
-            this.isGameOver = false;
-            this.gameOverModal.setVisible(false);
-            this.scene.restart({ isLoadGame: true });
-        });
-
-        // Tombol 2: Return to Main Menu
-        const menuBtn = this.add.rectangle(0, 102, 240, 34, 0x1e293b, 1)
-            .setStrokeStyle(1.5, 0x64748b)
-            .setInteractive({ useHandCursor: true });
-        const menuText = this.add.text(0, 102, 'Return to Main Menu', {
-            fontSize: '12px', fontStyle: 'bold', fill: '#cbd5e1', fontFamily: FONT_BODY
-        }).setOrigin(0.5);
-
-        menuBtn.on('pointerover', () => menuBtn.setFillStyle(0x334155, 1));
-        menuBtn.on('pointerout', () => menuBtn.setFillStyle(0x1e293b, 1));
-        menuBtn.on('pointerdown', () => {
-            this.isGameOver = false;
-            AudioManager.stopAmbientBGM();
-            this.scene.start('TitleScene');
-        });
-
-        this.gameOverModal.add([overlay, box, skull, title, subtitle, reloadBtn, reloadText, menuBtn, menuText]);
-    }
-
     triggerGameOver() {
         this.isGameOver = true;
         AudioManager.stopAmbientBGM();
@@ -1319,8 +1361,20 @@ export class GameScene extends Phaser.Scene {
             alpha: 0,
             duration: 450,
             onComplete: () => {
-                this.updateModalsCenter();
-                this.gameOverModal.setVisible(true);
+                if (this.gameOverModal) {
+                    this.gameOverModal.show({
+                        retryText: 'Muat Checkpoint Terakhir',
+                        onRetry: () => {
+                            this.isGameOver = false;
+                            this.scene.restart({ isLoadGame: true });
+                        },
+                        onMenu: () => {
+                            this.isGameOver = false;
+                            AudioManager.stopAmbientBGM();
+                            this.scene.start('TitleScene');
+                        }
+                    });
+                }
             }
         });
     }
@@ -1597,24 +1651,7 @@ export class GameScene extends Phaser.Scene {
             this.activeFloatingToast.destroy();
             this.activeFloatingToast = null;
         }
-        const hexColor = '#' + color.toString(16).padStart(6, '0');
-        const toast = this.add.text(this.player.x, this.player.y - 35, msg, {
-            fontSize: '11px', fontStyle: 'bold', fill: hexColor, backgroundColor: '#0f172acc', padding: { x: 6, y: 3 }, fontFamily: FONT_BODY
-        }).setOrigin(0.5).setDepth(30);
-        this.activeFloatingToast = toast;
-
-        this.tweens.add({
-            targets: toast,
-            y: toast.y - 25,
-            alpha: 0,
-            duration: 1200,
-            onComplete: () => {
-                if (this.activeFloatingToast === toast) {
-                    this.activeFloatingToast = null;
-                }
-                toast.destroy();
-            }
-        });
+        return;
     }
 
     createVictoryModalUI() {
@@ -1678,10 +1715,6 @@ export class GameScene extends Phaser.Scene {
 
         const centerPos = toCoords(cx, cy);
 
-        if (this.gameOverModal && this.gameOverModal.active) {
-            this.gameOverModal.setPosition(centerPos.x, centerPos.y);
-            this.gameOverModal.setScale(centerPos.scale);
-        }
         if (this.victoryModal && this.victoryModal.active) {
             this.victoryModal.setPosition(centerPos.x, centerPos.y);
             this.victoryModal.setScale(centerPos.scale);

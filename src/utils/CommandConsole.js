@@ -1297,7 +1297,7 @@ export class CommandConsole {
         return scenes.find(s => ['GameScene', 'HongKongScene', 'Scene2', 'CustomWorldScene', 'Scene3'].includes(s.scene && s.scene.key)) || scenes[0];
     }
 
-    openSceneBuilder(initialMode = 'scene', targetProjectId = null) {
+    openSceneBuilder(initialMode = 'scene', targetProjectId = null, isNewWorld = false) {
         const activeScene = this.getActiveScene();
         if (this.sceneBuilderModal) {
             try {
@@ -1307,7 +1307,8 @@ export class CommandConsole {
         }
         this.sceneBuilderModal = new SceneBuilderModal(activeScene, {
             projectId: targetProjectId || (activeScene && activeScene.projectId) || null,
-            sceneId: (activeScene && activeScene.sceneId) || null
+            sceneId: (activeScene && activeScene.sceneId) || null,
+            isNewWorld: isNewWorld
         });
         this.sceneBuilderModal.show(activeScene);
         if (initialMode === 'flow') {
