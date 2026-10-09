@@ -82,7 +82,7 @@ export class TitleScene extends Phaser.Scene {
         // ─────────────────────────────────────────────────────────
         this.htmlTitleMenu = new HTMLTitleMenu(this, {
             onPlayTutorial: () => {
-                this._transitionTo('GameScene', { isNewGame: true });
+                this._transitionTo('GameScene', { isNewGame: true, isTutorial: true });
             },
             onMyProjects: () => {
                 this.projectHubModal.show();

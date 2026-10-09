@@ -45,13 +45,127 @@ export class ProjectManager {
     }
 
     /**
+     * Mengambil project khusus bawaan cerita utama / tutorial (Story Campaign)
+     */
+    static getStoryCampaignProject() {
+        let savedPositions = null;
+        let savedConnections = null;
+        try {
+            const raw = localStorage.getItem('gt_story_campaign_flow');
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed.positions) savedPositions = parsed.positions;
+                if (parsed.connections) savedConnections = parsed.connections;
+            }
+        } catch (e) {}
+
+        const defaultPositions = {
+            'GameScene': { x: 100, y: 120 },
+            'Scene2': { x: 480, y: 120 }
+        };
+
+        const defaultConnections = [
+            {
+                fromSceneId: 'GameScene',
+                fromPort: 'portal',
+                toSceneId: 'Scene2',
+                toPort: 'entry'
+            }
+        ];
+
+        return {
+            id: 'story_campaign',
+            name: '⭐ Campaign Petualangan Utama (Tutorial & Story)',
+            desc: 'Alur cerita utama petualangan tutorial Part I & Part II.',
+            isStoryCampaign: true,
+            startingSceneId: 'GameScene',
+            scenes: [
+                {
+                    id: 'GameScene',
+                    name: 'Tutorial Part I • Lembah Salju',
+                    biome: 'snow',
+                    worldWidth: 3000,
+                    worldHeight: 1000,
+                    hasSlime: true,
+                    hasCoins: true,
+                    hasPortal: true,
+                    desc: 'Tempat mempelajari kontrol jalan, lompat, koin emas, dan dasar petualangan.'
+                },
+                {
+                    id: 'Scene2',
+                    name: 'Tutorial Part II • Victoria Harbour',
+                    biome: 'dirt',
+                    worldWidth: 2200,
+                    worldHeight: 850,
+                    hasSkeleton: true,
+                    hasPlatforms: true,
+                    hasPortal: true,
+                    desc: 'Pelabuhan malam Teluk Victoria dengan kapal tongkang terapung dan portal finish kemenangan.'
+                }
+            ],
+            connections: savedConnections || defaultConnections,
+            flowGraphPositions: savedPositions || defaultPositions,
+            hasConfiguredFlowGraph: true
+        };
+    }
+
+    /**
+     * Mengambil daftar semua project yang dapat dipilih pengguna (termasuk Story Campaign)
+     */
+    static getSelectableProjects() {
+        const list = [
+            { id: 'story_campaign', name: '⭐ Campaign Petualangan Utama (Tutorial & Story)' }
+        ];
+        const custom = this.getProjects();
+        if (Array.isArray(custom)) {
+            custom.forEach(p => {
+                list.push({ id: p.id, name: `📁 ${p.name || 'Project Game'}` });
+            });
+        }
+        return list;
+    }
+
+    /**
      * Mengambil project berdasarkan ID
      * @param {string} projectId 
      * @returns {Object|null}
      */
     static getProject(projectId) {
+        if (projectId === 'story_campaign') {
+            return this.getStoryCampaignProject();
+        }
         const projects = this.getProjects();
         return projects.find(p => p.id === projectId) || null;
+    }
+
+    /**
+     * Mengambil scene spesifik dari dalam project
+     * @param {string} projectId 
+     * @param {string} sceneId 
+     * @returns {Object|null}
+     */
+    static getScene(projectId, sceneId) {
+        if (projectId === 'story_campaign') {
+            const story = this.getStoryCampaignProject();
+            return story.scenes.find(s => s.id === sceneId) || null;
+        }
+        const proj = this.getProject(projectId);
+        if (!proj || !Array.isArray(proj.scenes)) return null;
+        const scene = proj.scenes.find(s => s.id === sceneId) || null;
+        if (scene) {
+            // Self-healing jika entities kosong: lengkapi terrain dan spawn agar selalu bisa dimainkan
+            if (!Array.isArray(scene.entities) || scene.entities.length === 0) {
+                scene.terrainTiles = Array.from({ length: 72 }, (_, i) => `${i},8`);
+                scene.entities = [
+                    { id: 'player_1', type: 'player', col: 2, row: 7, x: 125, y: 400, label: 'Letak Spawn (Pintu Putih)', cat: 'spawn', icon: '🚪', wTiles: 1, hTiles: 1 },
+                    { id: 'coin_1', type: 'coins', col: 18, row: 7, x: 925, y: 375, label: 'Koin Emas', cat: 'item', icon: '🟡', wTiles: 1, hTiles: 1 },
+                    { id: 'coin_2', type: 'coins', col: 36, row: 7, x: 1825, y: 375, label: 'Koin Emas', cat: 'item', icon: '🟡', wTiles: 1, hTiles: 1 },
+                    { id: 'portal_1', type: 'portal', col: 70, row: 7, x: 3525, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 },
+                    ...this.generateIrregularBottomLava(72, 18, 19)
+                ];
+            }
+        }
+        return scene;
     }
 
     /**
@@ -434,6 +548,13 @@ export class ProjectManager {
      * Menyimpan data visual node flow graph (koneksi antar scene dan koordinat node)
      */
     static saveFlowGraph(projectId, { connections, positions }) {
+        if (projectId === 'story_campaign') {
+            try {
+                localStorage.setItem('gt_story_campaign_flow', JSON.stringify({ connections, positions }));
+            } catch (e) {}
+            return true;
+        }
+
         const projects = this.getProjects();
         const proj = projects.find(p => p.id === projectId);
         if (!proj) return false;
@@ -655,17 +776,37 @@ export class ProjectManager {
                         id: 'scene_lvl2_desert',
                         name: 'Level 2 • Gurun Api Tengkorak',
                         biome: 'desert',
+                        bgType: 'color',
+                        bgColor: '#fed7aa',
                         worldWidth: 3600,
                         worldHeight: 1000,
-                        entities: []
+                        terrainTiles: Array.from({ length: 72 }, (_, i) => `${i},8`),
+                        dugTiles: [],
+                        entities: [
+                            { id: 'player_2', type: 'player', col: 2, row: 7, x: 125, y: 400, label: 'Letak Spawn (Pintu Putih)', cat: 'spawn', icon: '🚪', wTiles: 1, hTiles: 1 },
+                            { id: 'coin_2_1', type: 'coins', col: 18, row: 7, x: 925, y: 375, label: 'Koin Emas', cat: 'item', icon: '🟡', wTiles: 1, hTiles: 1 },
+                            { id: 'coin_2_2', type: 'coins', col: 36, row: 7, x: 1825, y: 375, label: 'Koin Emas', cat: 'item', icon: '🟡', wTiles: 1, hTiles: 1 },
+                            { id: 'portal_2', type: 'portal', col: 70, row: 7, x: 3525, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 },
+                            ...this.generateIrregularBottomLava(72, 18, 19)
+                        ]
                     },
                     {
                         id: 'scene_lvl3_cave',
                         name: 'Level 3 • Labirin Gua Tersembunyi',
                         biome: 'cave',
+                        bgType: 'color',
+                        bgColor: '#1e1b4b',
                         worldWidth: 3600,
                         worldHeight: 1000,
-                        entities: []
+                        terrainTiles: Array.from({ length: 72 }, (_, i) => `${i},8`),
+                        dugTiles: [],
+                        entities: [
+                            { id: 'player_3', type: 'player', col: 2, row: 7, x: 125, y: 400, label: 'Letak Spawn (Pintu Putih)', cat: 'spawn', icon: '🚪', wTiles: 1, hTiles: 1 },
+                            { id: 'coin_3_1', type: 'coins', col: 14, row: 7, x: 725, y: 375, label: 'Koin Emas', cat: 'item', icon: '🟡', wTiles: 1, hTiles: 1 },
+                            { id: 'coin_3_2', type: 'coins', col: 42, row: 7, x: 2125, y: 375, label: 'Koin Emas', cat: 'item', icon: '🟡', wTiles: 1, hTiles: 1 },
+                            { id: 'portal_3', type: 'portal', col: 70, row: 7, x: 3525, y: 400, label: 'Goal Portal Finish', cat: 'solid', icon: '🌀', wTiles: 1, hTiles: 1 },
+                            ...this.generateIrregularBottomLava(72, 18, 19)
+                        ]
                     }
                 ]
             });

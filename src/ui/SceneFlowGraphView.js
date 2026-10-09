@@ -15,6 +15,7 @@ export class SceneFlowGraphView {
         this.options = options;
         this.projectId = options.projectId || null;
         this.onOpenScene = options.onOpenScene || null;
+        this.onPlayScene = options.onPlayScene || null;
         this.onAddScene = options.onAddScene || null;
 
         this.graphMode = 'scenes'; // 'scenes' | 'quests'
@@ -417,6 +418,14 @@ export class SceneFlowGraphView {
 
             <!-- Control Bar Atas -->
             <div class="gt-flow-toolbar">
+                <div class="gt-flow-project-selector-wrap" style="display: inline-flex; align-items: center; gap: 6px; margin-right: 6px; padding-right: 8px; border-right: 1px solid #1e293b;">
+                    <span style="font-size: 11px; font-weight: 700; color: #94a3b8; display: inline-flex; align-items: center; gap: 4px;">
+                        <span>📁</span> Proyek:
+                    </span>
+                    <select id="gt-flow-project-select" style="background: #0f172a; border: 1px solid #334155; color: #38bdf8; font-size: 11px; font-weight: 800; padding: 4px 8px; border-radius: 6px; cursor: pointer; outline: none; max-width: 220px;" title="Pilih Proyek Game atau Campaign Petualangan Utama">
+                    </select>
+                </div>
+
                 <div class="gt-flow-subtabs" style="display: inline-flex; background: #090e17; border: 1px solid #1e293b; border-radius: 6px; padding: 2px; gap: 2px; margin-right: 4px;">
                     <button class="gt-flow-subtab" id="btn-flow-tab-scenes" style="padding: 4px 10px; font-size: 11px; font-weight: 700; border: none; background: #0284c7; color: #fff; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;" title="Alur Rute Antar-Scene">
                         <span>🎬 Rute Level</span>
@@ -428,6 +437,9 @@ export class SceneFlowGraphView {
 
                 <button class="gt-flow-btn gt-flow-btn-primary" id="btn-flow-add-scene" title="Tambah Level Baru ke Project">
                     <span>+</span> Tambah Scene
+                </button>
+                <button class="gt-flow-btn" id="btn-flow-play-game" style="color: #4ade80; border-color: rgba(74, 222, 128, 0.4); background: rgba(34, 197, 94, 0.15);" title="Mainkan Alur Permainan Dari Level Start">
+                    <span>▶</span> Mainkan Alur
                 </button>
                 <button class="gt-flow-btn" id="btn-flow-auto-layout" title="Rapikan Tata Letak Node Secara Otomatis">
                     <span>📐</span> Auto-Layout
@@ -468,10 +480,47 @@ export class SceneFlowGraphView {
         this.nodesLayer = this.dom.querySelector('#gt-flow-nodes-layer');
     }
 
+    updateProjectDropdown() {
+        if (!this.dom) return;
+        const select = this.dom.querySelector('#gt-flow-project-select');
+        if (!select) return;
+
+        const projects = ProjectManager.getSelectableProjects();
+        select.innerHTML = projects.map(p => `
+            <option value="${p.id}" ${p.id === this.projectId ? 'selected' : ''}>
+                ${p.name}
+            </option>
+        `).join('');
+    }
+
+    switchProject(newProjId) {
+        if (!newProjId || this.projectId === newProjId) return;
+        this.projectId = newProjId;
+        this.pan = { x: 40, y: 40 };
+        this.zoom = 1;
+        this.clearPortSelection();
+        this.loadProjectData();
+        if (typeof this.options.onProjectChange === 'function') {
+            this.options.onProjectChange(newProjId);
+        }
+    }
+
     loadProjectData() {
         if (!this.projectId) {
-            const projects = ProjectManager.getProjects();
+            const projects = ProjectManager.getSelectableProjects();
             if (projects.length > 0) this.projectId = projects[0].id;
+        }
+
+        this.updateProjectDropdown();
+
+        // Tombol Tambah Scene: sembunyikan jika story_campaign (karena scene tutorial fixed Part I & Part II)
+        const btnAdd = this.dom ? this.dom.querySelector('#btn-flow-add-scene') : null;
+        if (btnAdd) {
+            if (this.projectId === 'story_campaign') {
+                btnAdd.style.display = 'none';
+            } else {
+                btnAdd.style.display = 'inline-flex';
+            }
         }
 
         const project = this.projectId ? ProjectManager.getProject(this.projectId) : null;
@@ -558,6 +607,9 @@ export class SceneFlowGraphView {
                         <button class="gt-flow-node-btn btn-open-scene" title="Buka Level ini di Kanvas Editor Dunia">
                             <span>✏️</span> Edit
                         </button>
+                        <button class="gt-flow-node-btn btn-play-scene" title="Langsung Mainkan Level Ini" style="color: #4ade80; border-color: rgba(74, 222, 128, 0.4);">
+                            <span>▶</span> Play
+                        </button>
                         <button class="gt-flow-node-btn btn-open-quest" title="Atur Logika Interaksi NPC, Koin &amp; Misi (Visual Scripting)" style="color: #c084fc; border-color: rgba(192, 132, 252, 0.4);">
                             <span>⚡</span> Misi
                         </button>
@@ -598,6 +650,18 @@ export class SceneFlowGraphView {
                     this.onOpenScene(scene.id, scene);
                 }
             });
+
+            // Tombol Play Scene
+            const playBtn = card.querySelector('.btn-play-scene');
+            if (playBtn) {
+                playBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    AudioManager.playClick();
+                    if (typeof this.onPlayScene === 'function') {
+                        this.onPlayScene(scene.id, scene);
+                    }
+                });
+            }
 
             // Tombol Buka Logika Misi Scene
             const questBtn = card.querySelector('.btn-open-quest');
@@ -790,9 +854,12 @@ export class SceneFlowGraphView {
                 this.draggedNodeId = sceneId;
 
                 const pos = this.nodePositions[sceneId] || { x: 0, y: 0 };
+                const wrapRect = this.canvasWrap.getBoundingClientRect();
+                const mouseCanvasX = (e.clientX - wrapRect.left) / this.zoom;
+                const mouseCanvasY = (e.clientY - wrapRect.top) / this.zoom;
                 this.dragOffset = {
-                    x: (e.clientX / this.zoom) - pos.x,
-                    y: (e.clientY / this.zoom) - pos.y
+                    x: mouseCanvasX - pos.x,
+                    y: mouseCanvasY - pos.y
                 };
                 return;
             }
@@ -829,8 +896,11 @@ export class SceneFlowGraphView {
 
             // Dragging Node Card
             if (this.draggedNodeId) {
-                const nx = Math.round((e.clientX / this.zoom) - this.dragOffset.x);
-                const ny = Math.round((e.clientY / this.zoom) - this.dragOffset.y);
+                const wrapRect = this.canvasWrap.getBoundingClientRect();
+                const mouseCanvasX = (e.clientX - wrapRect.left) / this.zoom;
+                const mouseCanvasY = (e.clientY - wrapRect.top) / this.zoom;
+                const nx = Math.round(mouseCanvasX - this.dragOffset.x);
+                const ny = Math.round(mouseCanvasY - this.dragOffset.y);
 
                 this.nodePositions[this.draggedNodeId] = { x: nx, y: ny };
                 const nodeEl = this.dom.querySelector(`#flow-node-${this.draggedNodeId}`);
@@ -898,13 +968,34 @@ export class SceneFlowGraphView {
             this.renderWires();
         }, { passive: false });
 
-        // Toolbar Buttons
+        // Toolbar Buttons & Project Selector
+        const projSelect = this.dom.querySelector('#gt-flow-project-select');
+        if (projSelect) {
+            projSelect.addEventListener('change', (e) => {
+                AudioManager.playClick();
+                this.switchProject(e.target.value);
+            });
+        }
+
         const btnAdd = this.dom.querySelector('#btn-flow-add-scene');
         if (btnAdd) {
             btnAdd.addEventListener('click', () => {
                 AudioManager.playClick();
                 if (typeof this.onAddScene === 'function') {
                     this.onAddScene();
+                }
+            });
+        }
+
+        const btnPlay = this.dom.querySelector('#btn-flow-play-game');
+        if (btnPlay) {
+            btnPlay.addEventListener('click', () => {
+                AudioManager.playClick();
+                const project = this.projectId ? ProjectManager.getProject(this.projectId) : null;
+                const startId = (project && project.startingSceneId) || (project && project.scenes && project.scenes[0] && project.scenes[0].id);
+                if (startId && typeof this.onPlayScene === 'function') {
+                    const sceneData = ProjectManager.getScene(this.projectId, startId);
+                    this.onPlayScene(startId, sceneData);
                 }
             });
         }

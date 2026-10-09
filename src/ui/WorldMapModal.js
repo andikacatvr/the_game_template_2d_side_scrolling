@@ -60,7 +60,7 @@ export class WorldMapModal {
         if (sceneKey === 'HongKongScene' || sceneKey === 'Scene2') {
             return {
                 mode: 'story',
-                sceneId: 'HongKongScene',
+                sceneId: 'Scene2',
                 sceneName: 'Tutorial Part II',
                 biome: 'dirt'
             };
@@ -121,17 +121,7 @@ export class WorldMapModal {
 
     // Mengambil daftar project yang tersedia untuk switcher
     getAvailableProjects() {
-        const list = [
-            { id: 'story_campaign', name: '⭐ Campaign Petualangan Utama (Tutorial & Story)' }
-        ];
-
-        const customProjects = ProjectManager.getProjects();
-        if (Array.isArray(customProjects)) {
-            customProjects.forEach(p => {
-                list.push({ id: p.id, name: `📁 ${p.name || 'Project Game'}` });
-            });
-        }
-        return list;
+        return ProjectManager.getSelectableProjects();
     }
 
     // Mengambil data seluruh scene pada project/campaign yang sedang dilihat
@@ -154,15 +144,15 @@ export class WorldMapModal {
                     desc: 'Tempat mempelajari kontrol jalan, lompat, koin emas, dan dasar petualangan.'
                 },
                 {
-                    id: 'HongKongScene',
+                    id: 'Scene2',
                     name: 'Tutorial Part II',
                     biome: 'dirt',
                     worldWidth: 2200,
                     worldHeight: 850,
                     hasSkeleton: true,
                     hasPlatforms: true,
-                    hasPortal: false,
-                    desc: 'Pelabuhan malam Teluk Victoria dengan kapal tongkang terapung, rintangan vertikal, dan kapal feri bintang.'
+                    hasPortal: true,
+                    desc: 'Pelabuhan malam Teluk Victoria dengan kapal tongkang terapung, rintangan vertikal, dan portal finish kemenangan.'
                 }
             ];
         } else {
@@ -207,7 +197,7 @@ export class WorldMapModal {
         scenes = scenes.map((s, idx) => ({
             ...s,
             index: idx + 1,
-            isCurrent: (s.id === this.realtimeLocation.sceneId)
+            isCurrent: (s.id === this.realtimeLocation.sceneId || (s.id === 'Scene2' && this.realtimeLocation.sceneId === 'HongKongScene') || (s.id === 'HongKongScene' && this.realtimeLocation.sceneId === 'Scene2'))
         }));
 
         // Pastikan selectedSceneId valid
@@ -1121,7 +1111,7 @@ export class WorldMapModal {
             if (sceneId === 'GameScene') {
                 this.scene.scene.start('GameScene');
             } else if (sceneId === 'HongKongScene' || sceneId === 'Scene2') {
-                this.scene.scene.start('HongKongScene');
+                this.scene.scene.start('Scene2');
             } else if (sceneId === 'CrystalCaveScene') {
                 this.scene.scene.start('CrystalCaveScene');
             } else if (sceneId === 'Scene3') {

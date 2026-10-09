@@ -511,6 +511,7 @@ export class QuestLogicGraphView {
                     width: 6000px;
                     height: 4000px;
                     transform-origin: 0 0;
+                    will-change: transform;
                 }
 
                 .gt-qg-svg-layer {
@@ -582,9 +583,20 @@ export class QuestLogicGraphView {
                     border: 1px solid #1e293b;
                     border-radius: 8px;
                     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65);
-                    cursor: default;
+                    cursor: grab;
                     pointer-events: auto;
                     transition: border-color 0.15s ease, box-shadow 0.15s ease;
+                    will-change: left, top;
+                    user-select: none;
+                    -webkit-user-select: none;
+                }
+
+                .gt-qg-node.is-dragging {
+                    transition: none !important;
+                    cursor: grabbing !important;
+                    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.9), 0 0 25px rgba(168, 85, 247, 0.5) !important;
+                    z-index: 1000 !important;
+                    opacity: 0.96;
                 }
 
                 .gt-qg-node:hover {
@@ -706,20 +718,34 @@ export class QuestLogicGraphView {
                     border: 2px solid #f59e0b;
                     border-radius: 10px;
                     box-shadow: 0 14px 35px rgba(0, 0, 0, 0.75), 0 0 20px rgba(245, 158, 11, 0.2);
-                    cursor: default;
+                    cursor: grab;
                     pointer-events: auto;
-                    transition: all 0.2s ease;
+                    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+                    will-change: left, top;
+                    user-select: none;
+                    -webkit-user-select: none;
                 }
 
                 .gt-qg-folder-card:hover {
                     border-color: #fbbf24;
                     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 26px rgba(251, 191, 36, 0.35);
-                    transform: translateY(-2px);
                 }
 
                 .gt-qg-folder-card.selected {
                     border-color: #38bdf8 !important;
                     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 26px rgba(56, 189, 248, 0.5) !important;
+                }
+
+                .gt-qg-folder-card.is-dragging {
+                    transition: none !important;
+                    cursor: grabbing !important;
+                    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.95), 0 0 35px rgba(245, 158, 11, 0.55) !important;
+                    z-index: 1000 !important;
+                    opacity: 0.96;
+                }
+
+                .gt-qg-folder-card.is-dragging .gt-qg-folder-header {
+                    cursor: grabbing !important;
                 }
 
                 .gt-qg-folder-header {
@@ -1314,6 +1340,10 @@ export class QuestLogicGraphView {
                 this.openFolder(folder.id);
             });
 
+            // Cache port offset agar pergerakan wire saat drag 100% mulus tanpa lag
+            card._inPortOffset = { x: 20, y: 140 };
+            card._outPortOffset = { x: 240, y: 140 };
+
             this.nodesLayer.appendChild(card);
         });
     }
@@ -1322,19 +1352,19 @@ export class QuestLogicGraphView {
         this.wiresGroup.innerHTML = '';
 
         this.folderWires.forEach((wire, index) => {
-            const outDot = this.dom.querySelector(`.gt-qg-port-dot.is-out[data-folder="${wire.fromFolder}"][data-fport="out"]`);
-            const inDot = this.dom.querySelector(`.gt-qg-port-dot.is-in[data-folder="${wire.toFolder}"][data-fport="in"]`);
+            const fromCard = this.dom.querySelector(`#qg-folder-${wire.fromFolder}`);
+            const toCard = this.dom.querySelector(`#qg-folder-${wire.toFolder}`);
+            const fromF = this.folders.find(f => f.id === wire.fromFolder);
+            const toF = this.folders.find(f => f.id === wire.toFolder);
+            if (!fromF || !toF) return;
 
-            if (!outDot || !inDot) return;
+            const outOff = (fromCard && fromCard._outPortOffset) || { x: 240, y: 140 };
+            const inOff = (toCard && toCard._inPortOffset) || { x: 20, y: 140 };
 
-            const outRect = outDot.getBoundingClientRect();
-            const inRect = inDot.getBoundingClientRect();
-            const wrapRect = this.canvasWrap.getBoundingClientRect();
-
-            const x1 = (outRect.left + outRect.width / 2 - wrapRect.left) / this.zoom;
-            const y1 = (outRect.top + outRect.height / 2 - wrapRect.top) / this.zoom;
-            const x2 = (inRect.left + inRect.width / 2 - wrapRect.left) / this.zoom;
-            const y2 = (inRect.top + inRect.height / 2 - wrapRect.top) / this.zoom;
+            const x1 = (fromF.x || 80) + outOff.x;
+            const y1 = (fromF.y || 120) + outOff.y;
+            const x2 = (toF.x || 80) + inOff.x;
+            const y2 = (toF.y || 120) + inOff.y;
 
             const dx = Math.max(80, Math.abs(x2 - x1) * 0.55);
             const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
@@ -1343,6 +1373,7 @@ export class QuestLogicGraphView {
             const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             hitPath.setAttribute('d', d);
             hitPath.setAttribute('class', 'gt-qg-wire-hit');
+            hitPath.setAttribute('data-fwire-idx', index);
             hitPath.setAttribute('title', 'Klik garis untuk memutus sambungan antar-folder');
 
             const delHandler = (e) => {
@@ -1358,11 +1389,38 @@ export class QuestLogicGraphView {
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path.setAttribute('d', d);
             path.setAttribute('class', 'gt-qg-wire-folder');
+            path.setAttribute('data-fwire-idx', index);
             path.setAttribute('title', 'Klik garis untuk memutus sambungan antar-folder');
             path.addEventListener('click', delHandler);
 
             this.wiresGroup.appendChild(hitPath);
             this.wiresGroup.appendChild(path);
+        });
+    }
+
+    updateFolderWires() {
+        this.folderWires.forEach((wire, index) => {
+            const fromCard = this.dom.querySelector(`#qg-folder-${wire.fromFolder}`);
+            const toCard = this.dom.querySelector(`#qg-folder-${wire.toFolder}`);
+            const fromF = this.folders.find(f => f.id === wire.fromFolder);
+            const toF = this.folders.find(f => f.id === wire.toFolder);
+            if (!fromF || !toF) return;
+
+            const outOff = (fromCard && fromCard._outPortOffset) || { x: 240, y: 140 };
+            const inOff = (toCard && toCard._inPortOffset) || { x: 20, y: 140 };
+
+            const x1 = (fromF.x || 80) + outOff.x;
+            const y1 = (fromF.y || 120) + outOff.y;
+            const x2 = (toF.x || 80) + inOff.x;
+            const y2 = (toF.y || 120) + inOff.y;
+
+            const dx = Math.max(80, Math.abs(x2 - x1) * 0.55);
+            const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+
+            const path = this.wiresGroup.querySelector(`.gt-qg-wire-folder[data-fwire-idx="${index}"]`);
+            const hitPath = this.wiresGroup.querySelector(`.gt-qg-wire-hit[data-fwire-idx="${index}"]`);
+            if (path) path.setAttribute('d', d);
+            if (hitPath) hitPath.setAttribute('d', d);
         });
     }
 
@@ -1521,6 +1579,7 @@ export class QuestLogicGraphView {
             const hitPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             hitPath.setAttribute('d', d);
             hitPath.setAttribute('class', 'gt-qg-wire-hit');
+            hitPath.setAttribute('data-wire-idx', index);
             hitPath.setAttribute('title', 'Klik garis untuk memutus sambungan logika');
 
             const delHandler = (e) => {
@@ -1536,12 +1595,40 @@ export class QuestLogicGraphView {
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path.setAttribute('d', d);
             path.setAttribute('class', 'gt-qg-wire');
+            path.setAttribute('data-wire-idx', index);
             path.setAttribute('stroke', wire.fromPort === 'pass' ? '#22c55e' : (wire.fromPort === 'fail' ? '#ef4444' : 'url(#gtQGFlowGrad)'));
             path.setAttribute('title', 'Klik garis untuk memutus');
             path.addEventListener('click', delHandler);
 
             this.wiresGroup.appendChild(hitPath);
             this.wiresGroup.appendChild(path);
+        });
+    }
+
+    updateWires() {
+        if (!this.canvasWrap) return;
+        const wrapRect = this.canvasWrap.getBoundingClientRect();
+
+        this.wires.forEach((wire, index) => {
+            const outDot = this.dom.querySelector(`.gt-qg-port-dot.is-out[data-node="${wire.fromNode}"][data-port="${wire.fromPort}"]`);
+            const inDot = this.dom.querySelector(`.gt-qg-port-dot.is-in[data-node="${wire.toNode}"][data-port="${wire.toPort}"]`);
+            if (!outDot || !inDot) return;
+
+            const outRect = outDot.getBoundingClientRect();
+            const inRect = inDot.getBoundingClientRect();
+
+            const x1 = (outRect.left + outRect.width / 2 - wrapRect.left) / this.zoom;
+            const y1 = (outRect.top + outRect.height / 2 - wrapRect.top) / this.zoom;
+            const x2 = (inRect.left + inRect.width / 2 - wrapRect.left) / this.zoom;
+            const y2 = (inRect.top + inRect.height / 2 - wrapRect.top) / this.zoom;
+
+            const dx = Math.max(60, Math.abs(x2 - x1) * 0.55);
+            const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+
+            const path = this.wiresGroup.querySelector(`.gt-qg-wire[data-wire-idx="${index}"]`);
+            const hitPath = this.wiresGroup.querySelector(`.gt-qg-wire-hit[data-wire-idx="${index}"]`);
+            if (path) path.setAttribute('d', d);
+            if (hitPath) hitPath.setAttribute('d', d);
         });
     }
 
@@ -2082,12 +2169,15 @@ export class QuestLogicGraphView {
                 }
             }
 
-            // 2. DRAGGING FOLDER CARD (Macro View)
-            if (dragFolderHandle) {
+            // 2. DRAGGING FOLDER CARD (Macro View: seluruh area kartu bisa ditarik mulus)
+            const clickedFolderCard = e.target.closest('.gt-qg-folder-card');
+            const isFolderInteractive = e.target.closest('button, input, textarea, select, .gt-qg-port-dot');
+            if (clickedFolderCard && !isFolderInteractive && this.currentFolderId === null) {
                 e.preventDefault();
-                const folderCard = dragFolderHandle.closest('.gt-qg-folder-card');
-                const fId = folderCard.getAttribute('data-folder-id');
+                const fId = clickedFolderCard.getAttribute('data-folder-id');
                 this.draggedFolderId = fId;
+                this.selectFolder(fId);
+                clickedFolderCard.classList.add('is-dragging');
 
                 const folder = this.folders.find(f => f.id === fId);
                 if (folder) {
@@ -2099,12 +2189,15 @@ export class QuestLogicGraphView {
                 return;
             }
 
-            // 3. DRAGGING NODE CARD (Micro View)
-            if (dragNodeHandle) {
+            // 3. DRAGGING NODE CARD (Micro View: seluruh area kotak node bisa ditarik mulus)
+            const clickedNodeCard = e.target.closest('.gt-qg-node');
+            const isNodeInteractive = e.target.closest('button, input, textarea, select, .gt-qg-port-dot');
+            if (clickedNodeCard && !isNodeInteractive && this.currentFolderId !== null) {
                 e.preventDefault();
-                const nodeCard = dragNodeHandle.closest('.gt-qg-node');
-                const nodeId = nodeCard.getAttribute('data-node-id');
+                const nodeId = clickedNodeCard.getAttribute('data-node-id');
                 this.draggedNodeId = nodeId;
+                this.selectNode(nodeId);
+                clickedNodeCard.classList.add('is-dragging');
 
                 const node = this.nodes.find(n => n.id === nodeId);
                 if (node) {
@@ -2122,62 +2215,28 @@ export class QuestLogicGraphView {
             this.panStart = { x: e.clientX - this.pan.x, y: e.clientY - this.pan.y };
         });
 
-        // Mouse Move Handler
+        // Mouse Move Handler dengan Sinkronisasi requestAnimationFrame (60fps Ultra Smooth)
         window.addEventListener('mousemove', (e) => {
-            // Drag Live Wire
-            if (this.wiring) {
-                const wrapRect = this.canvasWrap.getBoundingClientRect();
-                const curX = (e.clientX - wrapRect.left) / this.zoom;
-                const curY = (e.clientY - wrapRect.top) / this.zoom;
+            if (!this.wiring && !this.draggedFolderId && !this.draggedNodeId && !this.isPanning) return;
 
-                const dx = Math.max(60, Math.abs(curX - this.wiring.startX) * 0.55);
-                const d = `M ${this.wiring.startX} ${this.wiring.startY} C ${this.wiring.startX + dx} ${this.wiring.startY}, ${curX - dx} ${curY}, ${curX} ${curY}`;
-                this.liveWirePath.setAttribute('d', d);
-                return;
-            }
+            this._lastMouseX = e.clientX;
+            this._lastMouseY = e.clientY;
 
-            // Drag Folder Card
-            if (this.draggedFolderId) {
-                const folder = this.folders.find(f => f.id === this.draggedFolderId);
-                if (folder) {
-                    folder.x = Math.max(20, Math.round(e.clientX / this.zoom - this.dragOffset.x));
-                    folder.y = Math.max(20, Math.round(e.clientY / this.zoom - this.dragOffset.y));
-                    const card = this.dom.querySelector(`#qg-folder-${folder.id}`);
-                    if (card) {
-                        card.style.left = `${folder.x}px`;
-                        card.style.top = `${folder.y}px`;
-                    }
-                    this.renderFolderWires();
-                }
-                return;
-            }
-
-            // Drag Node Card
-            if (this.draggedNodeId) {
-                const node = this.nodes.find(n => n.id === this.draggedNodeId);
-                if (node) {
-                    node.x = Math.max(20, Math.round(e.clientX / this.zoom - this.dragOffset.x));
-                    node.y = Math.max(20, Math.round(e.clientY / this.zoom - this.dragOffset.y));
-                    const card = this.dom.querySelector(`#qg-node-${node.id}`);
-                    if (card) {
-                        card.style.left = `${node.x}px`;
-                        card.style.top = `${node.y}px`;
-                    }
-                    this.renderWires();
-                }
-                return;
-            }
-
-            // Panning Kanvas
-            if (this.isPanning) {
-                this.pan.x = e.clientX - this.panStart.x;
-                this.pan.y = e.clientY - this.panStart.y;
-                this.applyTransform();
+            if (!this._animRafId) {
+                this._animRafId = requestAnimationFrame(() => {
+                    this._animRafId = null;
+                    this.handleMoveFrame(this._lastMouseX, this._lastMouseY);
+                });
             }
         });
 
         // Mouse Up Handler
         window.addEventListener('mouseup', (e) => {
+            if (this._animRafId) {
+                cancelAnimationFrame(this._animRafId);
+                this._animRafId = null;
+            }
+
             if (this.wiring) {
                 const portDot = e.target.closest('.gt-qg-port-dot');
                 if (portDot && portDot.classList.contains('is-in')) {
@@ -2215,8 +2274,16 @@ export class QuestLogicGraphView {
                 this.clearPortSelection();
             }
 
-            if (this.draggedFolderId || this.draggedNodeId) {
+            if (this.draggedFolderId) {
+                const card = this.dom.querySelector(`#qg-folder-${this.draggedFolderId}`);
+                if (card) card.classList.remove('is-dragging');
                 this.draggedFolderId = null;
+                this.saveData();
+            }
+
+            if (this.draggedNodeId) {
+                const card = this.dom.querySelector(`#qg-node-${this.draggedNodeId}`);
+                if (card) card.classList.remove('is-dragging');
                 this.draggedNodeId = null;
                 this.saveData();
             }
@@ -2232,6 +2299,59 @@ export class QuestLogicGraphView {
             this.zoom = Math.min(2.0, Math.max(0.4, this.zoom + delta));
             this.applyTransform();
         }, { passive: false });
+    }
+
+    handleMoveFrame(clientX, clientY) {
+        // 1. Drag Live Wire Preview
+        if (this.wiring) {
+            const wrapRect = this.canvasWrap.getBoundingClientRect();
+            const curX = (clientX - wrapRect.left) / this.zoom;
+            const curY = (clientY - wrapRect.top) / this.zoom;
+
+            const dx = Math.max(60, Math.abs(curX - this.wiring.startX) * 0.55);
+            const d = `M ${this.wiring.startX} ${this.wiring.startY} C ${this.wiring.startX + dx} ${this.wiring.startY}, ${curX - dx} ${curY}, ${curX} ${curY}`;
+            this.liveWirePath.setAttribute('d', d);
+            return;
+        }
+
+        // 2. Drag Folder Card (Macro View)
+        if (this.draggedFolderId) {
+            const folder = this.folders.find(f => f.id === this.draggedFolderId);
+            if (folder) {
+                folder.x = Math.round(clientX / this.zoom - this.dragOffset.x);
+                folder.y = Math.round(clientY / this.zoom - this.dragOffset.y);
+                const card = this.dom.querySelector(`#qg-folder-${folder.id}`);
+                if (card) {
+                    card.style.left = `${folder.x}px`;
+                    card.style.top = `${folder.y}px`;
+                }
+                this.updateFolderWires();
+            }
+            return;
+        }
+
+        // 3. Drag Node Card (Micro View)
+        if (this.draggedNodeId) {
+            const node = this.nodes.find(n => n.id === this.draggedNodeId);
+            if (node) {
+                node.x = Math.round(clientX / this.zoom - this.dragOffset.x);
+                node.y = Math.round(clientY / this.zoom - this.dragOffset.y);
+                const card = this.dom.querySelector(`#qg-node-${node.id}`);
+                if (card) {
+                    card.style.left = `${node.x}px`;
+                    card.style.top = `${node.y}px`;
+                }
+                this.updateWires();
+            }
+            return;
+        }
+
+        // 4. Pan Kanvas
+        if (this.isPanning) {
+            this.pan.x = clientX - this.panStart.x;
+            this.pan.y = clientY - this.panStart.y;
+            this.applyTransform();
+        }
     }
 
     selectSourcePort(nodeId, portId, portEl) {

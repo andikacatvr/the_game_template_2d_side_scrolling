@@ -693,7 +693,7 @@ export class EngineUITourModal {
 
         this.dom.classList.remove('active');
         setTimeout(() => {
-            this.dom.style.display = 'none';
+            if (this.dom) this.dom.style.display = 'none';
         }, 250);
 
         this.teardownKeyboard();

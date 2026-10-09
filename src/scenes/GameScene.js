@@ -16,6 +16,7 @@ import { QuestModal } from '../ui/QuestModal.js';
 import { NPCDialogEditorModal } from '../ui/NPCDialogEditorModal.js';
 import { EngineMenuBar } from '../ui/EngineMenuBar.js';
 import { EngineUITourModal } from '../ui/EngineUITourModal.js';
+import { HTMLTutorialGuide } from '../ui/HTMLTutorialGuide.js';
 import { GameOverModal } from '../ui/GameOverModal.js';
 import { GridSystem } from '../utils/GridSystem.js';
 import { UndoRedoManager } from '../utils/UndoRedoManager.js';
@@ -43,32 +44,22 @@ export class GameScene extends Phaser.Scene {
         if (data.customSpeed) this.customSpeed = data.customSpeed;
         if (data.customJump) this.customJump = data.customJump;
 
-        if (data.hp !== undefined) {
+        // Level Tutorial adalah Sandbox Eksplorasi Bersih (Tanpa Save Permanen)
+        this.isTutorialMode = true;
+
+        if (data.hp !== undefined && !data.isNewGame) {
             this.hp = data.hp;
             this.maxHp = data.maxHp || (CONFIG_SKELETON.player.hpMaksimal || 3);
             this.inventory = Array.isArray(data.inventory) ? [...data.inventory] : [...(CONFIG_SKELETON.inventoryAwal || [])];
             this.quest = data.quest ? { ...data.quest } : { ...CONFIG_SKELETON.questAwal };
             this.collectedItemIds = Array.isArray(data.collectedItemIds) ? [...data.collectedItemIds] : [];
-        } else if (data.isLoadGame && SaveManager.hasSave()) {
-            const save = SaveManager.load();
-            this.hp = save.hp !== undefined ? save.hp : (CONFIG_SKELETON.player.hpMaksimal || 3);
-            this.maxHp = save.maxHp || (CONFIG_SKELETON.player.hpMaksimal || 3);
-            this.inventory = Array.isArray(save.inventory) ? [...save.inventory] : [...(CONFIG_SKELETON.inventoryAwal || [])];
-            this.quest = save.quest ? { ...save.quest } : { ...CONFIG_SKELETON.questAwal };
-            this.collectedItemIds = Array.isArray(save.collectedItemIds) ? [...save.collectedItemIds] : [];
-            if (save.playerX && save.playerY) {
-                this.savedSpawnPos = { x: save.playerX, y: save.playerY };
-            }
         } else {
-            // New Game / Default
+            // Default Selalu Segar dari konfigurasi awal cerita.js
             this.hp = CONFIG_SKELETON.player.hpMaksimal || 3;
             this.maxHp = CONFIG_SKELETON.player.hpMaksimal || 3;
             this.inventory = [...(CONFIG_SKELETON.inventoryAwal || [])];
             this.quest = { ...CONFIG_SKELETON.questAwal };
             this.collectedItemIds = [];
-            if (data.isNewGame) {
-                SaveManager.clear();
-            }
         }
     }
 
@@ -205,16 +196,65 @@ export class GameScene extends Phaser.Scene {
     }
 
     initTutorialGuide() {
-        this.tutorialSteps = [];
         this.tutorialStep = 0;
+        this.tutorialSteps = [
+            {
+                id: 'step_npc',
+                title: 'Bicara dengan Pemandu',
+                desc: 'Dekati Pemandu Engine (🧙) dan tekan [F] / [E] untuk info & tur engine.',
+                targetX: 225, targetY: 378
+            },
+            {
+                id: 'step_cmd',
+                title: 'Coba Command Developer',
+                desc: 'Buka chat konsol di kanan bawah dan ketik /speed 350 atau /jump 550.',
+                targetX: 475, targetY: 300
+            },
+            {
+                id: 'step_god',
+                title: 'Lompati Duri / Coba /god',
+                desc: 'Ketik /god di konsol untuk kebal, lalu lompati duri rintangan.',
+                targetX: 600, targetY: 388
+            },
+            {
+                id: 'step_coin',
+                title: 'Ambil Koin Emas Murni',
+                desc: 'Lompat ke platform melayang dan ambil koin emas berkilau.',
+                targetX: 725, targetY: 125
+            },
+            {
+                id: 'step_portal',
+                title: 'Masuki Portal Gerbang',
+                desc: 'Berjalanlah ke kanan dan masuki portal cahaya biru menuju Tutorial Part II!',
+                targetX: 1175, targetY: 376
+            }
+        ];
+
+        this.tutorialGuide = new HTMLTutorialGuide(this, {
+            steps: this.tutorialSteps
+        });
     }
 
     setTutorialStep(index) {
-        this.tutorialStep = index;
+        this.tutorialStep = Math.max(0, Math.min(index, this.tutorialSteps.length - 1));
+        if (this.tutorialGuide) {
+            this.tutorialGuide.updateStep(this.tutorialStep);
+        }
     }
 
     advanceTutorialStep(completedId) {
-        // Handled via Pemandu Engine tour
+        if (!this.tutorialSteps || this.tutorialSteps.length === 0) return;
+        const curStep = this.tutorialSteps[this.tutorialStep];
+        if (curStep && (curStep.id === completedId || !completedId)) {
+            if (this.tutorialStep < this.tutorialSteps.length - 1) {
+                this.tutorialStep++;
+                if (this.tutorialGuide) {
+                    this.tutorialGuide.updateStep(this.tutorialStep);
+                }
+                AudioManager.playSuccess();
+                this.showFloatingToast(`✓ Tutorial Langkah ${this.tutorialStep}/${this.tutorialSteps.length} Selesai!`, 0x10b981);
+            }
+        }
     }
 
     onCommandExecuted(cmd, args) {
@@ -299,6 +339,11 @@ export class GameScene extends Phaser.Scene {
     }
 
     autoSave(showToast = true) {
+        // Mode Tutorial adalah Sandbox Bebas:
+        // Pemain bebas bereksperimen, menggali balok, menumpuk platform, atau mengutak-atik saat sesi bermain,
+        // namun TIDAK disimpan ke penyimpanan permanen agar level tutorial selalu default & segar.
+        if (this.isTutorialMode) return;
+
         if (!this.player || !this.player.body || this.isGameOver) return;
         const data = {
             hp: this.hp,
@@ -375,6 +420,7 @@ export class GameScene extends Phaser.Scene {
         }
 
         this.platforms = this.physics.add.staticGroup();
+        this.hazards = this.physics.add.staticGroup();
         this.gridWorldBlocks = new Map();
 
         // 1. Lantai Dasar Modular 50x50 px - Permukaan atas tepat sejajar garis horizontal grid y = 400 (Row 8)
@@ -422,7 +468,7 @@ export class GameScene extends Phaser.Scene {
         });
 
         // 4. Hazard Duri (Bisa jamak)
-        this.hazards = this.physics.add.staticGroup();
+        if (!this.hazards) this.hazards = this.physics.add.staticGroup();
         const daftarDuri = (Array.isArray(map.duri) && map.duri.length > 0) 
             ? map.duri 
             : [{ x: 600, y: 388, lebar: 100 }];
@@ -498,6 +544,10 @@ export class GameScene extends Phaser.Scene {
             repeat: -1,
             ease: 'Linear'
         });
+
+        // Sensor Tabrakan Fisika Otomatis Masuk Portal
+        this.portalSensor = this.add.rectangle(portalX, portalY, 50, 70, 0x000000, 0);
+        this.physics.add.existing(this.portalSensor, true);
 
         // 7. Papan Petunjuk Alami Dunia (Single Wooden Signpost RPG)
         this.createNaturalSignpost();
@@ -1222,6 +1272,13 @@ export class GameScene extends Phaser.Scene {
         this.player.body.setSize(boxW, boxH, true);
         this.physics.add.collider(this.player, this.platforms);
 
+        // Sensor Tabrakan Masuk Portal
+        if (this.portalSensor) {
+            this.physics.add.overlap(this.player, this.portalSensor, () => {
+                this.handlePortalEnter();
+            });
+        }
+
         // Variabel animasi elastisitas & timer platformer halus
         this.playerBaseScaleX = this.player.scaleX || 1;
         this.playerBaseScaleY = this.player.scaleY || 1;
@@ -1363,10 +1420,10 @@ export class GameScene extends Phaser.Scene {
             onComplete: () => {
                 if (this.gameOverModal) {
                     this.gameOverModal.show({
-                        retryText: 'Muat Checkpoint Terakhir',
+                        retryText: this.isTutorialMode ? 'Ulangi Tutorial (Mulai Baru)' : 'Muat Checkpoint Terakhir',
                         onRetry: () => {
                             this.isGameOver = false;
-                            this.scene.restart({ isLoadGame: true });
+                            this.scene.restart({ isNewGame: true, isTutorial: true });
                         },
                         onMenu: () => {
                             this.isGameOver = false;
@@ -1823,43 +1880,48 @@ export class GameScene extends Phaser.Scene {
         const pY = this.portalY !== undefined ? this.portalY : 396;
         const distPortal = Phaser.Math.Distance.Between(this.player.x, this.player.y, pX, pY);
         if (distPortal < 80) {
-            AudioManager.playClick();
+            this.handlePortalEnter();
+            return;
+        }
+    }
 
-            // Masuk langsung ke Scene 2 (Polos tanpa syarat terkunci)
-            if (this.portalTargetMapId === 'Scene2' || this.portalTargetMapId === 'HongKongScene' || !this.portalTargetMapId) {
-                this.showFloatingToast('Berlayar ke Scene 2...', 0x38bdf8);
+    handlePortalEnter() {
+        if (this.isLevelTransitioning) return;
+        this.isLevelTransitioning = true;
+        AudioManager.playCoin();
+
+        const targetSceneKey = this.portalTargetMapId || 'Scene2';
+        const isHongKong = (targetSceneKey === 'HongKongScene' || targetSceneKey === 'Scene2');
+
+        this.advanceTutorialStep('step_portal');
+        this.showFloatingToast(`🎉 Memasuki Portal! Menuju ${isHongKong ? 'Tutorial Part II (Victoria Harbour)' : targetSceneKey}...`, 0x10b981);
+
+        this.time.delayedCall(800, () => {
+            if (isHongKong) {
                 this.scene.start('Scene2', {
                     hp: this.hp,
                     maxHp: this.maxHp,
                     inventory: this.inventory,
-                    collectedItemIds: this.collectedItemIds
-                });
-                return;
-            }
-
-            const targetMap = Array.isArray(DAFTAR_MAP) && DAFTAR_MAP.find(m => m.id === this.portalTargetMapId);
-            if (targetMap) {
-                this.showFloatingToast(this.portalOpenMsg || 'Gerbang Terbuka! Memuat level...', 0x38bdf8);
-                this.scene.restart({
-                    mapId: this.portalTargetMapId,
-                    customSpeed: this.customSpeed,
-                    customJump: this.customJump,
-                    hp: this.hp,
-                    maxHp: this.maxHp,
-                    inventory: this.inventory,
-                    quest: {
-                        judul: `Misi: Menjelajahi ${targetMap.nama}`,
-                        deskripsi: 'Jelajahi level ini, kumpulkan koin, dan temukan pintu gerbang selanjutnya!',
-                        selesai: false
-                    }
+                    collectedItemIds: this.collectedItemIds,
+                    isTutorial: true
                 });
             } else {
-                // Selesai / Tamat
-                this.showVictoryModal();
-                AudioManager.playSuccess();
+                const targetMap = Array.isArray(DAFTAR_MAP) && DAFTAR_MAP.find(m => m.id === targetSceneKey);
+                if (targetMap) {
+                    this.scene.restart({
+                        mapId: targetSceneKey,
+                        customSpeed: this.customSpeed,
+                        customJump: this.customJump,
+                        hp: this.hp,
+                        maxHp: this.maxHp,
+                        inventory: this.inventory
+                    });
+                } else {
+                    this.showVictoryModal();
+                    AudioManager.playSuccess();
+                }
             }
-            return;
-        }
+        });
     }
 
     update(time, delta) {

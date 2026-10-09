@@ -102,9 +102,9 @@ export const DAFTAR_MAP = [
         portal: {
             posisiX: 1175,
             posisiY: 376,
-            tujuanMapId: 'Scene2', // Otomatis berpindah ke Scene 2: Teluk Victoria Hong Kong!
+            tujuanMapId: 'Scene2', // Otomatis berpindah ke Tutorial Part II: Teluk Victoria Hong Kong (Scene2)!
             pesanTerkunci: "Gerbang Terkunci! Kamu harus mengambil Koin Emas terlebih dahulu.",
-            pesanTerbuka: "Gerbang Terkunci! Berlayar menuju Scene 2: Teluk Hong Kong..."
+            pesanTerbuka: "Gerbang Terbuka! Berlayar menuju Tutorial Part II: Teluk Hong Kong..."
         }
     },
 

@@ -3821,24 +3821,62 @@ export class SceneBuilderModal {
                 if (flowWrapper) flowWrapper.style.display = 'block';
 
                 if (!this.projectId) {
-                    if (this.scene && this.scene.projectId) {
+                    const sceneKey = this.scene && this.scene.scene ? this.scene.scene.key : '';
+                    if (sceneKey === 'GameScene' || sceneKey === 'HongKongScene' || sceneKey === 'Scene2') {
+                        this.projectId = 'story_campaign';
+                    } else if (this.scene && this.scene.projectId) {
                         this.projectId = this.scene.projectId;
                     } else {
                         const projs = ProjectManager.getProjects();
                         if (projs.length > 0) this.projectId = projs[0].id;
+                        else this.projectId = 'story_campaign';
                     }
                 }
 
                 if (!this.flowGraphView) {
                     this.flowGraphView = new SceneFlowGraphView(flowWrapper, {
                         projectId: this.projectId,
+                        onProjectChange: (newProjId) => {
+                            this.projectId = newProjId;
+                        },
                         onOpenScene: (sceneId, sceneData) => {
+                            if (this.projectId === 'story_campaign') {
+                                if (sceneId === 'GameScene') {
+                                    this.syncWithActiveScene({ scene: { key: 'GameScene' } });
+                                } else {
+                                    this.syncWithActiveScene({ scene: { key: 'Scene2' } });
+                                }
+                                this.switchEditorMode('scene');
+                                return;
+                            }
                             this.loadWorldData(sceneData, this.projectId, sceneId);
                             this.switchEditorMode('scene');
                         },
+                        onPlayScene: (sceneId, sceneData) => {
+                            this.hide();
+                            if (this.projectId === 'story_campaign' || sceneId === 'GameScene' || sceneId === 'Scene2' || sceneId === 'HongKongScene') {
+                                const targetKey = (sceneId === 'Scene2' || sceneId === 'HongKongScene') ? 'Scene2' : 'GameScene';
+                                const s = (this.scene && this.scene.scene) ? this.scene : window.__templateGame;
+                                if (s && s.scene) {
+                                    s.scene.start(targetKey, { isTutorial: true });
+                                }
+                                return;
+                            }
+                            const targetScene = sceneData || ProjectManager.getScene(this.projectId, sceneId);
+                            const startData = {
+                                worldData: targetScene,
+                                projectId: this.projectId,
+                                sceneId: sceneId
+                            };
+                            if (this.scene && this.scene.scene) {
+                                this.scene.scene.start('CustomWorldScene', startData);
+                            } else if (window.__templateGame && window.__templateGame.scene) {
+                                window.__templateGame.scene.start('CustomWorldScene', startData);
+                            }
+                        },
                         onAddScene: () => {
                             let targetProjId = this.projectId;
-                            if (!targetProjId) {
+                            if (!targetProjId || targetProjId === 'story_campaign') {
                                 const projs = ProjectManager.getProjects();
                                 if (projs.length > 0) targetProjId = projs[0].id;
                             }
@@ -4912,6 +4950,31 @@ export class SceneBuilderModal {
     }
 
     executeEnterWorld() {
+        if (this.editorMode === 'flow') {
+            if (this.projectId === 'story_campaign') {
+                this.hide();
+                const s = (this.scene && this.scene.scene) ? this.scene : window.__templateGame;
+                if (s && s.scene) {
+                    s.scene.start('GameScene', { isTutorial: true });
+                }
+                return;
+            }
+
+            const project = this.projectId ? ProjectManager.getProject(this.projectId) : null;
+            const startSceneId = (project && project.startingSceneId) || (project && project.scenes && project.scenes[0] && project.scenes[0].id);
+            if (project && startSceneId) {
+                const sceneData = ProjectManager.getScene(this.projectId, startSceneId);
+                this.hide();
+                const startData = { worldData: sceneData, projectId: this.projectId, sceneId: startSceneId };
+                if (this.scene && this.scene.scene) {
+                    this.scene.scene.start('CustomWorldScene', startData);
+                } else if (window.__templateGame && window.__templateGame.scene) {
+                    window.__templateGame.scene.start('CustomWorldScene', startData);
+                }
+                return;
+            }
+        }
+
         const { worldData, targetProjectId, targetSceneId } = this.saveSceneData(false);
         this.hide();
 
@@ -6785,7 +6848,7 @@ export class SceneBuilderModal {
                 if (rulerFinish) rulerFinish.textContent = `[Col ${Math.floor(portalX / 50)}: ${Math.round(portalX)}px] PORTAL PART II`;
             }
 
-            this.loadWorldData(data);
+            this.loadWorldData(data, 'story_campaign', 'GameScene');
             return;
         }
 
@@ -6904,7 +6967,7 @@ export class SceneBuilderModal {
                 if (rulerFinish) rulerFinish.textContent = `[Col 1: 75px] ← SCENE 1`;
             }
 
-            this.loadWorldData(data);
+            this.loadWorldData(data, 'story_campaign', 'Scene2');
             return;
         }
 

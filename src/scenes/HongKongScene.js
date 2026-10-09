@@ -31,7 +31,8 @@ export class HongKongScene extends Phaser.Scene {
         this.collectedItemIds = [];
         this.savedSpawnPos = null;
 
-        if (data.isLoadGame && SaveManager.hasSave()) {
+        this.isTutorialMode = !!data.isTutorial;
+        if (data.isLoadGame && !this.isTutorialMode && SaveManager.hasSave()) {
             const save = SaveManager.load();
             this.hp = save.hp !== undefined ? save.hp : (CONFIG_SKELETON.player.hpMaksimal || 3);
             this.maxHp = save.maxHp || (CONFIG_SKELETON.player.hpMaksimal || 3);
@@ -83,10 +84,14 @@ export class HongKongScene extends Phaser.Scene {
         // 5. Buat Kontrol Touch Mobile/Tablet Identik Scene 1
         this.createGoblinStyleTouchControls();
 
-        // 6. Buat Modal Game Over
+        // 6. Buat Modal Game Over & Victory
         this.createGameOverModalUI();
+        this.createVictoryModalUI();
 
-        // 7. Buat Dialog Box RPG
+        // 7. Setup Portal Sensor Overlaps
+        this.setupPortalsAndSensors();
+
+        // 8. Buat Dialog Box RPG
         this.dialogBox = new DialogBox(this);
 
         // Prompt Interaksi NPC HTML (Boxless & Tajam)
@@ -364,6 +369,22 @@ export class HongKongScene extends Phaser.Scene {
             repeat: -1,
             ease: 'Linear'
         });
+
+        // -------------------------------------------------------------
+        // PORTAL 2 (KANAN, x: 1850): Selesai Petualangan / Goal Finish
+        // -------------------------------------------------------------
+        this.portalFinish = this.add.container(1850, 376).setDepth(12);
+        const pFinishRing = this.add.circle(0, 0, 24, 0xa855f7, 0.25).setStrokeStyle(2.5, 0xc084fc);
+        const pFinishIcon = this.add.text(0, 0, '🌀', { fontSize: '18px' }).setOrigin(0.5);
+        const pFinishLabel = this.add.text(0, -32, 'Portal Finish', { fontSize: '11px', fontStyle: 'bold', fill: '#e9d5ff', fontFamily: FONT_BODY }).setOrigin(0.5);
+        this.portalFinish.add([pFinishRing, pFinishIcon, pFinishLabel]);
+        this.tweens.add({
+            targets: pFinishRing,
+            angle: -360,
+            duration: 3500,
+            repeat: -1,
+            ease: 'Linear'
+        });
     }
 
     createPierCrate(col, row, tileCount = 2, id = '') {
@@ -614,6 +635,88 @@ export class HongKongScene extends Phaser.Scene {
         }
     }
 
+    createVictoryModalUI() {
+        const cx = this.scale ? this.scale.width / 2 : 400;
+        const cy = this.scale ? this.scale.height / 2 : 225;
+        this.victoryModal = this.add.container(cx, cy).setDepth(60).setVisible(false).setScrollFactor(0);
+        const overlay = this.add.rectangle(0, 0, 4000, 4000, 0x000000, 0.85).setInteractive();
+        const box = this.add.rectangle(0, 0, 480, 260, 0x071526, 0.98).setStrokeStyle(2.5, 0x38bdf8);
+
+        const icon = this.add.text(0, -68, '[ SELESAI ]', { fontSize: '14px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_TITLE }).setOrigin(0.5);
+        const title = this.add.text(0, -32, 'PETUALANGAN SELESAI!', {
+            fontSize: '24px', fontStyle: 'bold', fill: '#38bdf8', fontFamily: FONT_TITLE
+        }).setOrigin(0.5);
+
+        const subtitle = this.add.text(0, 10, 'Selamat! Kamu telah menyelesaikan ekspedisi Hong Kong,\nmendapatkan Mutiara Victoria, dan menguasai alur multi-level!', {
+            fontSize: '12px', fill: '#cbd5e1', align: 'center', wordWrap: { width: 420 }, lineSpacing: 4, fontFamily: FONT_BODY
+        }).setOrigin(0.5);
+
+        // Tombol 1: Play Again
+        const replayBtn = this.add.rectangle(-90, 72, 140, 36, 0x2563eb, 0.95)
+            .setStrokeStyle(1.5, 0x60a5fa)
+            .setInteractive({ useHandCursor: true });
+        const replayText = this.add.text(-90, 72, 'Play Again', {
+            fontSize: '12px', fontStyle: 'bold', fill: '#ffffff', fontFamily: FONT_BODY
+        }).setOrigin(0.5);
+
+        replayBtn.on('pointerdown', () => {
+            this.victoryModal.setVisible(false);
+            this.scene.restart({ isNewGame: true });
+        });
+
+        // Tombol 2: Main Menu
+        const menuBtn = this.add.rectangle(90, 72, 140, 36, 0x1e293b, 1)
+            .setStrokeStyle(1.5, 0x64748b)
+            .setInteractive({ useHandCursor: true });
+        const menuText = this.add.text(90, 72, 'Main Menu', {
+            fontSize: '12px', fontStyle: 'bold', fill: '#cbd5e1', fontFamily: FONT_BODY
+        }).setOrigin(0.5);
+
+        menuBtn.on('pointerdown', () => {
+            this.victoryModal.setVisible(false);
+            AudioManager.stopAmbientBGM();
+            this.scene.start('TitleScene');
+        });
+
+        this.victoryModal.add([overlay, box, icon, title, subtitle, replayBtn, replayText, menuBtn, menuText]);
+    }
+
+    setupPortalsAndSensors() {
+        if (!this.player) return;
+
+        // Sensor Portal Balik ke Scene 1 (x: 75)
+        const backSensor = this.add.rectangle(75, 376, 50, 60, 0x000000, 0);
+        this.physics.add.existing(backSensor, true);
+        this.physics.add.overlap(this.player, backSensor, () => {
+            if (this.isTransitioning) return;
+            this.isTransitioning = true;
+            AudioManager.playCoin();
+            this.showFloatingToast('Teleportasi kembali ke Scene 1...', 0x38bdf8);
+            this.time.delayedCall(500, () => {
+                this.scene.start('GameScene', {
+                    hp: this.hp,
+                    maxHp: this.maxHp,
+                    inventory: this.inventory,
+                    quest: this.quest,
+                    collectedItemIds: this.collectedItemIds,
+                    isTutorial: this.isTutorialMode
+                });
+            });
+        });
+
+        // Sensor Portal Finish di Ujung Dermaga (x: 1850)
+        const finishSensor = this.add.rectangle(1850, 376, 50, 60, 0x000000, 0);
+        this.physics.add.existing(finishSensor, true);
+        this.physics.add.overlap(this.player, finishSensor, () => {
+            if (this.isTransitioning || this.isGameOver) return;
+            this.isTransitioning = true;
+            AudioManager.playSuccess();
+            if (this.victoryModal) {
+                this.victoryModal.setVisible(true);
+            }
+        });
+    }
+
     // ===============================================================
     // KONTROL TOUCH SCREEN MOBILE/TABLET
     // ===============================================================
@@ -800,6 +903,10 @@ export class HongKongScene extends Phaser.Scene {
             this.gameOverModal.setPosition(centerPos.x, centerPos.y);
             this.gameOverModal.setScale(centerPos.scale);
         }
+        if (this.victoryModal && this.victoryModal.active) {
+            this.victoryModal.setPosition(centerPos.x, centerPos.y);
+            this.victoryModal.setScale(centerPos.scale);
+        }
         if (this.questModal && this.questModal.active) {
             this.questModal.setPosition(centerPos.x, centerPos.y);
             this.questModal.setScale(centerPos.scale);
@@ -872,6 +979,7 @@ export class HongKongScene extends Phaser.Scene {
     }
 
     autoSave(showToast = true) {
+        if (this.isTutorialMode) return;
         if (!this.player || !this.player.body || this.isGameOver) return;
         const data = {
             sceneKey: 'Scene2',
@@ -939,8 +1047,19 @@ export class HongKongScene extends Phaser.Scene {
                 maxHp: this.maxHp,
                 inventory: this.inventory,
                 quest: this.quest,
-                collectedItemIds: this.collectedItemIds
+                collectedItemIds: this.collectedItemIds,
+                isTutorial: this.isTutorialMode
             });
+            return;
+        }
+
+        // 3. Portal Selesai / Finish di Ujung Dermaga (x: 1850)
+        const distPortalFinish = Phaser.Math.Distance.Between(this.player.x, this.player.y, 1850, 376);
+        if (distPortalFinish < 70) {
+            AudioManager.playSuccess();
+            if (this.victoryModal) {
+                this.victoryModal.setVisible(true);
+            }
             return;
         }
     }

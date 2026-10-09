@@ -843,6 +843,12 @@ export class EngineMenuBar {
 
         this.bar.querySelector('#mi-save').addEventListener('click', () => {
             AudioManager.playSuccess();
+            if (this.scene && this.scene.isTutorialMode) {
+                if (this.scene.showFloatingToast) {
+                    this.scene.showFloatingToast('ℹ️ Mode Tutorial (Sandbox): Perubahan hanya berlaku selama bermain & tidak disimpan permanen agar tutorial selalu default.', 0x38bdf8);
+                }
+                return;
+            }
             if (this.scene && this.scene.showFloatingToast) {
                 this.scene.showFloatingToast('Progres Sandbox Disimpan!', 0x22c55e);
             }
